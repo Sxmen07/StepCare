@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="login.css">
+    <title>StepCare</title>
+</head>
+
+<body class="m-0 p-0 h-screen w-screen flex flex-col md:flex-row overflow-hidden bg-gray-50">
+
+    <div class="w-full md:w-3/5 h-64 md:h-full relative">
+        <img src="../../../images/loginNsignup.jpg" alt="loginNsignup" class="w-full h-full object-cover">
+
+        <div class="absolute bottom-12 left-6 flex items-center gap-3 z-10 text-5xl font-bold">
+            <img src="../../../images/StepCare.png" alt="StepCare" class="w-14 h-14">
+            <span><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></span>
+        </div>
+
+    </div>
+
+    <div class="w-full md:w-2/5 h-full bg-white flex flex-col justify-center items-center p-8">
+        <div class="w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-[#3C52C3] mb-4 text-left w-full">Sign Up</h2>
+            <div class="border-1 border-[#007FFF]/50 rounded-xl w-full h-80 p-6 flex flex-col justify-center">
+                <label for="username">Username</label>
+                <input type="text" id=username placeholder="Username" 
+                class="border p-2 mb-4 rounded hover:border-[#007FFF] focus:border-bg-[#007FFF] focus:outline-bg-[#007FFF]">
+
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Password"
+                class="border p-2 mb-4 rounded hover:border-[#007FFF] focus:border-bg-[#007FFF] focus:outline-bg-[#007FFF]"">
+
+                <button class="bg-[#3C52C3] hover:bg-[#007FFF] text-white p-2 rounded">Next</button>
+            </div>
+        </div>
+    </div>
+    
+</body>
+
+</html>
