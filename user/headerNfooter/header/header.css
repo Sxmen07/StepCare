@@ -1,0 +1,18 @@
+.nav-link{
+    color: #374151;
+    font-size:large;
+    font-weight: 700;
+    transition: color 0.2s;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover{
+    color: #007FFF;
+}
+
+.nav-link:active{
+    color: #007FFF;
+    font-weight: 800;
+    border-bottom: 2px solid #007FFF;
+}
