@@ -1,45 +1,102 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="login.css">
-    <title>StepCare</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <title>StepCare</title>
 </head>
 
-<body class="m-0 p-0 h-screen w-screen flex flex-col md:flex-row overflow-hidden bg-gray-50">
+<body class="min-h-dvh antialiased">
 
-    <div class="w-full md:w-3/5 h-64 md:h-full relative">
-        <img src="../../../images/loginNsignup.jpg" alt="loginNsignup" class="w-full h-full object-cover">
+  <!-- ============ 1. BACKGROUND LAYER ============ -->
+  <div class="fixed inset-0 -z-10 overflow-hidden">
+    <img src="../../../images/loginNsignup.jpg"
+         alt=""
+         class="h-full w-full object-cover" />
 
-        <div class="absolute bottom-12 left-6 flex items-center gap-3 z-10 text-5xl font-bold">
-            <img src="../../../images/StepCare.png" alt="StepCare" class="w-14 h-14">
-            <span><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></span>
+    <!-- white blur veil -->
+    <div class="absolute inset-0 bg-white/50 backdrop-blur-md"></div>
+  </div>
+
+  <!-- ============ 2. CENTERING WRAPPER ============ -->
+  <main class="flex min-h-dvh items-center justify-center p-4">
+    <!-- ============ 3. THE CARD ============ -->
+    <div class="w-full max-w-4xl rounded-3xl bg-white ring-1 ring-white/60 p-8 md:p-10">
+
+      <div class="flex flex-col gap-10 md:flex-row md:gap-0">
+
+        <!-- ---------- LEFT: logo + name ---------- -->
+        <div class="flex flex-col items-center justify-center gap-3
+                    md:w-1/2 md:border-r md:border-slate-300/70 md:pr-10">
+          <img src="../../images/StepCare.png"
+               alt="StepCare"
+               class="h-16 w-16 object-contain" />
+
+          <p class="text-5xl font-bold tracking-tight">
+            <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
+          </p>
+
+          <p class="text-sm text-slate-500 text-center">
+            Your health, one step at a time.
+          </p>
         </div>
 
-    </div>
+        <!-- ---------- RIGHT: form ---------- -->
+        <div class="md:w-1/2 md:pl-10">
+          <h1 class="mb-6 text-2xl font-bold text-[#3C52C3]">Login</h1>
 
-    <div class="w-full md:w-2/5 h-full bg-white flex flex-col justify-center items-center p-8">
-        <div class="w-full max-w-sm">
-            <h2 class="text-2xl font-bold text-[#3C52C3] mb-4 text-left w-full">Login</h2>
-            <div class="rounded-xl w-full h-80 p-6 flex flex-col justify-center">
-                <label for="username">Username</label>
-                <input type="text" id=username placeholder="Username" 
-                class="border p-2 mb-4 rounded hover:border-[#007FFF] focus:border-bg-[#007FFF] focus:outline-bg-[#007FFF]">
+          <form action="login.php" method="POST" class="flex flex-col gap-4">
 
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Password"
-                class="border p-2 mb-4 rounded hover:border-[#007FFF] focus:border-bg-[#007FFF] focus:outline-bg-[#007FFF]"">
-
-                <button class="bg-[#3C52C3] hover:bg-[#007FFF] text-white p-2 rounded transition">Submit</button>
+            <div class="flex flex-col gap-1.5">
+              <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+              <input id="email" type="email" name="email" required
+                     placeholder="Enter your gmail account"
+                     class="w-full rounded-lg border border-slate-300 bg-white/80
+                            px-4 py-2.5 text-slate-800 placeholder-slate-400
+                            outline-none transition
+                            focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40" />
             </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="password" class="text-sm font-medium text-slate-700">Password</label>
+              <input id="password" type="password" name="password" required
+                     placeholder="Enter your password"
+                     class="w-full rounded-lg border border-slate-300 bg-white/80
+                            px-4 py-2.5 text-slate-800 placeholder-slate-400
+                            outline-none transition
+                            focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40" />
+
+              <!-- Forgot Password: aligned LEFT -->
+              <a href="../forgotPassword/forgotPassword.html"
+                 class="self-start text-sm font-semibold text-[#007FFF] hover:underline">
+                Forgot Password
+              </a>
+            </div>
+
+            <!-- BUTTON ROW: create account + login, side by side on the right -->
+            <div class="mt-2 flex items-center justify-end gap-4">
+              <a href="../signup/signup.html"
+                 class="text-sm font-semibold text-[#3C52C3] transition duration-300 ease-in-out
+                        hover:-translate-y-0.5 hover:scale-105 hover:text-[#007FFF] active:scale-95">
+                Create an account
+              </a>
+
+              <button type="submit"
+                      class="rounded-lg bg-[#3C52C3] px-7 py-2.5 font-medium text-white
+                             transition duration-300 ease-in-out
+                             hover:-translate-y-0.5 hover:bg-[#007FFF]
+                             active:scale-95">
+                Login
+              </button>
+            </div>
+
+          </form>
         </div>
 
-        <a href="../signUp/signUp.html" class="text-[#3C52C3] hover:text-[#007FFF] transition">Haven't an account? Create an account</a>
+      </div>
     </div>
-    
-</body>
+  </main>
 
+</body>
 </html>
