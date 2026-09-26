@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Sidebar Preview</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Glassmorphism sidebar style */
+    .glass-sidebar {
+      background: rgba(235, 245, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 4px 0 24px 0 rgba(148, 163, 184, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 min-h-screen text-slate-700 flex flex-col">
+
+  <!-- 顶部预览切换控制条（仅用于你现在本地测试查看，后续不用放到实际页面） -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-sky-100 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-bold text-sky-800 tracking-wider uppercase">Preview Role Mode:</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="switchView('nurse')" id="btn-nurse" class="px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-sky-500 text-white shadow-sm">
+        Nurse Sidebar
+      </button>
+      <button onclick="switchView('admin')" id="btn-admin" class="px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300">
+        Admin Sidebar
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体工作区 -->
+  <div class="flex flex-1">
+
+    <!-- ==================== 1. NURSE SIDEBAR (独立组件内容) ==================== -->
+    <aside id="sidebar-nurse" class="w-64 h-[calc(100vh-53px)] sticky top-[53px] glass-sidebar flex flex-col justify-between p-5 z-20">
+      <div>
+        <!-- Logo -->
+        <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-sky-200/50">
+          <img src="images/StepCare.png" alt="StepCare Logo" class="h-8 max-w-[40px] object-contain" />
+          <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent select-none">
+            StepCare
+          </span>
+        </div>
+
+        <div class="px-3 mb-2 text-xs font-bold text-sky-900/60 uppercase tracking-wider">Nurse Portal</div>
+
+        <!-- Links -->
+        <nav class="space-y-1.5">
+          <a href="nurse-dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="nurse-job-market.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="briefcase" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Job Market</span>
+          </a>
+          <a href="nurse-care-log.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Care Log</span>
+          </a>
+          <a href="nurse-profile.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="user" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Profile</span>
+          </a>
+          <a href="nurse-settings.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="settings" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Settings</span>
+          </a>
+          <a href="nurse-service.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
+            <i data-lucide="headphones" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Customer Services</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Log Out -->
+      <div class="pt-4 border-t border-sky-200/50">
+        <button onclick="logout()" class="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl font-medium text-rose-500 hover:bg-rose-500/10 transition group whitespace-nowrap">
+          <i data-lucide="log-out" class="w-5 h-5 text-rose-500 transition group-hover:-translate-x-1 flex-shrink-0"></i>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ==================== 2. ADMIN SIDEBAR (独立组件内容) ==================== -->
+    <aside id="sidebar-admin" class="hidden w-64 h-[calc(100vh-53px)] sticky top-[53px] glass-sidebar flex flex-col justify-between p-5 z-20">
+      <div>
+        <!-- Logo -->
+        <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-sky-200/50">
+          <img src="images/StepCare.png" alt="StepCare Logo" class="h-8 max-w-[40px] object-contain" />
+          <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent select-none">
+            StepCare
+          </span>
+        </div>
+
+        <div class="px-3 mb-2 text-xs font-bold text-indigo-900/60 uppercase tracking-wider">Admin Portal</div>
+
+        <!-- Links -->
+        <nav class="space-y-1.5">
+          <a href="admin-dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+            <i data-lucide="line-chart" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="admin-job-market.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+            <i data-lucide="briefcase" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Job Market</span>
+          </a>
+          <a href="admin-users.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+            <i data-lucide="users" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Users</span>
+          </a>
+          <a href="admin-care-log.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+            <i data-lucide="file-check" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Care Log</span>
+          </a>
+          <a href="admin-profile.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+            <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+            <span>Profile</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Log Out -->
+      <div class="pt-4 border-t border-sky-200/50">
+        <button onclick="logout()" class="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl font-medium text-rose-500 hover:bg-rose-500/10 transition group whitespace-nowrap">
+          <i data-lucide="log-out" class="w-5 h-5 text-rose-500 transition group-hover:-translate-x-1 flex-shrink-0"></i>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 右侧内容展示区 -->
+    <main class="flex-1 p-8">
+      <div class="bg-white/60 backdrop-blur-md rounded-2xl p-6 border border-white/80 shadow-sm max-w-3xl">
+        <h1 id="page-title" class="text-2xl font-bold text-slate-800">Nurse Dashboard Overview</h1>
+        <p id="page-desc" class="text-slate-500 mt-2">Currently previewing the Nurse Sidebar navigation layout.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // 顶部按钮实时切换两个 Sidebar
+    function switchView(role) {
+      const nurseBar = document.getElementById('sidebar-nurse');
+      const adminBar = document.getElementById('sidebar-admin');
+      const btnNurse = document.getElementById('btn-nurse');
+      const btnAdmin = document.getElementById('btn-admin');
+      const pageTitle = document.getElementById('page-title');
+      const pageDesc = document.getElementById('page-desc');
+
+      if (role === 'nurse') {
+        nurseBar.classList.remove('hidden');
+        adminBar.classList.add('hidden');
+
+        btnNurse.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-sky-500 text-white shadow-sm";
+        btnAdmin.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300";
+
+        pageTitle.innerText = "Nurse Dashboard Overview";
+        pageDesc.innerText = "Currently previewing the Nurse Sidebar navigation layout.";
+      } else {
+        adminBar.classList.remove('hidden');
+        nurseBar.classList.add('hidden');
+
+        btnAdmin.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-sm";
+        btnNurse.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition bg-slate-200 text-slate-600 hover:bg-slate-300";
+
+        pageTitle.innerText = "Admin Dashboard Overview";
+        pageDesc.innerText = "Currently previewing the Admin Sidebar navigation layout.";
+      }
+
+      lucide.createIcons();
+    }
+
+    function logout() {
+      alert("Redirecting to login page...");
+    }
+  </script>
+</body>
+</html>
