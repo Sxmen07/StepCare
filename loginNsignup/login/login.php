@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['firstName'] = $user['firstName'];
 
             // Redirect to user dashboard (adjust path as needed)
-            header("Location: ../../user/dashboard.html");
+            header("Location: ../../user/aboutUs/aboutUs.html");
             exit();
 
         } else {
