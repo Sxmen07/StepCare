@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit History - StepCare</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-[#3C52C3] text-white px-8 py-4">
+
+        <div class="flex justify-between items-center">
+
+            <h1 class="text-2xl font-bold">
+                StepCare
+            </h1>
+
+            <nav class="space-x-6 text-sm">
+                <a href="#" class="hover:underline">Dashboard</a>
+                <a href="#" class="hover:underline">Schedule</a>
+                <a href="#" class="hover:underline">Visits</a>
+                <a href="#" class="hover:underline">Reports</a>
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-8">
+
+        <h2 class="text-2xl font-bold text-gray-800">
+            Visits
+        </h2>
+
+        <p class="text-gray-500 mt-1 mb-6">
+            Manage your current and previous patient visits.
+        </p>
+
+
+        <!-- Current Visit -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <div class="flex justify-between items-center mb-5">
+
+                <div>
+
+                    <h3 class="text-lg font-semibold">
+                        Current Visit
+                    </h3>
+
+                    <p class="text-gray-500 text-sm">
+                        Active patient visit
+                    </p>
+
+                </div>
+
+                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                    In Progress
+                </span>
+
+            </div>
+
+
+            <!-- Current Visit Information -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Patient
+                    </p>
+
+                    <p class="font-semibold">
+                        Mary Lee
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Date
+                    </p>
+
+                    <p class="font-semibold">
+                        22 September 2026
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Scheduled Time
+                    </p>
+
+                    <p class="font-semibold">
+                        2:00 PM - 3:00 PM
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Location
+                    </p>
+
+                    <p class="font-semibold">
+                        Bukit Mertajam, Penang
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Check In
+                    </p>
+
+                    <p class="font-semibold text-green-600">
+                        1:58 PM
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Check Out
+                    </p>
+
+                    <p class="font-semibold text-gray-400">
+                        Not yet
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Check In / Check Out Buttons -->
+            <div class="flex gap-3 mb-7">
+
+                <button class="bg-[#3C52C3] text-white px-5 py-2 rounded hover:bg-blue-800">
+                    Check In
+                </button>
+
+                <button class="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600">
+                    Check Out
+                </button>
+
+            </div>
+
+
+            <!-- Current Visit Progress Bar -->
+            <div>
+
+                <div class="flex items-center">
+
+                    <!-- Scheduled -->
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+
+                    <!-- Checked In -->
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+
+                    <!-- In Progress -->
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ●
+                    </div>
+
+                    <div class="h-1 bg-gray-200 flex-1"></div>
+
+
+                    <!-- Completed -->
+                    <div class="w-6 h-6 bg-gray-200 rounded-full">
+                    </div>
+
+                </div>
+
+
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+
+                    <span>Scheduled</span>
+                    <span>Checked In</span>
+                    <span>In Progress</span>
+                    <span>Completed</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Visit History -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4">
+            Visit History
+        </h3>
+
+
+        <!-- Visit 1 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+
+            <div class="flex justify-between items-center mb-5">
+
+                <div>
+
+                    <h3 class="text-lg font-semibold">
+                        John Tan
+                    </h3>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Date: 20 September 2026
+                    </p>
+
+                </div>
+
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                    Completed
+                </span>
+
+            </div>
+
+
+            <!-- Visit Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Scheduled Time
+                    </p>
+
+                    <p class="font-semibold">
+                        10:00 AM - 11:00 AM
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Location
+                    </p>
+
+                    <p class="font-semibold">
+                        George Town, Penang
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Check In / Check Out -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check In
+                    </p>
+
+                    <p class="font-semibold text-green-600">
+                        9:58 AM
+                    </p>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check Out
+                    </p>
+
+                    <p class="font-semibold">
+                        11:02 AM
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Progress Bar -->
+            <div>
+
+                <div class="flex items-center">
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+
+                    <span>Scheduled</span>
+                    <span>Checked In</span>
+                    <span>In Progress</span>
+                    <span>Completed</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Visit 2 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+
+            <div class="flex justify-between items-center mb-5">
+
+                <div>
+
+                    <h3 class="text-lg font-semibold">
+                        Mary Lee
+                    </h3>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Date: 22 September 2026
+                    </p>
+
+                </div>
+
+                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                    In Progress
+                </span>
+
+            </div>
+
+
+            <!-- Visit Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Scheduled Time
+                    </p>
+
+                    <p class="font-semibold">
+                        2:00 PM - 3:00 PM
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Location
+                    </p>
+
+                    <p class="font-semibold">
+                        Bukit Mertajam, Penang
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Check In / Check Out -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check In
+                    </p>
+
+                    <p class="font-semibold text-green-600">
+                        1:58 PM
+                    </p>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check Out
+                    </p>
+
+                    <p class="font-semibold text-gray-400">
+                        Not yet
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Progress Bar -->
+            <div>
+
+                <div class="flex items-center">
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ●
+                    </div>
+
+                    <div class="h-1 bg-gray-200 flex-1"></div>
+
+                    <div class="w-6 h-6 bg-gray-200 rounded-full">
+                    </div>
+
+                </div>
+
+
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+
+                    <span>Scheduled</span>
+                    <span>Checked In</span>
+                    <span>In Progress</span>
+                    <span>Completed</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Visit 3 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+
+            <div class="flex justify-between items-center mb-5">
+
+                <div>
+
+                    <h3 class="text-lg font-semibold">
+                        David Wong
+                    </h3>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Date: 18 September 2026
+                    </p>
+
+                </div>
+
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                    Completed
+                </span>
+
+            </div>
+
+
+            <!-- Visit Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Scheduled Time
+                    </p>
+
+                    <p class="font-semibold">
+                        9:00 AM - 10:00 AM
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+                        Visit Location
+                    </p>
+
+                    <p class="font-semibold">
+                        Butterworth, Penang
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Check In / Check Out -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check In
+                    </p>
+
+                    <p class="font-semibold text-green-600">
+                        8:57 AM
+                    </p>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4">
+
+                    <p class="text-gray-500 text-sm">
+                        Check Out
+                    </p>
+
+                    <p class="font-semibold">
+                        10:04 AM
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Progress Bar -->
+            <div>
+
+                <div class="flex items-center">
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                    <div class="h-1 bg-[#3C52C3] flex-1"></div>
+
+                    <div class="w-6 h-6 bg-[#3C52C3] rounded-full flex items-center justify-center text-white text-xs">
+                        ✓
+                    </div>
+
+                </div>
+
+
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+
+                    <span>Scheduled</span>
+                    <span>Checked In</span>
+                    <span>In Progress</span>
+                    <span>Completed</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="bg-[#3C52C3] text-white text-center py-6 mt-10">
+
+        <p class="text-sm">
+            © 2026 StepCare. All rights reserved.
+        </p>
+
+    </footer>
+
+</body>
+</html>
