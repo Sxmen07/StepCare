@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Admin Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Glass sidebar style */
+    .glass-sidebar {
+      background: rgba(235, 245, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 4px 0 24px 0 rgba(148, 163, 184, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 min-h-screen text-slate-700 flex">
+
+  <!-- Sidebar Mount Point -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main View -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Top Header -->
+    <header class="h-16 px-8 flex items-center justify-between border-b border-sky-100 bg-white/40 backdrop-blur-md sticky top-0 z-10">
+      <div>
+        <h1 class="text-xl font-bold text-slate-800">Admin Dashboard</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-slate-600">Administrator</span>
+        <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm shadow-sm">
+          A
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <div class="p-8 flex-1">
+      <div class="bg-white/60 backdrop-blur-md rounded-2xl p-6 border border-white/80 shadow-sm min-h-[300px]">
+        <h2 class="text-lg font-semibold text-slate-800">Welcome to Admin Portal</h2>
+        <p class="text-sm text-slate-500 mt-1">This is an empty template ready for your dashboard widgets and tables.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch('../components/sidebar-admin.html')
+        .then((res) => {
+          if (!res.ok) throw new Error("Sidebar file not found at ../components/sidebar-admin.html");
+          return res.text();
+        })
+        .then((html) => {
+          const fixedHtml = html.replace(/src=["']images\//g, 'src="../images/');
+          document.getElementById('sidebar-container').innerHTML = fixedHtml;
+          lucide.createIcons();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+
+    function logout() {
+      localStorage.removeItem('stepcare_role');
+      location.reload();
+    }
+  </script>
+</body>
+</html>
