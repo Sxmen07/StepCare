@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurse Platform - StepCare</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-[#3C52C3] text-white px-8 py-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold">StepCare</h1>
+
+            <nav class="space-x-6 text-sm">
+                <a href="#" class="hover:underline">Dashboard</a>
+                <a href="#" class="hover:underline">Schedule</a>
+                <a href="#" class="hover:underline">Visits</a>
+                <a href="#" class="hover:underline">Reports</a>
+            </nav>
+        </div>
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-8">
+
+        <h2 class="text-2xl font-bold text-gray-800">
+            Nurse Platform
+        </h2>
+
+        <p class="text-gray-500 mt-1 mb-6">
+            Manage your schedule, visits and patient care.
+        </p>
+
+
+        <!-- Nurse Information -->
+        <div class="bg-white rounded-lg shadow p-5 mb-6">
+
+            <h3 class="text-lg font-semibold mb-3">
+                Nurse Information
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div>
+                    <p class="text-gray-500 text-sm">Name</p>
+                    <p class="font-semibold">Fiona</p>
+                </div>
+
+                <div>
+                    <p class="text-gray-500 text-sm">Nurse ID</p>
+                    <p class="font-semibold">N001</p>
+                </div>
+
+                <div>
+                    <p class="text-gray-500 text-sm">Status</p>
+                    <p class="text-green-600 font-semibold">Available</p>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Schedule & Availability -->
+        <div class="bg-white rounded-lg shadow p-5 mb-6">
+
+            <div class="flex justify-between items-center mb-5">
+
+                <h3 class="text-lg font-semibold">
+                    Schedule & Availability
+                </h3>
+
+                <button class="bg-[#3C52C3] text-white px-4 py-2 rounded hover:bg-blue-800">
+                    Edit Schedule
+                </button>
+
+            </div>
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- My Schedule -->
+                <div>
+
+                    <h4 class="font-semibold mb-3">
+                        My Schedule
+                    </h4>
+
+                    <div class="border-b pb-3 mb-3">
+                        <p class="font-semibold">Monday</p>
+                        <p class="text-gray-500 text-sm">
+                            9:00 AM - 5:00 PM
+                        </p>
+                    </div>
+
+                    <div class="border-b pb-3 mb-3">
+                        <p class="font-semibold">Tuesday</p>
+                        <p class="text-gray-500 text-sm">
+                            9:00 AM - 5:00 PM
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="font-semibold">Wednesday</p>
+                        <p class="text-gray-500 text-sm">
+                            10:00 AM - 6:00 PM
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <!-- Availability -->
+                <div>
+
+                    <h4 class="font-semibold mb-3">
+                        Availability
+                    </h4>
+
+                    <label class="block text-sm mb-2">
+                        Availability Status
+                    </label>
+
+                    <select class="w-full border rounded px-3 py-2 mb-4">
+                        <option>Available</option>
+                        <option>Not Available</option>
+                    </select>
+
+                    <label class="block text-sm mb-2">
+                        Available Date
+                    </label>
+
+                    <input
+                        type="date"
+                        class="w-full border rounded px-3 py-2 mb-4"
+                    >
+
+                    <button class="bg-[#3C52C3] text-white px-4 py-2 rounded hover:bg-blue-800">
+                        Update Availability
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Visits & Reports -->
+        <div class="bg-white rounded-lg shadow p-5 mb-6">
+
+            <h3 class="text-lg font-semibold mb-5">
+                Visits & Reports
+            </h3>
+
+
+            <!-- Current Visit -->
+            <div class="border-b pb-5 mb-5">
+
+                <h4 class="font-semibold mb-4">
+                    Current Visit
+                </h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div>
+                        <p class="text-gray-500 text-sm">Patient</p>
+                        <p class="font-semibold">Dohn</p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">Visit Date</p>
+                        <p class="font-semibold">22 September 2026</p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">Visit Time</p>
+                        <p class="font-semibold">10:00 AM - 11:00 AM</p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">Address</p>
+                        <p class="font-semibold">George Town, Penang</p>
+                    </div>
+
+                </div>
+
+
+                <div class="mt-5 flex gap-3">
+
+                    <button class="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700">
+                        Check In
+                    </button>
+
+                    <button class="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600">
+                        Check Out
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Visit Reports -->
+            <div>
+
+                <h4 class="font-semibold mb-4">
+                    Visit Reports & Updates
+                </h4>
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full text-left">
+
+                        <thead class="border-b">
+                            <tr>
+                                <th class="py-3">Date</th>
+                                <th class="py-3">Patient</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3">Report</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr class="border-b">
+                                <td class="py-3">20 Sep 2026</td>
+                                <td>John Tan</td>
+                                <td class="text-green-600">Completed</td>
+                                <td>
+                                    <button class="text-[#3C52C3] hover:underline">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr class="border-b">
+                                <td class="py-3">18 Sep 2026</td>
+                                <td>Mary Lee</td>
+                                <td class="text-green-600">Completed</td>
+                                <td>
+                                    <button class="text-[#3C52C3] hover:underline">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Care Documentation -->
+        <div class="bg-white rounded-lg shadow p-5">
+
+            <h3 class="text-lg font-semibold mb-4">
+                Care Documentation
+            </h3>
+
+            <label class="block mb-2">
+                Patient Notes
+            </label>
+
+            <textarea
+                rows="5"
+                class="w-full border rounded px-3 py-2"
+                placeholder="Enter notes about the patient's visit..."
+            ></textarea>
+
+            <button class="mt-4 bg-[#3C52C3] text-white px-5 py-2 rounded hover:bg-blue-800">
+                Save Documentation
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="bg-[#3C52C3] text-white text-center py-6 mt-10">
+
+        <p class="text-sm">
+            © 2026 StepCare. All rights reserved.
+        </p>
+
+    </footer>
+
+</body>
+</html>

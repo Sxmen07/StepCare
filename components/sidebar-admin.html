@@ -1,0 +1,46 @@
+<!-- Admin Sidebar Component -->
+<aside class="w-64 h-screen sticky top-0 glass-sidebar flex flex-col justify-between p-5 z-20">
+  <div>
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-sky-200/50">
+      <img src="images/StepCare.png" alt="StepCare Logo" class="h-8 max-w-[40px] object-contain" />
+      <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent select-none">
+        StepCare
+      </span>
+    </div>
+
+    <div class="px-3 mb-2 text-xs font-bold text-indigo-900/60 uppercase tracking-wider">Admin Portal</div>
+
+    <!-- Navigation Links -->
+    <nav class="space-y-1.5">
+      <a href="admin-dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+        <i data-lucide="line-chart" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="admin-job-market.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+        <i data-lucide="briefcase" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+        <span>Job Market</span>
+      </a>
+      <a href="admin-users.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+        <i data-lucide="users" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+        <span>Users</span>
+      </a>
+      <a href="admin-care-log.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+        <i data-lucide="file-check" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+        <span>Care Log</span>
+      </a>
+      <a href="admin-profile.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-indigo-500/10 hover:text-indigo-600 transition group whitespace-nowrap">
+        <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600 transition group-hover:scale-110 flex-shrink-0"></i>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Log Out -->
+  <div class="pt-4 border-t border-sky-200/50">
+    <button onclick="logout()" class="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl font-medium text-rose-500 hover:bg-rose-500/10 transition group whitespace-nowrap">
+      <i data-lucide="log-out" class="w-5 h-5 text-rose-500 transition group-hover:-translate-x-1 flex-shrink-0"></i>
+      <span>Log Out</span>
+    </button>
+  </div>
+</aside>
