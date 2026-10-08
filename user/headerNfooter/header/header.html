@@ -1,15 +1,103 @@
 <header class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white border-b border-[#3C52C3]">
-    <a href="aboutUs.html" class="flex items-center gap-2 text-4xl font-bold">
+
+    <!-- ---------- Logo ---------- -->
+    <a href="../aboutUs/aboutUs.php" class="flex items-center gap-2 text-4xl font-bold">
         <img src="../../images/StepCare.png" alt="StepCare" class="w-10 h-10">
-        <span><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></span>
+        <span>
+            <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
+        </span>
     </a>
+
+    <!-- ---------- Nav links ---------- -->
     <ul class="flex gap-12 list-none p-0 m-0">
-        <li><a href="../aboutUs/aboutUs.html" class="nav-link active">About Us</a></li>
-        <li><a href="../services/services.html" class="nav-link">Services</a></li>
-        <li><a href="../familyCare/familyCare.html" class="nav-link">Family Care</a></li>
+        <li>
+            <a href="../aboutUs/aboutUs.php"
+               class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>">
+                About Us
+            </a>
+        </li>
+        <li>
+            <a href="../services/services.php"
+               class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">
+                Services
+            </a>
+        </li>
+        <li>
+            <a href="../familyCare/familyCare.php"
+               class="nav-link <?= $currentPage === 'familyCare' ? 'active' : '' ?>">
+                Family Care
+            </a>
+        </li>
     </ul>
 
-    <a href="../../loginNsignup/login/login.html"
-        class="px-4 py-2 rounded-lg bg-[#3C52C3] text-white text-sm hover:bg-[#2f41a0] transition">Login / Sign
-        Up</a>
+    <!-- ---------- Right side: profile OR login button ---------- -->
+    <?php if ($isLoggedIn): ?>
+
+        <div class="relative" id="profileMenu">
+            <button type="button"
+                    onclick="toggleProfileMenu()"
+                    class="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-slate-100 transition">
+                <img src="<?= htmlspecialchars($userPhoto) ?>"
+                     alt="Profile"
+                     class="w-9 h-9 rounded-full object-cover border-2 border-[#3C52C3]">
+                <span class="font-semibold text-slate-700">
+                    <?= htmlspecialchars($firstName) ?>
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-4 h-4 text-slate-500"
+                     fill="none" viewBox="0 0 24 24"
+                     stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                </svg>
+            </button>
+
+            <!-- Dropdown -->
+            <div id="profileDropdown"
+                 class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-white
+                        ring-1 ring-slate-200 shadow-lg overflow-hidden">
+                <a href="../profile/profile.php"
+                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    My Profile
+                </a>
+                <a href="../history/history.php"
+                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    My History
+                </a>
+                <a href="../appointments/appointments.php"
+                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    My Appointments
+                </a>
+                <hr class="border-slate-200">
+                <a href="../../loginNsignup/login/logout.php"
+                   class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
+                    Logout
+                </a>
+            </div>
+        </div>
+
+    <?php else: ?>
+
+        <a href="../../loginNsignup/login/login.html"
+           class="px-4 py-2 rounded-lg bg-[#3C52C3] text-white text-sm
+                  hover:bg-[#2f41a0] transition">
+            Login / Sign Up
+        </a>
+
+    <?php endif; ?>
 </header>
+
+<script>
+function toggleProfileMenu() {
+    document.getElementById('profileDropdown').classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function (e) {
+    const menu = document.getElementById('profileMenu');
+    const dropdown = document.getElementById('profileDropdown');
+    if (menu && !menu.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+</script>

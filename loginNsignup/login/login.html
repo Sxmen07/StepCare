@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <title>StepCare</title>
+  <title>Login - StepCare</title>
 </head>
 
 <body class="min-h-dvh antialiased">
 
   <!-- ============ 1. BACKGROUND LAYER ============ -->
   <div class="fixed inset-0 -z-10 overflow-hidden">
-    <img src="../../../images/loginNsignup.jpg"
+    <img src="../../images/loginNsignup.jpg"
          alt=""
          class="h-full w-full object-cover" />
 
@@ -23,12 +23,13 @@
   <main class="flex min-h-dvh items-center justify-center p-4">
     
     <!-- ============ 3. THE CARD ============ -->
-    <div class="w-full max-w-4xl rounded-3xl bg-white ring-1 ring-white/60 p-8 md:p-10">
+    <div class="w-full max-w-5xl rounded-3xl bg-white ring-1 ring-white/60 p-8 md:p-14">
 
       <a href="../../user/aboutUs/aboutUs.html" 
              class="inline-flex items-center gap-1 text-sm text-slate-500 font-medium 
                     mb-2 transition duration-300 ease-in-out
-                    hover:text-[#3C52C3] hover:-translate-x-1">
+                    hover:text-[#3C52C3] hover:-translate-x-1
+                    md: text-base">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
@@ -42,29 +43,29 @@
                     md:w-1/2 md:border-r md:border-slate-300/70 md:pr-10">
           <img src="../../images/StepCare.png"
                alt="StepCare"
-               class="h-16 w-16 object-contain" />
+               class="h-20 w-20 object-contain" />
 
-          <p class="text-5xl font-bold tracking-tight">
+          <p class="text-6xl font-bold tracking-tight">
             <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
           </p>
 
-          <p class="text-sm text-slate-500 text-center">
+          <p class="text-base text-slate-500 text-center mt-2">
             Your health, one step at a time.
           </p>
         </div>
 
         <!-- ---------- RIGHT: form ---------- -->
         <div class="md:w-1/2 md:pl-10">
-          <h1 class="mb-6 text-2xl font-bold text-[#3C52C3]">Login</h1>
+          <h1 class="mb-8 text-3xl font-bold text-[#3C52C3]">Login</h1>
 
           <form action="login.php" method="POST" class="flex flex-col gap-4">
 
             <div class="flex flex-col gap-1.5">
-              <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+              <label for="email" class="text-base font-medium text-slate-700">Email</label>
               <input id="email" type="email" name="email" required
                      placeholder="Enter your gmail account"
                      class="w-full rounded-lg border border-slate-300 bg-white/80
-                            px-4 py-2.5 text-slate-800 placeholder-slate-400
+                            px-5 py-3.5 text-base text-slate-800 placeholder-slate-400
                             outline-none transition
                             focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40" />
             </div>
@@ -74,27 +75,27 @@
               <input id="password" type="password" name="password" required
                      placeholder="Enter your password"
                      class="w-full rounded-lg border border-slate-300 bg-white/80
-                            px-4 py-2.5 text-slate-800 placeholder-slate-400
+                            px-5 py-3.5 text-base text-slate-800 placeholder-slate-400
                             outline-none transition
                             focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40" />
 
               <!-- Forgot Password: aligned LEFT -->
               <a href="../forgotPassword/forgotPassword.html"
-                 class="self-start text-sm font-semibold text-[#007FFF] hover:underline">
+                 class="self-start text-base font-semibold text-[#007FFF] hover:underline">
                 Forgot Password
               </a>
             </div>
 
             <!-- BUTTON ROW: create account + login, side by side on the right -->
-            <div class="mt-2 flex items-center justify-end gap-4">
+            <div class="mt-2 flex items-center justify-end gap-4 md:gap-10">
               <a href="../signup/signup.html"
-                 class="text-sm font-semibold text-[#3C52C3] transition duration-300 ease-in-out
+                 class="text-base font-semibold text-[#3C52C3] transition duration-300 ease-in-out
                         hover:-translate-y-0.5 hover:scale-105 hover:text-[#007FFF] active:scale-95">
                 Create an account
               </a>
 
               <button type="submit"
-                      class="rounded-lg bg-[#3C52C3] px-7 py-2.5 font-medium text-white
+                      class="rounded-lg bg-[#3C52C3] px-8 py-3.5 font-medium text-white
                              transition duration-300 ease-in-out
                              hover:-translate-y-0.5 hover:bg-[#007FFF]
                              active:scale-95">
