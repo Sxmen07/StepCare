@@ -11,19 +11,19 @@
     <!-- ---------- Nav links ---------- -->
     <ul class="flex gap-12 list-none p-0 m-0">
         <li>
-            <a href="../aboutUs/aboutUs.php"
+            <a href="../aboutUs/aboutUs.html"
                class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>">
                 About Us
             </a>
         </li>
         <li>
-            <a href="../services/services.php"
+            <a href="../services/services.html"
                class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">
                 Services
             </a>
         </li>
         <li>
-            <a href="../familyCare/familyCare.php"
+            <a href="../familyCare/familyCare.html"
                class="nav-link <?= $currentPage === 'familyCare' ? 'active' : '' ?>">
                 Family Care
             </a>
@@ -56,20 +56,20 @@
             <div id="profileDropdown"
                  class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-white
                         ring-1 ring-slate-200 shadow-lg overflow-hidden">
-                <a href="../profile/profile.php"
+                <a href="../profile/profile.html"
                    class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                     My Profile
                 </a>
-                <a href="../history/history.php"
+                <a href="../history/history.html"
                    class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                     My History
                 </a>
-                <a href="../appointments/appointments.php"
+                <a href="../appointments/appointments.html"
                    class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                     My Appointments
                 </a>
                 <hr class="border-slate-200">
-                <a href="../../loginNsignup/login/logout.php"
+                <a href="../../loginNsignup/login/logout.html"
                    class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
                     Logout
                 </a>
@@ -77,7 +77,6 @@
         </div>
 
     <?php else: ?>
-
         <a href="../../loginNsignup/login/login.html"
            class="px-4 py-2 rounded-lg bg-[#3C52C3] text-white text-sm
                   hover:bg-[#2f41a0] transition">
