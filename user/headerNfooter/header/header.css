@@ -1,17 +1,28 @@
-.nav-link{
+/* user/headerNfooter/header/header.css */
+
+.topbar {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-link {
     color: #374151;
-    font-size:large;
+    font-size: large;
     font-weight: 700;
     transition: color 0.2s;
     padding-bottom: 4px;
     border-bottom: 2px solid transparent;
 }
 
-.nav-link:hover{
+.nav-link:hover {
     color: #007FFF;
 }
 
-.nav-link:active{
+.nav-link.active {
     color: #007FFF;
     font-weight: 800;
     border-bottom: 2px solid #007FFF;
