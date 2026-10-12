@@ -1,0 +1,13 @@
+# Run .html and .htm through the PHP interpreter
+<FilesMatch "\.(html|htm)$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Still block direct access to the header/footer partials
+<Files "header.html">
+    Require all denied
+</Files>
+
+<Files "header.php">
+    Require all denied
+</Files>
