@@ -1,8 +1,8 @@
 <?php
 session_start();
 
-require __DIR__ . '/../../config/db_connect.php';       // gives $pdo + $conn
-require __DIR__ . '/../../auth/mailer.php';              // gives sendMail()
+require __DIR__ . '/../../config/db_connect.php';
+require __DIR__ . '/../../auth/mailer.php';
 
 /* ---------- Must be logged in ---------- */
 if (empty($_SESSION['userID'])) {
@@ -24,16 +24,24 @@ $notes     = trim($_POST['specialInstructions'] ?? '');
 
 /* ---------- Validate ---------- */
 if ($serviceID <= 0 || $startDate === '' || $startTime === '' || $address === '') {
-    header("Location: serviceDetail.php?id=$serviceID&error=missing");
+    $_SESSION['booking_flash'] = [
+        'title'   => 'Booking failed',
+        'message' => 'Please fill in all required fields.'
+    ];
+    header('Location: services.php');
     exit;
 }
 
 if (strtotime("$startDate $startTime") < time()) {
-    header("Location: serviceDetail.php?id=$serviceID&error=past");
+    $_SESSION['booking_flash'] = [
+        'title'   => 'Booking failed',
+        'message' => 'The date and time must be in the future.'
+    ];
+    header('Location: services.php');
     exit;
 }
 
-/* ---------- Fetch service + duration ---------- */
+/* ---------- Fetch service ---------- */
 $stmt = $pdo->prepare(
     'SELECT serviceID, serviceName, price, price_unit, durationMin, durationMax
      FROM services WHERE serviceID = ?'
@@ -46,16 +54,16 @@ if (!$service) {
     exit;
 }
 
-/* ---------- Fetch user for email ---------- */
+/* ---------- Fetch user ---------- */
 $stmt = $pdo->prepare(
     'SELECT firstName, lastName, email FROM users WHERE userID = ?'
 );
 $stmt->execute([$userID]);
 $user = $stmt->fetch();
 
-/* ---------- Compute start / end datetime ---------- */
+/* ---------- Compute date/time ---------- */
 $startDateTime = date('Y-m-d H:i:s', strtotime("$startDate $startTime"));
-$durationMin   = (int)($service['durationMin'] ?: 60);   // default 60 mins
+$durationMin   = (int)($service['durationMin'] ?: 60);
 $endDateTime   = date('Y-m-d H:i:s', strtotime("$startDateTime +$durationMin minutes"));
 
 /* ---------- Insert appointment ---------- */
@@ -72,7 +80,7 @@ $stmt->execute([
 
 $appointmentID = $pdo->lastInsertId();
 
-/* ---------- Build confirmation email ---------- */
+/* ---------- Confirmation email ---------- */
 $prettyDate = date('D, d M Y', strtotime($startDateTime));
 $prettyTime = date('g:i A',     strtotime($startDateTime));
 
@@ -129,7 +137,7 @@ $html = "
 
 sendMail($user['email'], 'StepCare — Your booking is confirmed', $html);
 
-/* ---------- Set flash for the detail page ---------- */
+/* ---------- Flash for the services page ---------- */
 $_SESSION['booking_flash'] = [
     'title'   => 'Booking confirmed!',
     'message' => 'Reference #SC' . str_pad($appointmentID, 6, '0', STR_PAD_LEFT)
@@ -137,5 +145,5 @@ $_SESSION['booking_flash'] = [
                . '. A confirmation email has been sent to you.'
 ];
 
-header('Location: serviceDetail.php?id=' . $serviceID . '#book');
+header('Location: services.php');
 exit;

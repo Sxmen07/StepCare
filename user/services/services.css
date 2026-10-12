@@ -1,3 +1,5 @@
+/* user/services/services.css */
+
 /* Category chips */
 .cat-chip {
     border: 1px solid #cbd5e1;
@@ -20,12 +22,12 @@
     border-color: #3C52C3;
 }
 
-/* Hide transition flash on filtered cards */
+/* Hide filtered cards */
 .svc-card.hidden {
     display: none;
 }
 
-/* Truncate helper if your Tailwind version lacks line-clamp */
+/* Line clamp helpers */
 .line-clamp-1 {
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -37,4 +39,37 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* Modal animation */
+#detailModal {
+    animation: fadeIn 0.2s ease-out;
+}
+#modalCard {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Scrollbar styling for modal content */
+#detailModal .overflow-y-auto::-webkit-scrollbar {
+    width: 8px;
+}
+#detailModal .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+#detailModal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+#detailModal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
