@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Profile</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Glassmorphism sidebar styling */
+    .glass-sidebar {
+      background: rgba(235, 245, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 4px 0 24px 0 rgba(148, 163, 184, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-[#f0f2f5] min-h-screen flex text-slate-800">
+
+  <!-- Left: Dynamic Sidebar Container -->
+  <div id="sidebar-container"></div>
+
+  <!-- Right: Main Page Content -->
+  <main class="flex-1 flex flex-col min-w-0">
+
+    <!-- Top Privacy Notice Banner -->
+    <div class="bg-[#dcf4fd] border-b border-[#c8ebf9] py-3 px-6 text-center text-sm font-semibold text-slate-800 tracking-tight">
+      StepCare only stored necassary information. Users have the rights to perform erasure of data from StepCare.
+    </div>
+
+    <!-- Core Grid Layout -->
+    <div class="p-8 flex-1 flex flex-col xl:flex-row gap-8 items-start">
+
+      <!-- Left Card: Profile Card (Direct In-Place Editing) -->
+      <div class="w-full xl:w-96 bg-white rounded-3xl p-8 border border-slate-300/80 shadow-sm flex flex-col items-center">
+        
+        <!-- Large Rounded Avatar -->
+        <div class="w-36 h-36 rounded-full bg-[#80a9f5] border-4 border-[#b9d3ff] flex items-center justify-center overflow-hidden mb-8 shadow-sm">
+          <img id="avatar-img" src="" alt="Profile Photo" class="w-full h-full object-cover hidden" />
+          <i id="avatar-icon" data-lucide="user" class="w-20 h-20 text-white"></i>
+        </div>
+
+        <!-- Information / Input Fields -->
+        <div class="w-full space-y-4 mb-8">
+          
+          <!-- Name Field (Supports View & Inline Edit Mode) -->
+          <div>
+            <label class="block text-xs font-black tracking-wider text-slate-400 uppercase mb-1.5 ml-2">Name</label>
+            <!-- View Mode -->
+            <div id="display-name" class="w-full py-3 px-5 border border-slate-300 rounded-full bg-slate-50 text-slate-800 font-semibold text-sm">
+              Loading...
+            </div>
+            <!-- In-place Edit Mode (Initially hidden) -->
+            <div id="edit-name-group" class="hidden flex gap-2">
+              <input type="text" id="input-first-name" placeholder="First Name" class="w-1/2 py-2.5 px-3 border border-indigo-300 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white" />
+              <input type="text" id="input-last-name" placeholder="Last Name" class="w-1/2 py-2.5 px-3 border border-indigo-300 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white" />
+            </div>
+          </div>
+
+          <!-- Role Field (Read-only) -->
+          <div>
+            <label class="block text-xs font-black tracking-wider text-slate-400 uppercase mb-1.5 ml-2">Role</label>
+            <div id="field-role" class="w-full py-3 px-5 border border-slate-300 rounded-full bg-slate-50 text-slate-700 text-sm">
+              --
+            </div>
+          </div>
+
+          <!-- Account ID Field (Read-only) -->
+          <div>
+            <label class="block text-xs font-black tracking-wider text-slate-400 uppercase mb-1.5 ml-2">ID</label>
+            <div id="field-id" class="w-full py-3 px-5 border border-slate-300 rounded-full bg-slate-50 text-slate-700 font-mono text-sm">
+              --
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons Container -->
+        <div class="w-full flex items-center justify-center gap-3">
+          <!-- Main Action Button (EDIT / SAVE) -->
+          <button id="edit-btn" class="flex-1 max-w-[130px] py-2.5 rounded-full bg-[#82a4ff] hover:bg-[#6c92fc] active:scale-95 transition text-white font-bold text-xs tracking-wider shadow-sm cursor-pointer">
+            EDIT
+          </button>
+          <!-- Cancel Button (Hidden by default, displayed only in edit mode) -->
+          <button id="cancel-btn" class="hidden flex-1 max-w-[130px] py-2.5 rounded-full bg-slate-200 hover:bg-slate-300 active:scale-95 transition text-slate-600 font-bold text-xs tracking-wider shadow-sm cursor-pointer">
+            CANCEL
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Area: Pure Reserved Placeholder Slots -->
+      <div class="flex-1 w-full flex flex-col gap-8">
+        
+        <!-- Top Row: 3 Placeholder Slots -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white rounded-3xl h-44 border border-slate-300/80 shadow-sm flex items-center justify-center text-slate-300 text-sm font-medium">
+            Slot 1
+          </div>
+          <div class="bg-white rounded-3xl h-44 border border-slate-300/80 shadow-sm flex items-center justify-center text-slate-300 text-sm font-medium">
+            Slot 2
+          </div>
+          <div class="bg-white rounded-3xl h-44 border border-slate-300/80 shadow-sm flex items-center justify-center text-slate-300 text-sm font-medium">
+            Slot 3
+          </div>
+        </div>
+
+        <!-- Bottom Row: Reserved Main Content Slot -->
+        <div class="bg-white rounded-3xl min-h-[380px] flex-1 border border-slate-300/80 shadow-sm flex items-center justify-center text-slate-300 text-sm font-medium">
+          Main Content Slot
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Retrieve role and user ID from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const role = urlParams.get('role') || localStorage.getItem('stepcare_role') || 'admin';
+      const id   = urlParams.get('id')   || 1;
+
+      let isEditing = false;
+      let profileData = null;
+
+      // 2. Dynamically load the sidebar component
+      const sidebarFile = role === 'nurse' ? 'sidebar-nurse.html' : 'sidebar-admin.html';
+      fetch(sidebarFile)
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('sidebar-container').innerHTML = html;
+          const logo = document.querySelector('#sidebar-container img');
+          if (logo) logo.src = '/StepCare/images/StepCare.png';
+          lucide.createIcons();
+        });
+
+      // 3. Fetch user profile data from backend
+      fetch(`get_profile.php?role=${role}&id=${id}`)
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP error " + res.status);
+          return res.json();
+        })
+        .then(res => {
+          if (res.success) {
+            profileData = res.profile;
+            document.getElementById('display-name').textContent = `${profileData.firstName} ${profileData.lastName}`;
+            document.getElementById('input-first-name').value   = profileData.firstName || '';
+            document.getElementById('input-last-name').value    = profileData.lastName  || '';
+
+            document.getElementById('field-role').textContent   = res.roleTitle;
+            document.getElementById('field-id').textContent     = `#${profileData.id.toString().padStart(4, '0')}`;
+
+            if (profileData.photoURL) {
+              const img = document.getElementById('avatar-img');
+              img.src = profileData.photoURL;
+              img.classList.remove('hidden');
+              document.getElementById('avatar-icon').classList.add('hidden');
+            }
+          } else {
+            document.getElementById('display-name').textContent = res.message || "User Not Found";
+          }
+          lucide.createIcons();
+        })
+        .catch(err => {
+          console.error("Fetch profile error:", err);
+          document.getElementById('display-name').textContent = "Connection Error";
+        });
+
+      // 4. In-Place Edit, Save, and Cancel toggle logic
+      const editBtn       = document.getElementById('edit-btn');
+      const cancelBtn     = document.getElementById('cancel-btn');
+      const displayName   = document.getElementById('display-name');
+      const editNameGroup = document.getElementById('edit-name-group');
+
+      // Helper function to reset fields back to View Mode
+      function exitEditMode() {
+        isEditing = false;
+        displayName.classList.remove('hidden');
+        editNameGroup.classList.add('hidden');
+        cancelBtn.classList.add('hidden');
+
+        editBtn.textContent = 'EDIT';
+        editBtn.classList.add('bg-[#82a4ff]', 'hover:bg-[#6c92fc]');
+        editBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+      }
+
+      // Handle Edit / Save button click
+      editBtn.addEventListener('click', () => {
+        if (!isEditing) {
+          // Enter inline editing mode
+          isEditing = true;
+          displayName.classList.add('hidden');
+          editNameGroup.classList.remove('hidden');
+          cancelBtn.classList.remove('hidden');
+
+          editBtn.textContent = 'SAVE';
+          editBtn.classList.remove('bg-[#82a4ff]', 'hover:bg-[#6c92fc]');
+          editBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+        } else {
+          // Validate and save updated name
+          const newFirst = document.getElementById('input-first-name').value.trim();
+          const newLast  = document.getElementById('input-last-name').value.trim();
+
+          if (!newFirst || !newLast) {
+            alert("Name fields cannot be empty.");
+            return;
+          }
+
+          // Update UI label and cached data
+          document.getElementById('display-name').textContent = `${newFirst} ${newLast}`;
+          if (profileData) {
+            profileData.firstName = newFirst;
+            profileData.lastName  = newLast;
+          }
+
+          exitEditMode();
+        }
+      });
+
+      // Handle Cancel button click (Revert values back to original)
+      cancelBtn.addEventListener('click', () => {
+        if (profileData) {
+          document.getElementById('input-first-name').value = profileData.firstName || '';
+          document.getElementById('input-last-name').value  = profileData.lastName  || '';
+        }
+        exitEditMode();
+      });
+    });
+  </script>
+</body>
+</html>
