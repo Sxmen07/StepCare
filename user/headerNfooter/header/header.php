@@ -1,26 +1,26 @@
 <?php
-// user/headerNfooter/header.php
-// - Starts session
-// - Prepares variables for the template
-// - Includes header.html
+// user/headerNfooter/header/header.php
+// Role: prepare variables, then hand off to the view.
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/* ---------- Logged-in state ---------- */
+/* ---- Logged-in state ---- */
 $isLoggedIn = !empty($_SESSION['userID']);
 
-/* ---------- User data (with fallbacks) ---------- */
-$firstName = $_SESSION['firstName'] ?? '';
+/* ---- User data (with fallbacks) ---- */
+$firstName = $_SESSION['firstName']    ?? '';
 $userPhoto = $_SESSION['userPhotoURL'] ?? '';
-
-if ($userPhoto === '' || $userPhoto === null) {
+if ($userPhoto === '') {
     $userPhoto = '../../images/default-user.png';
 }
 
-/* ---------- Which nav link is active? ---------- */
-$currentPage = basename($_SERVER['PHP_SELF'], '.php');
+/* ---- Current page (for highlighting the nav link) ---- */
+// A page can override this by setting $currentPage before including this file.
+if (!isset($currentPage)) {
+    $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+}
 
-/* ---------- Hand off to the template ---------- */
+/* ---- Hand off to the view ---- */
 include __DIR__ . '/header.html';

@@ -3,10 +3,10 @@
 
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
-$servername = $_ENV['DB_HOST'];
-$username   = $_ENV['DB_USER'];
-$password   = $_ENV['DB_PASS'];
-$dbname     = $_ENV['DB_NAME'];
+$servername = 'localhost';
+$username   = 'root';
+$password   = '';
+$dbname     = 'stepcare';
 
 /* ---------- mysqli (used by login.php / signup.php) ---------- */
 $conn = new mysqli($servername, $username, $password, $dbname);
