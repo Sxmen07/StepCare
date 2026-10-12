@@ -1,7 +1,0 @@
-<Files "header.html">
-    Require all denied
-</Files>
-
-<Files "header.php">
-    Require all denied
-</Files>
