@@ -1,0 +1,40 @@
+/* Category chips */
+.cat-chip {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cat-chip:hover {
+    border-color: #3C52C3;
+    color: #3C52C3;
+}
+.cat-chip.is-active {
+    background: #3C52C3;
+    color: white;
+    border-color: #3C52C3;
+}
+
+/* Hide transition flash on filtered cards */
+.svc-card.hidden {
+    display: none;
+}
+
+/* Truncate helper if your Tailwind version lacks line-clamp */
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
