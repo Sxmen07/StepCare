@@ -42,6 +42,73 @@
   }
 
   /* ============================================================
+     LIVE PREVIEW
+     ============================================================ */
+  function updatePreview() {
+    const name  = $('#editName').value.trim() || 'Service name';
+    const cat   = $('#editCategory').value.trim() || 'CATEGORY';
+    const img   = $('#editImage').value.trim();
+    const price = parseFloat($('#editPrice').value) || 0;
+    const unit  = $('#editUnit').value.trim() || 'visit';
+    const dMin  = parseInt($('#editDurMin').value) || 0;
+    const dMax  = parseInt($('#editDurMax').value) || 0;
+    const pinned = $('#editPinned').checked;
+
+    $('#previewTitle').textContent    = name;
+    $('#previewCategory').textContent = cat;
+
+    $('#previewPrice').textContent = Number(price).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    $('#previewUnit').textContent = unit;
+
+    let durText = 'Est. — mins';
+    if (dMin && dMax) durText = `Est. ${dMin}–${dMax} mins`;
+    else if (dMin)    durText = `Est. ${dMin} mins`;
+    else if (dMax)    durText = `Est. ${dMax} mins`;
+    $('#previewDuration').textContent = durText;
+
+    const badge = $('#previewPinBadge');
+    if (pinned) {
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    } else {
+      badge.classList.add('hidden');
+      badge.classList.remove('flex');
+    }
+
+    const imgEl = $('#previewImg');
+    if (img && img !== imgEl.dataset.currentSrc) {
+      imgEl.dataset.currentSrc = img;
+      imgEl.classList.add('is-loading');
+      imgEl.src = img;
+      imgEl.onload  = () => imgEl.classList.remove('is-loading');
+      imgEl.onerror = () => {
+        imgEl.src = '../../images/services/placeholder.jpg';
+        imgEl.classList.remove('is-loading');
+      };
+    }
+
+    const card = imgEl.closest('.bg-white');
+    if (card) {
+      card.classList.remove('preview-flash');
+      void card.offsetWidth;
+      card.classList.add('preview-flash');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  ['editName','editCategory','editImage','editPrice','editUnit',
+   'editDurMin','editDurMax','editPinned'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const evt = (el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
+    el.addEventListener(evt, updatePreview);
+  });
+
+  /* ============================================================
      RENDER — LIST
      ============================================================ */
   function renderList(items) {
@@ -83,7 +150,7 @@
         </div>
 
         <div class="svc-cell">
-          <span class="price-value">$${fmtPrice(s.price)}</span>
+          <span class="price-value">RM${fmtPrice(s.price)}</span>
           <span class="price-unit">/${esc(s.price_unit || 'visit')}</span>
         </div>
 
@@ -167,7 +234,7 @@
               <span class="star">★</span>
               <span>${Number(s.average_rating).toFixed(2)}</span>
             </span>
-            <span class="price-value">$${fmtPrice(s.price)}<span class="price-unit">/${esc(s.price_unit || 'visit')}</span></span>
+            <span class="price-value">RM${fmtPrice(s.price)}<span class="price-unit">/${esc(s.price_unit || 'visit')}</span></span>
           </div>
         </div>
       `;
@@ -305,8 +372,8 @@
     const svc = currentData().find(s => String(s.serviceID) === String(id));
     if (!svc) return;
 
-    if (action === 'edit')      openEditModal(svc);
-    else if (action === 'pin')  handlePin(svc);
+    if (action === 'edit')        openEditModal(svc);
+    else if (action === 'pin')    handlePin(svc);
     else if (action === 'delete') openDeleteModal(svc);
   });
 
@@ -327,6 +394,10 @@
 
   function openEditModal(svc, isNew = false) {
     $('#editTitle').textContent = isNew ? 'Create Service' : 'Edit Service';
+    $('#editSubtitle').textContent = isNew
+      ? 'Watch the preview on the left as you build the service'
+      : 'Updates preview on the left as you type';
+
     $('#editServiceID').value = isNew ? '' : svc.serviceID;
     $('#editName').value      = svc.serviceName || '';
     $('#editCategory').value  = svc.category || '';
@@ -337,6 +408,11 @@
     $('#editDurMax').value    = svc.durationMax || '';
     $('#editDesc').value      = svc.description || '';
     $('#editPinned').checked  = Number(svc.isTopRecommendation) === 1;
+
+    const imgEl = $('#previewImg');
+    imgEl.dataset.currentSrc = '';
+
+    updatePreview();
 
     editModal.classList.remove('hidden');
     editModal.classList.add('flex');
@@ -464,7 +540,13 @@
     countdownRing.style.strokeDashoffset = 0;
     launchConfirm.disabled = true;
     launchConfirm.className =
-      'flex-1 rounded-xl bg-slate-300 py-3 text-sm font-bold text-white cursor-not-allowed transition disabled:opacity-60';
+      'flex-1 rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-white cursor-not-allowed transition disabled:opacity-60 inline-flex items-center justify-center gap-2';
+
+    // Restore lock icon + label
+    launchConfirm.innerHTML = `
+      <i data-lucide="lock" class="w-4 h-4"></i>
+      <span id="launchConfirmLabel">Confirm Launch</span>`;
+    if (window.lucide) lucide.createIcons();
 
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
@@ -477,7 +559,12 @@
         clearInterval(countdownTimer);
         launchConfirm.disabled = false;
         launchConfirm.className =
-          'flex-1 rounded-xl bg-[#10B981] py-3 text-sm font-bold text-white hover:bg-[#059669] active:scale-95 transition';
+          'flex-1 rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white hover:bg-[#059669] active:scale-[0.98] transition inline-flex items-center justify-center gap-2';
+        // Swap lock for check icon on ready state
+        launchConfirm.innerHTML = `
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span id="launchConfirmLabel">Confirm Launch</span>`;
+        if (window.lucide) lucide.createIcons();
       }
     }, 1000);
   }
@@ -497,10 +584,16 @@
 
   launchConfirm.addEventListener('click', async function () {
     launchConfirm.disabled = true;
-    launchConfirm.textContent = 'Launching…';
+    // Show spinner state
+    launchConfirm.innerHTML = `
+      <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="20"/>
+      </svg>
+      <span>Launching…</span>`;
 
     try {
-      const res = await fetch('admin-services-actions.php', {
+      const res = await fetch('adminServicesAction.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'launch', changes: state.pending }),
@@ -524,7 +617,12 @@
       console.error(err);
       showToast('Launch failed: ' + err.message, 'error');
       launchConfirm.disabled = false;
-      launchConfirm.textContent = 'Confirm Launch';
+      launchConfirm.className =
+        'flex-1 rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white hover:bg-[#059669] active:scale-[0.98] transition inline-flex items-center justify-center gap-2';
+      launchConfirm.innerHTML = `
+        <i data-lucide="check" class="w-4 h-4"></i>
+        <span id="launchConfirmLabel">Confirm Launch</span>`;
+      if (window.lucide) lucide.createIcons();
     }
   });
 
@@ -560,7 +658,7 @@
      ============================================================ */
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (!editModal.classList.contains('hidden'))       closeEditModal();
+    if (!editModal.classList.contains('hidden'))        closeEditModal();
     else if (!deleteModal.classList.contains('hidden')) closeDeleteModal();
     else if (!launchModal.classList.contains('hidden')) closeLaunchModal();
   });

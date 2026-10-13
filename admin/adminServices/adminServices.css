@@ -308,7 +308,135 @@ body {
     box-shadow: 0 0 0 3px rgba(60, 82, 195, 0.15);
 }
 
-/* ---------- Animations ---------- */
+/* =============================================================
+   EDIT MODAL — Modern split layout
+   ============================================================= */
+   /* Slightly tighter inputs inside the edit modal */
+#editModal .form-input {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.875rem;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+#editModal .form-input:focus {
+    background: #ffffff;
+    border-color: #3C52C3;
+    box-shadow: 0 0 0 4px rgba(60, 82, 195, 0.1);
+}
+
+/* Scrollbar for the inner scrollable form area */
+#editModal form > .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+#editModal > div {
+    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+#editModal .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+#editModal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+#editModal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+#editModal .form-input {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+#editModal .form-input:focus {
+    background: #ffffff;
+    border-color: #3C52C3;
+    box-shadow: 0 0 0 4px rgba(60, 82, 195, 0.1);
+}
+
+#editModal .preview-flash {
+    animation: previewFlash 0.4s ease-out;
+}
+@keyframes previewFlash {
+    0%   { background-color: rgba(60, 82, 195, 0.08); }
+    100% { background-color: transparent; }
+}
+
+#previewImg {
+    transition: opacity 0.25s ease;
+}
+#previewImg.is-loading {
+    opacity: 0.4;
+}
+
+@media (max-width: 1023px) {
+    #editModal > div {
+        max-height: 95vh;
+    }
+    #editModal aside {
+        border-right: none;
+        border-bottom: 1px solid #f1f5f9;
+    }
+}
+
+/* =============================================================
+   MODALS — Modern entrance + countdown ring
+   ============================================================= */
+#launchModal > div,
+#deleteModal > div {
+    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#launchModal .overflow-y-auto::-webkit-scrollbar,
+#launchSummary::-webkit-scrollbar {
+    width: 6px;
+}
+#launchModal .overflow-y-auto::-webkit-scrollbar-thumb,
+#launchSummary::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+#launchModal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+#launchSummary::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Countdown ring glow */
+#countdownRing {
+    filter: drop-shadow(0 0 6px rgba(60, 82, 195, 0.35));
+}
+
+/* Delete modal subtle wobble */
+#deleteModal > div {
+    animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+               deleteWobble 0.5s ease-in-out 0.25s;
+}
+@keyframes deleteWobble {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(-1.5deg); }
+    75%      { transform: rotate(1.5deg); }
+}
+
+/* ---------- Animations (kept from before) ---------- */
 @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.94); }
     to   { opacity: 1; transform: scale(1); }
@@ -323,21 +451,6 @@ body {
 }
 #launchModal, #editModal, #deleteModal {
     animation: fadeIn 0.15s ease-out;
-}
-
-/* ---------- Scrollbars ---------- */
-#editModal .overflow-y-auto::-webkit-scrollbar,
-#launchSummary::-webkit-scrollbar {
-    width: 6px;
-}
-#editModal .overflow-y-auto::-webkit-scrollbar-thumb,
-#launchSummary::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-}
-#editModal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
-#launchSummary::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 /* ---------- Toast ---------- */
