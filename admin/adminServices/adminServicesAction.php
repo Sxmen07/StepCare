@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 
 require __DIR__ . '/../../config/db_connect.php';
 
-if (empty($_SESSION['adminID'])) {
+if (empty($_SESSION['userID']) || ($_SESSION['role'] ?? '') !== 'admin') {
     echo json_encode(['ok' => false, 'message' => 'Not authorized']);
     exit;
 }

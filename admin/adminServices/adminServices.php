@@ -3,7 +3,7 @@ session_start();
 require __DIR__ . '/../../config/db_connect.php';
 
 /* ---------- Admin auth ---------- */
-if (empty($_SESSION['adminID'])) {
+if (empty($_SESSION['userID']) || ($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: ../../loginNsignup/login/login.html');
     exit;
 }
