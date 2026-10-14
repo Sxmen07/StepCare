@@ -165,7 +165,7 @@
 </div>
 
 <!-- ============================================================= -->
-<!-- LAUNCH MODAL — Modern bank-style confirmation                  -->
+<!-- LAUNCH MODAL                                                   -->
 <!-- ============================================================= -->
 <div id="launchModal"
      class="fixed inset-0 z-[100] hidden items-center justify-center
@@ -174,7 +174,6 @@
   <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl my-8
               overflow-hidden animate-scale-in">
 
-    <!-- ============ HEADER ============ -->
     <div class="relative bg-gradient-to-br from-[#3C52C3] via-[#3C52C3] to-[#007FFF]
                 px-8 pt-8 pb-10 text-white overflow-hidden">
 
@@ -196,7 +195,6 @@
       </div>
     </div>
 
-    <!-- ============ BODY ============ -->
     <div class="p-6 lg:p-8">
 
       <div class="mb-6">
@@ -281,7 +279,6 @@
   <div class="w-full max-w-7xl bg-white rounded-3xl shadow-2xl
               h-[min(90vh,820px)] flex flex-col overflow-hidden animate-scale-in">
 
-    <!-- ============ MODAL HEADER ============ -->
     <div class="flex items-center justify-between px-7 py-4 border-b border-slate-100 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-[#3C52C3]/10 flex items-center justify-center">
@@ -298,11 +295,10 @@
       </button>
     </div>
 
-    <!-- ============ MODAL BODY: split layout ============ -->
     <div class="flex-1 overflow-hidden min-h-0">
       <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] h-full">
 
-        <!-- ============ LEFT: LIVE PREVIEW (white + centered) ============ -->
+        <!-- ============ LEFT: LIVE PREVIEW ============ -->
         <aside class="bg-white p-6 lg:p-7 border-r border-slate-100
                       overflow-y-auto flex flex-col justify-center items-center">
 
@@ -318,10 +314,7 @@
               </p>
             </div>
 
-            <!-- Preview card -->
             <div class="bg-white rounded-2xl overflow-hidden ring-1 ring-slate-200 shadow-sm">
-
-              <!-- Image + gradient -->
               <div class="relative aspect-[16/10] overflow-hidden bg-slate-200">
                 <img id="previewImg"
                      src="../../images/services/placeholder.jpg"
@@ -351,7 +344,6 @@
                 </div>
               </div>
 
-              <!-- Preview meta -->
               <div class="p-5">
                 <div class="flex items-center gap-2 text-sm mb-4">
                   <span class="text-amber-500">★</span>
@@ -380,11 +372,10 @@
           </div>
         </aside>
 
-        <!-- ============ RIGHT: FORM (sticky footer) ============ -->
+        <!-- ============ RIGHT: FORM ============ -->
         <form id="editForm" class="flex flex-col h-full overflow-hidden min-h-0">
           <input type="hidden" name="serviceID" id="editServiceID" value="" />
 
-          <!-- ---- Scrollable fields ---- -->
           <div class="flex-1 overflow-y-auto p-5 lg:p-7">
             <div class="flex flex-col gap-5">
 
@@ -415,11 +406,40 @@
                       </select>
                     </div>
 
+                    <!-- ===== Drag & drop image upload ===== -->
                     <div class="flex flex-col gap-1.5">
-                      <label class="text-sm font-medium text-slate-700">Image URL</label>
-                      <input type="text" name="serviceImageURL" id="editImage"
-                             placeholder="../../images/services/example.jpg"
-                             class="form-input" />
+                      <label class="text-sm font-medium text-slate-700">Service image</label>
+
+                      <div id="imageDropZone"
+                           class="relative rounded-lg border-2 border-dashed border-slate-300 bg-slate-50
+                                  hover:border-[#3C52C3] hover:bg-slate-100/70
+                                  transition cursor-pointer
+                                  flex items-center gap-2.5 px-3 py-2.5 min-h-[42px]">
+
+                        <input type="file" id="imageFileInput"
+                               accept="image/png,image/jpeg,image/webp,image/gif"
+                               class="hidden" />
+
+                        <input type="hidden" name="serviceImageURL" id="editImage" value="" />
+
+                        <div id="dropZoneThumb"
+                             class="w-7 h-7 rounded-md bg-slate-200 flex-shrink-0 overflow-hidden hidden">
+                          <img id="dropZoneThumbImg" src="" alt=""
+                               class="w-full h-full object-cover" />
+                        </div>
+
+                        <i id="dropZoneIcon" data-lucide="image-plus"
+                           class="w-4 h-4 text-[#3C52C3] flex-shrink-0"></i>
+
+                        <span id="editImageLabel"
+                              class="text-xs text-slate-500 truncate flex-1 min-w-0">
+                          Drop or click to upload
+                        </span>
+
+                        <span id="dropZoneSpinner"
+                              class="hidden w-4 h-4 border-2 border-[#3C52C3] border-t-transparent
+                                     rounded-full animate-spin flex-shrink-0"></span>
+                      </div>
                     </div>
                   </div>
 
@@ -440,13 +460,13 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                   <div class="flex flex-col gap-1.5 col-span-2">
-  <label class="text-sm font-medium text-slate-700">
-    Price (RM) <span class="text-red-500">*</span>
-  </label>
-  <input type="number" name="price" id="editPrice" required min="0" step="0.01"
-         placeholder="0.00"
-         class="form-input" />
-</div>
+                    <label class="text-sm font-medium text-slate-700">
+                      Price (RM) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="price" id="editPrice" required min="0" step="0.01"
+                           placeholder="0.00"
+                           class="form-input" />
+                  </div>
 
                   <div class="flex flex-col gap-1.5 col-span-2">
                     <label class="text-sm font-medium text-slate-700">Price unit</label>
@@ -492,7 +512,7 @@
             </div>
           </div>
 
-          <!-- ---- Fixed footer (always visible) ---- -->
+          <!-- ---- Fixed footer ---- -->
           <div class="flex-shrink-0 border-t border-slate-200 bg-white
                       px-5 lg:px-7 py-4 flex gap-3">
             <button type="button" id="editCancel"
@@ -500,12 +520,12 @@
                            text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
               Cancel
             </button>
-            <button type="submit"
+            <button type="submit" id="editSaveBtn"
                     class="flex-1 rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white
                            shadow-sm hover:bg-[#2f41a0] active:scale-95 transition
                            inline-flex items-center justify-center gap-2">
               <i data-lucide="check" class="w-4 h-4"></i>
-              Save changes
+              <span id="editSaveLabel">Save changes</span>
             </button>
           </div>
 
@@ -517,7 +537,7 @@
 </div>
 
 <!-- ============================================================= -->
-<!-- DELETE MODAL — Modern destructive confirmation                 -->
+<!-- DELETE MODAL                                                   -->
 <!-- ============================================================= -->
 <div id="deleteModal"
      class="fixed inset-0 z-[100] hidden items-center justify-center
@@ -583,6 +603,34 @@
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- GLOBAL DRAG OVERLAY (Google-style)                             -->
+<!-- ============================================================= -->
+<div id="globalDropOverlay"
+     class="fixed inset-0 z-[300] hidden items-center justify-center
+            bg-[#3C52C3]/40 backdrop-blur-md p-4
+            pointer-events-none">
+
+  <div class="w-full max-w-2xl rounded-3xl
+              border-4 border-dashed border-white/70
+              bg-white/10 backdrop-blur-md
+              p-16 text-center transition-all duration-200">
+
+    <div class="w-20 h-20 mx-auto rounded-2xl bg-white/20
+                flex items-center justify-center mb-6
+                ring-1 ring-white/30">
+      <i data-lucide="image-down" class="w-10 h-10 text-white"></i>
+    </div>
+
+    <p class="text-3xl font-extrabold text-white mb-2 drop-shadow">
+      Drop your image here
+    </p>
+    <p class="text-sm text-white/80">
+      JPG, PNG, WEBP, or GIF · up to 4 MB
+    </p>
   </div>
 </div>
 

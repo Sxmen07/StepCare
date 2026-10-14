@@ -18,7 +18,7 @@ if (!is_array($payload) || ($payload['action'] ?? '') !== 'launch') {
 }
 
 $changes = $payload['changes'] ?? [];
-if (!is_array($changes)) {
+if (!is_array($changes) || empty($changes)) {
     echo json_encode(['ok' => false, 'message' => 'No changes provided']);
     exit;
 }
@@ -27,23 +27,52 @@ $applied = 0;
 $pdo->beginTransaction();
 
 try {
-    foreach ($changes as $serviceID => $change) {
-        $serviceID = (int)$serviceID;
-        $type      = $change['type'] ?? '';
-        $data      = $change['data'] ?? [];
+    foreach ($changes as $key => $change) {
+        $type = $change['type'] ?? '';
+        $data = $change['data'] ?? [];
+
+        /* ---------- CREATE ---------- */
+        if ($type === 'create') {
+            $stmt = $pdo->prepare(
+                'INSERT INTO services
+                    (serviceName, category, serviceImageURL, price, price_unit,
+                     durationMin, durationMax, description, isTopRecommendation)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $data['serviceName'] ?? '',
+                $data['category'] ?? null,
+                $data['serviceImageURL'] ?? null,
+                $data['price'] ?? 0,
+                $data['price_unit'] ?? 'visit',
+                $data['durationMin'] ?? null,
+                $data['durationMax'] ?? null,
+                $data['description'] ?? null,
+                (int)($data['isTopRecommendation'] ?? 0),
+            ]);
+            $applied++;
+            continue;
+        }
+
+        /* ---------- EXISTING (edit / pin / delete) ---------- */
+        $serviceID = (int)$key;
 
         if ($type === 'delete') {
             $stmt = $pdo->prepare('DELETE FROM services WHERE serviceID = ?');
             $stmt->execute([$serviceID]);
             $applied++;
+            continue;
+        }
 
-        } elseif ($type === 'pin') {
+        if ($type === 'pin') {
             $pinned = (int)($data['isTopRecommendation'] ?? 0);
             $stmt = $pdo->prepare('UPDATE services SET isTopRecommendation = ? WHERE serviceID = ?');
             $stmt->execute([$pinned, $serviceID]);
             $applied++;
+            continue;
+        }
 
-        } elseif ($type === 'edit') {
+        if ($type === 'edit') {
             $stmt = $pdo->prepare(
                 'UPDATE services SET
                     serviceName = ?,
@@ -70,11 +99,11 @@ try {
                 $serviceID,
             ]);
             $applied++;
+            continue;
         }
     }
 
     $pdo->commit();
-
 } catch (Exception $e) {
     $pdo->rollBack();
     echo json_encode(['ok' => false, 'message' => 'DB error: ' . $e->getMessage()]);

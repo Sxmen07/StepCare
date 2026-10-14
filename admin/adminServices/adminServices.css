@@ -309,32 +309,8 @@ body {
 }
 
 /* =============================================================
-   EDIT MODAL — Modern split layout
+   EDIT MODAL
    ============================================================= */
-   /* Slightly tighter inputs inside the edit modal */
-#editModal .form-input {
-    padding: 0.55rem 0.9rem;
-    font-size: 0.875rem;
-    background: #f8fafc;
-    border-color: #e2e8f0;
-}
-#editModal .form-input:focus {
-    background: #ffffff;
-    border-color: #3C52C3;
-    box-shadow: 0 0 0 4px rgba(60, 82, 195, 0.1);
-}
-
-/* Scrollbar for the inner scrollable form area */
-#editModal form > .overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-}
-#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -350,20 +326,9 @@ body {
     to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-#editModal .overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-#editModal .overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-}
-#editModal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
 #editModal .form-input {
-    padding: 0.7rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.875rem;
     background: #f8fafc;
     border-color: #e2e8f0;
 }
@@ -371,6 +336,17 @@ body {
     background: #ffffff;
     border-color: #3C52C3;
     box-shadow: 0 0 0 4px rgba(60, 82, 195, 0.1);
+}
+
+#editModal form > .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+#editModal form > .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 #editModal .preview-flash {
@@ -388,6 +364,20 @@ body {
     opacity: 0.4;
 }
 
+/* ---------- Image drop zone (NEW) ---------- */
+#imageDropZone {
+    user-select: none;
+}
+#imageDropZone.is-dragging {
+    border-color: #3C52C3 !important;
+    background-color: rgba(60, 82, 195, 0.06) !important;
+}
+#imageDropZone.is-dragging #editImageLabel {
+    color: #3C52C3 !important;
+    font-weight: 500;
+}
+
+/* Mobile: stack */
 @media (max-width: 1023px) {
     #editModal > div {
         max-height: 95vh;
@@ -399,7 +389,7 @@ body {
 }
 
 /* =============================================================
-   MODALS — Modern entrance + countdown ring
+   MODALS
    ============================================================= */
 #launchModal > div,
 #deleteModal > div {
@@ -420,12 +410,10 @@ body {
     background: #94a3b8;
 }
 
-/* Countdown ring glow */
 #countdownRing {
     filter: drop-shadow(0 0 6px rgba(60, 82, 195, 0.35));
 }
 
-/* Delete modal subtle wobble */
 #deleteModal > div {
     animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                deleteWobble 0.5s ease-in-out 0.25s;
@@ -436,7 +424,7 @@ body {
     75%      { transform: rotate(1.5deg); }
 }
 
-/* ---------- Animations (kept from before) ---------- */
+/* ---------- Animations ---------- */
 @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.94); }
     to   { opacity: 1; transform: scale(1); }

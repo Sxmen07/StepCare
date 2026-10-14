@@ -42,6 +42,33 @@
   }
 
   /* ============================================================
+     TOAST
+     ============================================================ */
+  let toastTimer = null;
+  function showToast(msg, type = 'success') {
+    const toast = $('#toast');
+    const icon  = toast.querySelector('i');
+
+    $('#toastMsg').textContent = msg;
+
+    icon.setAttribute('data-lucide',
+      type === 'error' ? 'x-circle' : type === 'info' ? 'info' : 'check-circle');
+    icon.classList.remove('text-[#10B981]', 'text-red-400', 'text-blue-400');
+    icon.classList.add(
+      type === 'error' ? 'text-red-400' : type === 'info' ? 'text-blue-400' : 'text-[#10B981]');
+
+    toast.classList.remove('hidden');
+    toast.classList.add('flex');
+    if (window.lucide) lucide.createIcons();
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.add('hidden');
+      toast.classList.remove('flex');
+    }, 3200);
+  }
+
+  /* ============================================================
      LIVE PREVIEW
      ============================================================ */
   function updatePreview() {
@@ -100,13 +127,184 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  ['editName','editCategory','editImage','editPrice','editUnit',
+  ['editName','editCategory','editPrice','editUnit',
    'editDurMin','editDurMax','editPinned'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const evt = (el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
     el.addEventListener(evt, updatePreview);
   });
+
+  /* ============================================================
+     IMAGE UPLOAD — click + drag anywhere (Google-style)
+     ============================================================ */
+  const dropZone        = $('#imageDropZone');
+  const fileInput       = $('#imageFileInput');
+  const imageLabel      = $('#editImageLabel');
+  const dropZoneThumb   = $('#dropZoneThumb');
+  const dropZoneThumbImg= $('#dropZoneThumbImg');
+  const dropZoneIcon    = $('#dropZoneIcon');
+  const dropZoneSpinner = $('#dropZoneSpinner');
+  const globalOverlay   = $('#globalDropOverlay');
+
+  /* ---------- Click to pick a file ---------- */
+  dropZone.addEventListener('click', (e) => {
+    if (e.target === fileInput) return;
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file);
+  });
+
+  /* ---------- Drag-anywhere overlay ----------
+     Uses a drag counter because dragenter/dragleave fire on every child element. */
+  let dragCounter = 0;
+
+  function isFileDrag(e) {
+    return e.dataTransfer
+        && Array.from(e.dataTransfer.types || []).includes('Files');
+  }
+
+  function isEditModalOpen() {
+    return editModal && !editModal.classList.contains('hidden');
+  }
+
+  function showGlobalOverlay() {
+    globalOverlay.classList.remove('hidden');
+    globalOverlay.classList.add('flex');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function hideGlobalOverlay() {
+    globalOverlay.classList.add('hidden');
+    globalOverlay.classList.remove('flex');
+    globalOverlay.classList.remove('is-hot');
+  }
+
+  window.addEventListener('dragenter', (e) => {
+    if (!isEditModalOpen()) return;
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragCounter++;
+    if (dragCounter === 1) showGlobalOverlay();
+    globalOverlay.classList.add('is-hot');
+  });
+
+  window.addEventListener('dragover', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+
+  window.addEventListener('dragleave', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      hideGlobalOverlay();
+    }
+  });
+
+  window.addEventListener('drop', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    dragCounter = 0;
+    hideGlobalOverlay();
+
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('That file isn\'t an image', 'error');
+      return;
+    }
+    uploadImage(file);
+  });
+
+  // Prevent the browser from opening dropped files outside the modal
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop',     (e) => e.preventDefault());
+
+  /* ---------- Upload the image ---------- */
+  async function uploadImage(file) {
+    /* Validate */
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      showToast('Image is too large (max 4 MB)', 'error');
+      return;
+    }
+
+    /* Instant local preview */
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      $('#previewImg').src = ev.target.result;
+      $('#previewImg').classList.remove('is-loading');
+      dropZoneThumbImg.src = ev.target.result;
+      dropZoneThumb.classList.remove('hidden');
+      dropZoneIcon.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    /* Loading state on the small drop zone */
+    imageLabel.textContent = 'Uploading…';
+    imageLabel.className   = 'text-xs text-[#3C52C3] font-medium truncate flex-1 min-w-0';
+    dropZoneSpinner.classList.remove('hidden');
+
+    /* POST to server */
+    const fd = new FormData();
+    fd.append('image', file);
+
+    try {
+      const res  = await fetch('adminUploadImage.php', { method: 'POST', body: fd });
+      const json = await res.json().catch(() => ({ ok: false, message: 'Invalid server response' }));
+
+      if (!json.ok) throw new Error(json.message || 'Upload failed');
+
+      /* Store path in the hidden input */
+      $('#editImage').value = json.path;
+      $('#previewImg').dataset.currentSrc = json.path;
+
+      imageLabel.textContent = json.filename;
+      imageLabel.className   = 'text-xs text-emerald-600 font-medium truncate flex-1 min-w-0';
+      dropZoneSpinner.classList.add('hidden');
+
+      showToast('Image uploaded', 'success');
+
+    } catch (err) {
+      console.error(err);
+      imageLabel.textContent = 'Upload failed — click or drop to retry';
+      imageLabel.className   = 'text-xs text-red-500 font-medium truncate flex-1 min-w-0';
+      dropZoneSpinner.classList.add('hidden');
+      showToast('Upload failed: ' + err.message, 'error');
+    }
+  }
+
+  /* ---------- Reset the small drop zone (when opening edit modal) ---------- */
+  function resetUploadZone(existingPath) {
+    fileInput.value = '';
+
+    if (existingPath) {
+      const fname = existingPath.split('/').pop();
+      imageLabel.textContent = fname;
+      imageLabel.className   = 'text-xs text-slate-700 truncate flex-1 min-w-0';
+      dropZoneThumbImg.src = existingPath;
+      dropZoneThumb.classList.remove('hidden');
+      dropZoneIcon.classList.add('hidden');
+    } else {
+      imageLabel.textContent = 'Drop or click to upload';
+      imageLabel.className   = 'text-xs text-slate-500 truncate flex-1 min-w-0';
+      dropZoneThumbImg.src = '';
+      dropZoneThumb.classList.add('hidden');
+      dropZoneIcon.classList.remove('hidden');
+    }
+    dropZoneSpinner.classList.add('hidden');
+    dropZone.classList.remove('is-dragging');
+  }
 
   /* ============================================================
      RENDER — LIST
@@ -327,6 +525,9 @@
       } else if (p.type === 'pin') {
         label = `Pin "${s.serviceName}" as Top Pick`;
         dotColor = 'bg-amber-500';
+      } else if (p.type === 'create') {
+        label = `Create "${s.serviceName}"`;
+        dotColor = 'bg-emerald-500';
       } else {
         label = `Edit "${s.serviceName}"`;
         dotColor = 'bg-blue-500';
@@ -382,9 +583,11 @@
     const orig = state.original[svc.serviceID];
     if (Number(orig.isTopRecommendation) === newPinned) {
       discardOne(svc.serviceID);
+      showToast('Pin state reset to original', 'info');
       return;
     }
     markPending(svc.serviceID, 'pin', { ...svc, isTopRecommendation: newPinned });
+    showToast(newPinned ? 'Queued: pin as Top Pick' : 'Queued: unpin from Top Pick', 'info');
   }
 
   /* ============================================================
@@ -395,19 +598,22 @@
   function openEditModal(svc, isNew = false) {
     $('#editTitle').textContent = isNew ? 'Create Service' : 'Edit Service';
     $('#editSubtitle').textContent = isNew
-      ? 'Watch the preview on the left as you build the service'
+      ? 'Drag an image anywhere on the page, or fill out the fields below'
       : 'Updates preview on the left as you type';
 
     $('#editServiceID').value = isNew ? '' : svc.serviceID;
     $('#editName').value      = svc.serviceName || '';
     $('#editCategory').value  = svc.category || '';
-    $('#editImage').value     = svc.serviceImageURL || '';
     $('#editPrice').value     = svc.price || '';
     $('#editUnit').value      = svc.price_unit || 'visit';
     $('#editDurMin').value    = svc.durationMin || '';
     $('#editDurMax').value    = svc.durationMax || '';
     $('#editDesc').value      = svc.description || '';
     $('#editPinned').checked  = Number(svc.isTopRecommendation) === 1;
+
+    const existingPath = svc.serviceImageURL || '';
+    $('#editImage').value = existingPath;
+    resetUploadZone(existingPath);
 
     const imgEl = $('#previewImg');
     imgEl.dataset.currentSrc = '';
@@ -425,6 +631,8 @@
     editModal.classList.add('hidden');
     editModal.classList.remove('flex');
     document.body.style.overflow = '';
+    dragCounter = 0;
+    hideGlobalOverlay();
   }
 
   $('#editClose').addEventListener('click', closeEditModal);
@@ -433,32 +641,80 @@
     if (e.target === editModal) closeEditModal();
   });
 
+  /* ============================================================
+     SAVE
+     ============================================================ */
+  const saveBtn = $('#editSaveBtn');
+
   $('#editForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
     const id = $('#editServiceID').value;
+
     const data = {
-      serviceName: $('#editName').value.trim(),
-      category:    $('#editCategory').value.trim() || null,
+      serviceName:     $('#editName').value.trim(),
+      category:        $('#editCategory').value.trim() || null,
       serviceImageURL: $('#editImage').value.trim() || null,
-      price:       parseFloat($('#editPrice').value) || 0,
-      price_unit:  $('#editUnit').value.trim() || 'visit',
-      durationMin: parseInt($('#editDurMin').value) || null,
-      durationMax: parseInt($('#editDurMax').value) || null,
-      description: $('#editDesc').value.trim() || null,
+      price:           parseFloat($('#editPrice').value) || 0,
+      price_unit:      $('#editUnit').value.trim() || 'visit',
+      durationMin:     parseInt($('#editDurMin').value) || null,
+      durationMax:     parseInt($('#editDurMax').value) || null,
+      description:     $('#editDesc').value.trim() || null,
       isTopRecommendation: $('#editPinned').checked ? 1 : 0,
     };
 
-    if (id) {
-      const orig = state.original[id];
-      const changed = Object.keys(data).some(k => String(orig[k] ?? '') !== String(data[k] ?? ''));
-      if (!changed) discardOne(id);
-      else markPending(id, 'edit', data);
-    } else {
-      showToast('Create flow not wired to DB yet', 'info');
+    if (!data.serviceName) {
+      showToast('Service name is required', 'error');
+      $('#editName').focus();
+      return;
+    }
+    if (!data.price || data.price <= 0) {
+      showToast('Please enter a valid price', 'error');
+      $('#editPrice').focus();
+      return;
     }
 
-    closeEditModal();
+    saveBtn.disabled = true;
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `
+      <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="20"/>
+      </svg>
+      <span>Saving…</span>`;
+
+    let saved = false;
+
+    if (id) {
+      const orig = state.original[id];
+      if (!orig) {
+        showToast('Original service not found', 'error');
+      } else {
+        const changed = Object.keys(data).some(k =>
+          String(orig[k] ?? '') !== String(data[k] ?? '')
+        );
+        if (!changed) {
+          discardOne(id);
+          showToast('No changes to save', 'info');
+          saved = true;
+        } else {
+          markPending(id, 'edit', data);
+          showToast('Saved to draft — click Launch to publish', 'success');
+          saved = true;
+        }
+      }
+    } else {
+      const tempKey = 'new_' + Date.now();
+      markPending(tempKey, 'create', data);
+      showToast('New service queued — click Launch to publish', 'success');
+      saved = true;
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHTML;
+    if (window.lucide) lucide.createIcons();
+
+    if (saved) closeEditModal();
   });
 
   /* ============================================================
@@ -491,6 +747,7 @@
   $('#deleteConfirm').addEventListener('click', function () {
     if (!deleteTarget) return;
     markPending(deleteTarget.serviceID, 'delete');
+    showToast('Queued for deletion — click Launch to confirm', 'info');
     closeDeleteModal();
   });
 
@@ -511,7 +768,7 @@
   $('#discardBtn').addEventListener('click', () => {
     if (!confirm('Discard all pending changes?')) return;
     clearPending();
-    showToast('Changes discarded', 'info');
+    showToast('All changes discarded', 'info');
   });
 
   /* ============================================================
@@ -542,7 +799,6 @@
     launchConfirm.className =
       'flex-1 rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-white cursor-not-allowed transition disabled:opacity-60 inline-flex items-center justify-center gap-2';
 
-    // Restore lock icon + label
     launchConfirm.innerHTML = `
       <i data-lucide="lock" class="w-4 h-4"></i>
       <span id="launchConfirmLabel">Confirm Launch</span>`;
@@ -560,7 +816,6 @@
         launchConfirm.disabled = false;
         launchConfirm.className =
           'flex-1 rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white hover:bg-[#059669] active:scale-[0.98] transition inline-flex items-center justify-center gap-2';
-        // Swap lock for check icon on ready state
         launchConfirm.innerHTML = `
           <i data-lucide="check" class="w-4 h-4"></i>
           <span id="launchConfirmLabel">Confirm Launch</span>`;
@@ -584,7 +839,6 @@
 
   launchConfirm.addEventListener('click', async function () {
     launchConfirm.disabled = true;
-    // Show spinner state
     launchConfirm.innerHTML = `
       <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
@@ -625,33 +879,6 @@
       if (window.lucide) lucide.createIcons();
     }
   });
-
-  /* ============================================================
-     TOAST
-     ============================================================ */
-  let toastTimer = null;
-  function showToast(msg, type = 'success') {
-    const toast = $('#toast');
-    const icon  = toast.querySelector('i');
-
-    $('#toastMsg').textContent = msg;
-
-    icon.setAttribute('data-lucide',
-      type === 'error' ? 'x-circle' : type === 'info' ? 'info' : 'check-circle');
-    icon.classList.remove('text-[#10B981]', 'text-red-400', 'text-blue-400');
-    icon.classList.add(
-      type === 'error' ? 'text-red-400' : type === 'info' ? 'text-blue-400' : 'text-[#10B981]');
-
-    toast.classList.remove('hidden');
-    toast.classList.add('flex');
-    if (window.lucide) lucide.createIcons();
-
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.add('hidden');
-      toast.classList.remove('flex');
-    }, 3500);
-  }
 
   /* ============================================================
      ESC key
