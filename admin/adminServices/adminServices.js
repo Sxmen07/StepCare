@@ -1,0 +1,897 @@
+// admin-services.js
+(function () {
+  'use strict';
+
+  const state = {
+    view: 'list',
+    search: '',
+    pending: {},
+    original: {},
+  };
+
+  (window.servicesData || []).forEach(s => {
+    state.original[s.serviceID] = { ...s };
+  });
+
+  const $  = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function fmtPrice(n) {
+    return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0 });
+  }
+
+  function fmtDur(min, max) {
+    if (!min && !max) return '—';
+    if (min && max)   return `${min}–${max} mins`;
+    return `${min || max} mins`;
+  }
+
+  function currentData() {
+    return (window.servicesData || []).map(s => {
+      const p = state.pending[s.serviceID];
+      if (!p) return { ...s, _pending: null };
+      if (p.type === 'delete') return { ...s, _pending: 'delete' };
+      return { ...s, ...p.data, _pending: p.type };
+    });
+  }
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  let toastTimer = null;
+  function showToast(msg, type = 'success') {
+    const toast = $('#toast');
+    const icon  = toast.querySelector('i');
+
+    $('#toastMsg').textContent = msg;
+
+    icon.setAttribute('data-lucide',
+      type === 'error' ? 'x-circle' : type === 'info' ? 'info' : 'check-circle');
+    icon.classList.remove('text-[#10B981]', 'text-red-400', 'text-blue-400');
+    icon.classList.add(
+      type === 'error' ? 'text-red-400' : type === 'info' ? 'text-blue-400' : 'text-[#10B981]');
+
+    toast.classList.remove('hidden');
+    toast.classList.add('flex');
+    if (window.lucide) lucide.createIcons();
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.add('hidden');
+      toast.classList.remove('flex');
+    }, 3200);
+  }
+
+  /* ============================================================
+     LIVE PREVIEW
+     ============================================================ */
+  function updatePreview() {
+    const name  = $('#editName').value.trim() || 'Service name';
+    const cat   = $('#editCategory').value.trim() || 'CATEGORY';
+    const img   = $('#editImage').value.trim();
+    const price = parseFloat($('#editPrice').value) || 0;
+    const unit  = $('#editUnit').value.trim() || 'visit';
+    const dMin  = parseInt($('#editDurMin').value) || 0;
+    const dMax  = parseInt($('#editDurMax').value) || 0;
+    const pinned = $('#editPinned').checked;
+
+    $('#previewTitle').textContent    = name;
+    $('#previewCategory').textContent = cat;
+
+    $('#previewPrice').textContent = Number(price).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    $('#previewUnit').textContent = unit;
+
+    let durText = 'Est. — mins';
+    if (dMin && dMax) durText = `Est. ${dMin}–${dMax} mins`;
+    else if (dMin)    durText = `Est. ${dMin} mins`;
+    else if (dMax)    durText = `Est. ${dMax} mins`;
+    $('#previewDuration').textContent = durText;
+
+    const badge = $('#previewPinBadge');
+    if (pinned) {
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    } else {
+      badge.classList.add('hidden');
+      badge.classList.remove('flex');
+    }
+
+    const imgEl = $('#previewImg');
+    if (img && img !== imgEl.dataset.currentSrc) {
+      imgEl.dataset.currentSrc = img;
+      imgEl.classList.add('is-loading');
+      imgEl.src = img;
+      imgEl.onload  = () => imgEl.classList.remove('is-loading');
+      imgEl.onerror = () => {
+        imgEl.src = '../../images/services/placeholder.jpg';
+        imgEl.classList.remove('is-loading');
+      };
+    }
+
+    const card = imgEl.closest('.bg-white');
+    if (card) {
+      card.classList.remove('preview-flash');
+      void card.offsetWidth;
+      card.classList.add('preview-flash');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  ['editName','editCategory','editPrice','editUnit',
+   'editDurMin','editDurMax','editPinned'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const evt = (el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
+    el.addEventListener(evt, updatePreview);
+  });
+
+  /* ============================================================
+     IMAGE UPLOAD — click + drag anywhere (Google-style)
+     ============================================================ */
+  const dropZone        = $('#imageDropZone');
+  const fileInput       = $('#imageFileInput');
+  const imageLabel      = $('#editImageLabel');
+  const dropZoneThumb   = $('#dropZoneThumb');
+  const dropZoneThumbImg= $('#dropZoneThumbImg');
+  const dropZoneIcon    = $('#dropZoneIcon');
+  const dropZoneSpinner = $('#dropZoneSpinner');
+  const globalOverlay   = $('#globalDropOverlay');
+
+  /* ---------- Click to pick a file ---------- */
+  dropZone.addEventListener('click', (e) => {
+    if (e.target === fileInput) return;
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file);
+  });
+
+  /* ---------- Drag-anywhere overlay ----------
+     Uses a drag counter because dragenter/dragleave fire on every child element. */
+  let dragCounter = 0;
+
+  function isFileDrag(e) {
+    return e.dataTransfer
+        && Array.from(e.dataTransfer.types || []).includes('Files');
+  }
+
+  function isEditModalOpen() {
+    return editModal && !editModal.classList.contains('hidden');
+  }
+
+  function showGlobalOverlay() {
+    globalOverlay.classList.remove('hidden');
+    globalOverlay.classList.add('flex');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function hideGlobalOverlay() {
+    globalOverlay.classList.add('hidden');
+    globalOverlay.classList.remove('flex');
+    globalOverlay.classList.remove('is-hot');
+  }
+
+  window.addEventListener('dragenter', (e) => {
+    if (!isEditModalOpen()) return;
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragCounter++;
+    if (dragCounter === 1) showGlobalOverlay();
+    globalOverlay.classList.add('is-hot');
+  });
+
+  window.addEventListener('dragover', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+
+  window.addEventListener('dragleave', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      hideGlobalOverlay();
+    }
+  });
+
+  window.addEventListener('drop', (e) => {
+    if (!isEditModalOpen()) return;
+    e.preventDefault();
+    dragCounter = 0;
+    hideGlobalOverlay();
+
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('That file isn\'t an image', 'error');
+      return;
+    }
+    uploadImage(file);
+  });
+
+  // Prevent the browser from opening dropped files outside the modal
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop',     (e) => e.preventDefault());
+
+  /* ---------- Upload the image ---------- */
+  async function uploadImage(file) {
+    /* Validate */
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      showToast('Image is too large (max 4 MB)', 'error');
+      return;
+    }
+
+    /* Instant local preview */
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      $('#previewImg').src = ev.target.result;
+      $('#previewImg').classList.remove('is-loading');
+      dropZoneThumbImg.src = ev.target.result;
+      dropZoneThumb.classList.remove('hidden');
+      dropZoneIcon.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    /* Loading state on the small drop zone */
+    imageLabel.textContent = 'Uploading…';
+    imageLabel.className   = 'text-xs text-[#3C52C3] font-medium truncate flex-1 min-w-0';
+    dropZoneSpinner.classList.remove('hidden');
+
+    /* POST to server */
+    const fd = new FormData();
+    fd.append('image', file);
+
+    try {
+      const res  = await fetch('adminUploadImage.php', { method: 'POST', body: fd });
+      const json = await res.json().catch(() => ({ ok: false, message: 'Invalid server response' }));
+
+      if (!json.ok) throw new Error(json.message || 'Upload failed');
+
+      /* Store path in the hidden input */
+      $('#editImage').value = json.path;
+      $('#previewImg').dataset.currentSrc = json.path;
+
+      imageLabel.textContent = json.filename;
+      imageLabel.className   = 'text-xs text-emerald-600 font-medium truncate flex-1 min-w-0';
+      dropZoneSpinner.classList.add('hidden');
+
+      showToast('Image uploaded', 'success');
+
+    } catch (err) {
+      console.error(err);
+      imageLabel.textContent = 'Upload failed — click or drop to retry';
+      imageLabel.className   = 'text-xs text-red-500 font-medium truncate flex-1 min-w-0';
+      dropZoneSpinner.classList.add('hidden');
+      showToast('Upload failed: ' + err.message, 'error');
+    }
+  }
+
+  /* ---------- Reset the small drop zone (when opening edit modal) ---------- */
+  function resetUploadZone(existingPath) {
+    fileInput.value = '';
+
+    if (existingPath) {
+      const fname = existingPath.split('/').pop();
+      imageLabel.textContent = fname;
+      imageLabel.className   = 'text-xs text-slate-700 truncate flex-1 min-w-0';
+      dropZoneThumbImg.src = existingPath;
+      dropZoneThumb.classList.remove('hidden');
+      dropZoneIcon.classList.add('hidden');
+    } else {
+      imageLabel.textContent = 'Drop or click to upload';
+      imageLabel.className   = 'text-xs text-slate-500 truncate flex-1 min-w-0';
+      dropZoneThumbImg.src = '';
+      dropZoneThumb.classList.add('hidden');
+      dropZoneIcon.classList.remove('hidden');
+    }
+    dropZoneSpinner.classList.add('hidden');
+    dropZone.classList.remove('is-dragging');
+  }
+
+  /* ============================================================
+     RENDER — LIST
+     ============================================================ */
+  function renderList(items) {
+    const host = $('#listRows');
+    host.innerHTML = '';
+
+    if (!items.length) {
+      $('#emptyState').classList.remove('hidden');
+      return;
+    }
+    $('#emptyState').classList.add('hidden');
+
+    items.forEach(s => {
+      const pendingClass =
+        s._pending === 'delete' ? 'is-deleted'
+        : s._pending ? 'is-pending' : '';
+
+      const row = document.createElement('div');
+      row.className = `svc-row ${pendingClass}`;
+      row.dataset.id = s.serviceID;
+
+      row.innerHTML = `
+        <div class="svc-main">
+          <img src="${esc(s.serviceImageURL || '../../images/services/placeholder.jpg')}"
+               alt="" class="svc-thumb"
+               onerror="this.src='../../images/services/placeholder.jpg'">
+          <div class="min-w-0">
+            <div class="svc-name">${esc(s.serviceName)}</div>
+            <div class="svc-cat">${esc(s.category || 'General')}</div>
+          </div>
+        </div>
+
+        <div class="svc-cell">
+          <span class="rating">
+            <span class="star">★</span>
+            <span>${Number(s.average_rating).toFixed(2)}</span>
+            <span class="muted">(${s.review_count})</span>
+          </span>
+        </div>
+
+        <div class="svc-cell">
+          <span class="price-value">RM${fmtPrice(s.price)}</span>
+          <span class="price-unit">/${esc(s.price_unit || 'visit')}</span>
+        </div>
+
+        <div class="svc-cell text-slate-600 text-sm">
+          ${fmtDur(s.durationMin, s.durationMax)}
+        </div>
+
+        <div class="svc-cell">
+          ${ Number(s.isTopRecommendation)
+              ? `<span class="badge-pin"><i data-lucide="pin" class="w-3 h-3"></i> Pinned</span>`
+              : `<span class="badge-plain">Active</span>` }
+        </div>
+
+        <div class="svc-actions">
+          <button type="button" class="icon-btn" data-action="edit" data-id="${s.serviceID}" title="Edit">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+          </button>
+          <button type="button" class="icon-btn ${Number(s.isTopRecommendation) ? 'pin-active' : ''}"
+                  data-action="pin" data-id="${s.serviceID}"
+                  title="${Number(s.isTopRecommendation) ? 'Unpin' : 'Pin as top'}">
+            <i data-lucide="pin" class="w-4 h-4"></i>
+          </button>
+          <button type="button" class="icon-btn danger" data-action="delete" data-id="${s.serviceID}" title="Delete">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+
+      host.appendChild(row);
+    });
+  }
+
+  /* ============================================================
+     RENDER — GRID
+     ============================================================ */
+  function renderGrid(items) {
+    const host = $('#gridCards');
+    host.innerHTML = '';
+
+    if (!items.length) {
+      $('#emptyState').classList.remove('hidden');
+      return;
+    }
+    $('#emptyState').classList.add('hidden');
+
+    items.forEach(s => {
+      const card = document.createElement('div');
+      card.className = `grid-card ${s._pending ? 'is-pending' : ''} ${s._pending === 'delete' ? 'opacity-50' : ''}`;
+
+      card.innerHTML = `
+        <div class="grid-img-wrap">
+          <img src="${esc(s.serviceImageURL || '../../images/services/placeholder.jpg')}"
+               alt=""
+               onerror="this.src='../../images/services/placeholder.jpg'">
+          <div class="grid-badges">
+            ${ Number(s.isTopRecommendation)
+                ? `<span class="badge-pin"><i data-lucide="pin" class="w-3 h-3"></i> Pinned</span>`
+                : '' }
+            ${s._pending ? `<span class="badge-plain bg-amber-100 text-amber-700">Pending</span>` : ''}
+          </div>
+          <div class="grid-actions">
+            <button type="button" class="icon-btn" data-action="edit" data-id="${s.serviceID}" title="Edit">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button type="button" class="icon-btn ${Number(s.isTopRecommendation) ? 'pin-active' : ''}"
+                    data-action="pin" data-id="${s.serviceID}"
+                    title="${Number(s.isTopRecommendation) ? 'Unpin' : 'Pin'}">
+              <i data-lucide="pin" class="w-4 h-4"></i>
+            </button>
+            <button type="button" class="icon-btn danger" data-action="delete" data-id="${s.serviceID}" title="Delete">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-body">
+          <p class="grid-cat">${esc(s.category || 'General')}</p>
+          <p class="grid-title">${esc(s.serviceName)}</p>
+          <div class="grid-meta">
+            <span class="rating">
+              <span class="star">★</span>
+              <span>${Number(s.average_rating).toFixed(2)}</span>
+            </span>
+            <span class="price-value">RM${fmtPrice(s.price)}<span class="price-unit">/${esc(s.price_unit || 'visit')}</span></span>
+          </div>
+        </div>
+      `;
+
+      host.appendChild(card);
+    });
+  }
+
+  /* ============================================================
+     MAIN RENDER
+     ============================================================ */
+  function applyFilterAndRender() {
+    const all = currentData();
+
+    const filtered = all.filter(s => {
+      if (!state.search) return true;
+      const hay = (
+        (s.serviceName || '') + ' ' +
+        (s.category || '') + ' ' +
+        (s.description || '')
+      ).toLowerCase();
+      return hay.includes(state.search);
+    });
+
+    if (state.view === 'list') {
+      renderList(filtered);
+      $('#listView').classList.remove('hidden');
+      $('#gridView').classList.add('hidden');
+    } else {
+      renderGrid(filtered);
+      $('#gridView').classList.remove('hidden');
+      $('#listView').classList.add('hidden');
+    }
+
+    $('#resultCount').textContent = filtered.length
+      ? `${filtered.length} service${filtered.length === 1 ? '' : 's'}`
+      : '';
+
+    if (window.lucide) lucide.createIcons();
+    updatePendingBar();
+  }
+
+  /* ============================================================
+     PENDING
+     ============================================================ */
+  function markPending(id, type, data = null) {
+    state.pending[id] = { type, data };
+    applyFilterAndRender();
+  }
+
+  function clearPending() {
+    state.pending = {};
+    applyFilterAndRender();
+  }
+
+  function discardOne(id) {
+    delete state.pending[id];
+    applyFilterAndRender();
+  }
+
+  function updatePendingBar() {
+    const count = Object.keys(state.pending).length;
+    const bar = $('#pendingBar');
+
+    if (count === 0) {
+      bar.classList.add('hidden');
+      bar.classList.remove('flex');
+      return;
+    }
+
+    bar.classList.remove('hidden');
+    bar.classList.add('flex');
+    $('#pendingCount').textContent =
+      `${count} change${count === 1 ? '' : 's'} pending`;
+  }
+
+  function buildLaunchSummary() {
+    const items = currentData().filter(s => s._pending);
+    const host = $('#launchSummary');
+    host.innerHTML = '';
+
+    items.forEach(s => {
+      const p = state.pending[s.serviceID];
+      let label = '';
+      let dotColor = '';
+
+      if (p.type === 'delete') {
+        label = `Delete "${s.serviceName}"`;
+        dotColor = 'bg-red-500';
+      } else if (p.type === 'pin') {
+        label = `Pin "${s.serviceName}" as Top Pick`;
+        dotColor = 'bg-amber-500';
+      } else if (p.type === 'create') {
+        label = `Create "${s.serviceName}"`;
+        dotColor = 'bg-emerald-500';
+      } else {
+        label = `Edit "${s.serviceName}"`;
+        dotColor = 'bg-blue-500';
+      }
+
+      const li = document.createElement('li');
+      li.className = 'flex items-start gap-2';
+      li.innerHTML = `
+        <span class="mt-1.5 w-2 h-2 rounded-full ${dotColor} flex-shrink-0"></span>
+        <span>${esc(label)}</span>
+      `;
+      host.appendChild(li);
+    });
+  }
+
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+  let searchTimer = null;
+  $('#searchInput').addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      state.search = this.value.trim().toLowerCase();
+      applyFilterAndRender();
+    }, 180);
+  });
+
+  $$('.view-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.view-toggle').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      state.view = btn.dataset.view;
+      applyFilterAndRender();
+    });
+  });
+
+  document.addEventListener('click', function (e) {
+    const actionBtn = e.target.closest('[data-action]');
+    if (!actionBtn) return;
+
+    const id = actionBtn.dataset.id;
+    const action = actionBtn.dataset.action;
+    const svc = currentData().find(s => String(s.serviceID) === String(id));
+    if (!svc) return;
+
+    if (action === 'edit')        openEditModal(svc);
+    else if (action === 'pin')    handlePin(svc);
+    else if (action === 'delete') openDeleteModal(svc);
+  });
+
+  function handlePin(svc) {
+    const newPinned = Number(svc.isTopRecommendation) ? 0 : 1;
+    const orig = state.original[svc.serviceID];
+    if (Number(orig.isTopRecommendation) === newPinned) {
+      discardOne(svc.serviceID);
+      showToast('Pin state reset to original', 'info');
+      return;
+    }
+    markPending(svc.serviceID, 'pin', { ...svc, isTopRecommendation: newPinned });
+    showToast(newPinned ? 'Queued: pin as Top Pick' : 'Queued: unpin from Top Pick', 'info');
+  }
+
+  /* ============================================================
+     EDIT MODAL
+     ============================================================ */
+  const editModal = $('#editModal');
+
+  function openEditModal(svc, isNew = false) {
+    $('#editTitle').textContent = isNew ? 'Create Service' : 'Edit Service';
+    $('#editSubtitle').textContent = isNew
+      ? 'Drag an image anywhere on the page, or fill out the fields below'
+      : 'Updates preview on the left as you type';
+
+    $('#editServiceID').value = isNew ? '' : svc.serviceID;
+    $('#editName').value      = svc.serviceName || '';
+    $('#editCategory').value  = svc.category || '';
+    $('#editPrice').value     = svc.price || '';
+    $('#editUnit').value      = svc.price_unit || 'visit';
+    $('#editDurMin').value    = svc.durationMin || '';
+    $('#editDurMax').value    = svc.durationMax || '';
+    $('#editDesc').value      = svc.description || '';
+    $('#editPinned').checked  = Number(svc.isTopRecommendation) === 1;
+
+    const existingPath = svc.serviceImageURL || '';
+    $('#editImage').value = existingPath;
+    resetUploadZone(existingPath);
+
+    const imgEl = $('#previewImg');
+    imgEl.dataset.currentSrc = '';
+
+    updatePreview();
+
+    editModal.classList.remove('hidden');
+    editModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeEditModal() {
+    editModal.classList.add('hidden');
+    editModal.classList.remove('flex');
+    document.body.style.overflow = '';
+    dragCounter = 0;
+    hideGlobalOverlay();
+  }
+
+  $('#editClose').addEventListener('click', closeEditModal);
+  $('#editCancel').addEventListener('click', closeEditModal);
+  editModal.addEventListener('click', e => {
+    if (e.target === editModal) closeEditModal();
+  });
+
+  /* ============================================================
+     SAVE
+     ============================================================ */
+  const saveBtn = $('#editSaveBtn');
+
+  $('#editForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const id = $('#editServiceID').value;
+
+    const data = {
+      serviceName:     $('#editName').value.trim(),
+      category:        $('#editCategory').value.trim() || null,
+      serviceImageURL: $('#editImage').value.trim() || null,
+      price:           parseFloat($('#editPrice').value) || 0,
+      price_unit:      $('#editUnit').value.trim() || 'visit',
+      durationMin:     parseInt($('#editDurMin').value) || null,
+      durationMax:     parseInt($('#editDurMax').value) || null,
+      description:     $('#editDesc').value.trim() || null,
+      isTopRecommendation: $('#editPinned').checked ? 1 : 0,
+    };
+
+    if (!data.serviceName) {
+      showToast('Service name is required', 'error');
+      $('#editName').focus();
+      return;
+    }
+    if (!data.price || data.price <= 0) {
+      showToast('Please enter a valid price', 'error');
+      $('#editPrice').focus();
+      return;
+    }
+
+    saveBtn.disabled = true;
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `
+      <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="20"/>
+      </svg>
+      <span>Saving…</span>`;
+
+    let saved = false;
+
+    if (id) {
+      const orig = state.original[id];
+      if (!orig) {
+        showToast('Original service not found', 'error');
+      } else {
+        const changed = Object.keys(data).some(k =>
+          String(orig[k] ?? '') !== String(data[k] ?? '')
+        );
+        if (!changed) {
+          discardOne(id);
+          showToast('No changes to save', 'info');
+          saved = true;
+        } else {
+          markPending(id, 'edit', data);
+          showToast('Saved to draft — click Launch to publish', 'success');
+          saved = true;
+        }
+      }
+    } else {
+      const tempKey = 'new_' + Date.now();
+      markPending(tempKey, 'create', data);
+      showToast('New service queued — click Launch to publish', 'success');
+      saved = true;
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHTML;
+    if (window.lucide) lucide.createIcons();
+
+    if (saved) closeEditModal();
+  });
+
+  /* ============================================================
+     DELETE MODAL
+     ============================================================ */
+  const deleteModal = $('#deleteModal');
+  let deleteTarget = null;
+
+  function openDeleteModal(svc) {
+    deleteTarget = svc;
+    $('#deleteName').textContent = svc.serviceName;
+    deleteModal.classList.remove('hidden');
+    deleteModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeDeleteModal() {
+    deleteModal.classList.add('hidden');
+    deleteModal.classList.remove('flex');
+    document.body.style.overflow = '';
+    deleteTarget = null;
+  }
+
+  $('#deleteCancel').addEventListener('click', closeDeleteModal);
+  deleteModal.addEventListener('click', e => {
+    if (e.target === deleteModal) closeDeleteModal();
+  });
+
+  $('#deleteConfirm').addEventListener('click', function () {
+    if (!deleteTarget) return;
+    markPending(deleteTarget.serviceID, 'delete');
+    showToast('Queued for deletion — click Launch to confirm', 'info');
+    closeDeleteModal();
+  });
+
+  /* ============================================================
+     CREATE
+     ============================================================ */
+  $('#createBtn').addEventListener('click', () => {
+    openEditModal({
+      serviceName: '', category: '', serviceImageURL: '',
+      price: '', price_unit: 'visit', durationMin: '', durationMax: '',
+      description: '', isTopRecommendation: 0,
+    }, true);
+  });
+
+  /* ============================================================
+     PENDING BAR
+     ============================================================ */
+  $('#discardBtn').addEventListener('click', () => {
+    if (!confirm('Discard all pending changes?')) return;
+    clearPending();
+    showToast('All changes discarded', 'info');
+  });
+
+  /* ============================================================
+     LAUNCH
+     ============================================================ */
+  const launchModal   = $('#launchModal');
+  const launchConfirm = $('#launchConfirm');
+  const countdownText = $('#countdownText');
+  const countdownRing = $('#countdownRing');
+  let countdownTimer  = null;
+  const TOTAL_SECONDS = 10;
+  const CIRCUMFERENCE = 2 * Math.PI * 44;
+
+  function openLaunchModal() {
+    const count = Object.keys(state.pending).length;
+    if (count === 0) return;
+
+    buildLaunchSummary();
+
+    launchModal.classList.remove('hidden');
+    launchModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    let remaining = TOTAL_SECONDS;
+    countdownText.textContent = remaining;
+    countdownRing.style.strokeDashoffset = 0;
+    launchConfirm.disabled = true;
+    launchConfirm.className =
+      'flex-1 rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-white cursor-not-allowed transition disabled:opacity-60 inline-flex items-center justify-center gap-2';
+
+    launchConfirm.innerHTML = `
+      <i data-lucide="lock" class="w-4 h-4"></i>
+      <span id="launchConfirmLabel">Confirm Launch</span>`;
+    if (window.lucide) lucide.createIcons();
+
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      remaining--;
+      countdownText.textContent = remaining;
+      const progress = (TOTAL_SECONDS - remaining) / TOTAL_SECONDS;
+      countdownRing.style.strokeDashoffset = progress * CIRCUMFERENCE;
+
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        launchConfirm.disabled = false;
+        launchConfirm.className =
+          'flex-1 rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white hover:bg-[#059669] active:scale-[0.98] transition inline-flex items-center justify-center gap-2';
+        launchConfirm.innerHTML = `
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span id="launchConfirmLabel">Confirm Launch</span>`;
+        if (window.lucide) lucide.createIcons();
+      }
+    }, 1000);
+  }
+
+  function closeLaunchModal() {
+    clearInterval(countdownTimer);
+    launchModal.classList.add('hidden');
+    launchModal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  $('#launchBtn').addEventListener('click', openLaunchModal);
+  $('#launchCancel').addEventListener('click', closeLaunchModal);
+  launchModal.addEventListener('click', e => {
+    if (e.target === launchModal) closeLaunchModal();
+  });
+
+  launchConfirm.addEventListener('click', async function () {
+    launchConfirm.disabled = true;
+    launchConfirm.innerHTML = `
+      <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="20"/>
+      </svg>
+      <span>Launching…</span>`;
+
+    try {
+      const res = await fetch('adminServicesAction.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'launch', changes: state.pending }),
+      });
+
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message || 'Server error');
+
+      if (json.services) {
+        window.servicesData = json.services;
+        state.original = {};
+        window.servicesData.forEach(s => { state.original[s.serviceID] = { ...s }; });
+      }
+      state.pending = {};
+
+      closeLaunchModal();
+      applyFilterAndRender();
+      showToast(`${json.applied || 0} change${json.applied === 1 ? '' : 's'} launched successfully`, 'success');
+
+    } catch (err) {
+      console.error(err);
+      showToast('Launch failed: ' + err.message, 'error');
+      launchConfirm.disabled = false;
+      launchConfirm.className =
+        'flex-1 rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white hover:bg-[#059669] active:scale-[0.98] transition inline-flex items-center justify-center gap-2';
+      launchConfirm.innerHTML = `
+        <i data-lucide="check" class="w-4 h-4"></i>
+        <span id="launchConfirmLabel">Confirm Launch</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+  });
+
+  /* ============================================================
+     ESC key
+     ============================================================ */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!editModal.classList.contains('hidden'))        closeEditModal();
+    else if (!deleteModal.classList.contains('hidden')) closeDeleteModal();
+    else if (!launchModal.classList.contains('hidden')) closeLaunchModal();
+  });
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  applyFilterAndRender();
+})();
