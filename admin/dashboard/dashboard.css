@@ -1,0 +1,41 @@
+/* =============================================================
+   dashboard.css
+   ============================================================= */
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Sidebar (Reused from adminServices) ---------- */
+.glass-sidebar {
+    background: rgba(241, 245, 249, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(186, 230, 253, 0.5);
+}
+
+/* ---------- Stat cards ---------- */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+.stat-card:hover {
+    border-color: #3C52C3;
+    box-shadow: 0 4px 20px rgba(60, 82, 195, 0.08);
+    transform: translateY(-2px);
+}
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
