@@ -132,7 +132,6 @@
               </ul>
             <?php endif; ?>
 
-<<<<<<< HEAD
             <div class="mt-auto pt-4 border-t border-slate-100">
               <p class="text-2xl font-extrabold text-[#3C52C3] leading-none">
                 RM<?= number_format((float)$svc['price'], 0) ?>
@@ -141,18 +140,6 @@
               <?php if ($duration): ?>
                 <p class="text-xs text-slate-500 mt-1">Est. <?= $duration ?></p>
               <?php endif; ?>
-=======
-            <div class="mt-auto pt-4 border-t border-slate-100 flex items-end justify-between">
-              <div>
-                <p class="text-2xl font-extrabold text-[#3C52C3] leading-none">
-                  RM<?= number_format((float)$svc['price'], 0) ?>
-                  <span class="text-sm font-medium text-slate-500">/<?= htmlspecialchars($svc['price_unit']) ?></span>
-                </p>
-                <?php if ($duration): ?>
-                  <p class="text-xs text-slate-500 mt-1">Est. <?= $duration ?></p>
-                <?php endif; ?>
-              </div>
->>>>>>> 37b5371d2fe0f68f3d2f1b2668b683b00cf5a396
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3">
@@ -240,7 +227,6 @@
             <span id="sharedDuration" class="text-white/70"></span>
           </div>
 
-<<<<<<< HEAD
           <!-- Price block -->
           <div class="pt-6 border-t border-white/15">
             <p class="text-xs text-white/60 mb-2">Service fee</p>
@@ -250,23 +236,6 @@
               <span class="text-base md:text-lg font-medium text-white/60">
                 /<span id="sharedUnit"></span>
               </span>
-=======
-        <!-- Description -->
-        <p id="modalDescription" class="text-slate-600 leading-relaxed mb-8"></p>
-
-        <!-- Features -->
-        <h3 class="text-lg font-bold text-slate-800 mb-4">What's included</h3>
-        <ul id="modalFeatures" class="space-y-3 text-slate-700 mb-8"></ul>
-
-        <!-- Price Block -->
-        <div class="rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-5
-                    flex items-center justify-between mb-8">
-          <div>
-            <p class="text-sm font-medium text-slate-500 mb-1">Service fee</p>
-            <p class="text-4xl font-extrabold text-[#3C52C3] leading-none">
-              RM<span id="modalPrice"></span>
-              <span class="text-base font-medium text-slate-500">/<span id="modalPriceUnit"></span></span>
->>>>>>> 37b5371d2fe0f68f3d2f1b2668b683b00cf5a396
             </p>
           </div>
         </div>
