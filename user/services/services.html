@@ -190,33 +190,23 @@
       </button>
 
       <!-- ==================================================== -->
-      <!-- LEFT COLUMN — Hero panel (image + all info overlaid)  -->
+      <!-- LEFT COLUMN — Hero panel                              -->
       <!-- ==================================================== -->
       <aside class="md:w-1/2 flex-shrink-0 relative bg-slate-900 overflow-hidden">
-
-        <!-- Background image -->
         <img id="sharedImg" src="" alt=""
              class="absolute inset-0 w-full h-full object-cover" />
 
-        <!-- Gradient overlay -->
         <div class="absolute inset-0 bg-gradient-to-t
                     from-slate-900 via-slate-900/70 to-slate-900/10"></div>
 
-        <!-- Content — anchored to bottom -->
         <div class="relative h-full flex flex-col justify-end p-8 md:p-10 lg:p-12 text-white">
-
-          <!-- Category -->
           <p id="sharedCategory"
-             class="text-xs font-bold uppercase tracking-[0.18em] text-[#10B981] mb-3">
-          </p>
+             class="text-xs font-bold uppercase tracking-[0.18em] text-[#10B981] mb-3"></p>
 
-          <!-- Title -->
           <h2 id="sharedTitle"
               class="text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.08]
-                     tracking-tight mb-5 drop-shadow-lg">
-          </h2>
+                     tracking-tight mb-5 drop-shadow-lg"></h2>
 
-          <!-- Rating row -->
           <div class="flex items-center gap-3 text-sm mb-10 flex-wrap">
             <div class="flex items-center gap-1.5">
               <span class="text-amber-400 text-base">★</span>
@@ -227,7 +217,6 @@
             <span id="sharedDuration" class="text-white/70"></span>
           </div>
 
-          <!-- Price block -->
           <div class="pt-6 border-t border-white/15">
             <p class="text-xs text-white/60 mb-2">Service fee</p>
             <p class="text-4xl md:text-5xl font-extrabold leading-none text-white
@@ -252,7 +241,7 @@
                     transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);">
 
           <!-- PANEL 1 — DETAIL -->
-          <section class="w-1/2 h-full flex flex-col overflow-y-auto p-8 md:p-10">
+          <section class="w-1/2 h-full flex flex-col overflow-y-auto pt-16 md:pt-20 px-8 md:px-10 pb-8 md:pb-10">
 
             <p id="detailDescription"
                class="text-slate-600 leading-relaxed mb-8"></p>
@@ -277,7 +266,7 @@
 
           <!-- PANEL 2 — BOOKING -->
           <section class="w-1/2 h-full overflow-y-auto">
-            <div class="p-8 md:p-10">
+            <div class="pt-16 md:pt-20 px-8 md:px-10 pb-8 md:pb-10">
 
               <button type="button" id="backToDetail"
                       class="inline-flex items-center gap-1.5 text-sm font-semibold
@@ -304,6 +293,105 @@
       </div>
     </div>
   </div>
+
+  <!-- ============================================================ -->
+  <!-- BOOKING SUCCESS MODAL                                          -->
+  <!-- ============================================================ -->
+  <?php if (!empty($bookingSuccess)): ?>
+  <div id="successModal"
+       class="fixed inset-0 z-[200] hidden items-center justify-center
+              bg-slate-900/70 backdrop-blur-md p-4">
+
+    <div id="successCard"
+         class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden
+                text-center">
+
+      <!-- Header -->
+      <div class="relative bg-gradient-to-br from-[#10B981] to-[#059669]
+                  pt-10 pb-12 px-8 overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-white/10"></div>
+        <div class="absolute -bottom-20 -left-12 w-44 h-44 rounded-full bg-white/5"></div>
+
+        <div class="relative">
+          <div class="w-20 h-20 mx-auto rounded-full bg-white/20 backdrop-blur
+                      flex items-center justify-center mb-4
+                      ring-1 ring-white/30">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke-width="3" stroke="currentColor" class="w-10 h-10 text-white">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-extrabold text-white leading-tight">
+            Booking received!
+          </h2>
+          <p class="text-sm text-white/85 mt-2">
+            We've sent a confirmation email to you.
+          </p>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 md:p-8">
+        <div class="rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-5 mb-6 text-left">
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <span class="text-slate-500">Reference</span>
+              <span class="font-bold text-slate-800">
+                <?= htmlspecialchars($bookingSuccess['ref']) ?>
+              </span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-slate-500">Service</span>
+              <span class="font-semibold text-slate-800 text-right">
+                <?= htmlspecialchars($bookingSuccess['service']) ?>
+              </span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-slate-500">Date</span>
+              <span class="font-semibold text-slate-800">
+                <?= htmlspecialchars($bookingSuccess['date']) ?>
+              </span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-slate-500">Time</span>
+              <span class="font-semibold text-slate-800">
+                <?= htmlspecialchars($bookingSuccess['time']) ?>
+              </span>
+            </div>
+            <div class="pt-3 border-t border-slate-200 flex justify-between gap-4">
+              <span class="text-slate-500">Status</span>
+              <span class="inline-flex items-center rounded-full px-2.5 py-1
+                           text-[11px] font-bold uppercase tracking-wider
+                           bg-amber-100 text-amber-800 ring-1 ring-amber-200">
+                Pending Nurse
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-blue-50 border border-blue-200 p-4
+                    text-sm text-blue-800 text-left mb-6">
+          <p class="font-semibold mb-1">What happens next?</p>
+          <p>A licensed nurse will accept your booking shortly. You'll receive another
+             email once they're assigned.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button type="button" id="successClose"
+                  class="flex-1 rounded-xl border border-slate-300 bg-white py-3
+                         text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+            Keep browsing
+          </button>
+          <a href="../appointments/appointments.php"
+             class="flex-1 text-center rounded-xl bg-[#007FFF] py-3 text-sm font-bold text-white
+                    hover:bg-[#0066cc] active:scale-[0.98] transition">
+            View my appointments →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <script>
     window.servicesData   = <?= $servicesJson ?>;

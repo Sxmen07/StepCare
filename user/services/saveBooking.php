@@ -98,6 +98,7 @@ $appointmentID = $pdo->lastInsertId();
 $prettyDate = date('D, d M Y', strtotime($startDateTime));
 $prettyTime = date('g:i A',     strtotime($startDateTime));
 
+/* ---------- Send confirmation email ---------- */
 $html = "
   <div style='font-family: Arial, sans-serif; max-width: 560px; margin: auto; color:#0f172a;'>
     <div style='background:#3C52C3; padding:24px; border-radius:12px 12px 0 0;'>
@@ -145,12 +146,12 @@ $html = "
 
 sendMail($user['email'], 'StepCare — Booking received', $html);
 
-$_SESSION['booking_flash'] = [
-    'title'   => 'Booking received!',
-    'message' => 'Reference #SC' . str_pad($appointmentID, 6, '0', STR_PAD_LEFT)
-               . ' — ' . $prettyDate . ' at ' . $prettyTime
-               . '. We\'ve sent you a confirmation email and your appointment is now pending nurse assignment.',
-];
+/* ---------- Redirect back to services with popup params ---------- */
+$redirect = 'services.php?booked=1'
+          . '&ref='     . urlencode('#SC' . str_pad($appointmentID, 6, '0', STR_PAD_LEFT))
+          . '&date='    . urlencode($prettyDate)
+          . '&time='    . urlencode($prettyTime)
+          . '&service=' . urlencode($service['serviceName']);
 
-header('Location: ../appointments/appointments.php');
+header('Location: ' . $redirect);
 exit;

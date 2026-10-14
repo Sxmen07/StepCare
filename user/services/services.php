@@ -36,7 +36,7 @@ $timeSlots = [
 
 /* ---------- Nurses available ---------- */
 $totalNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
-if ($totalNurses <= 0) $totalNurses = 3;   // fallback for demo
+if ($totalNurses <= 0) $totalNurses = 3;
 
 /* ---------- Availability for next 30 days ---------- */
 $availability = [];
@@ -49,7 +49,7 @@ for ($i = 0; $i < 30; $i++) {
             "SELECT COUNT(*) FROM appointments
              WHERE DATE(startDateTime) = ?
                AND TIME(startDateTime) = ?
-               AND appointmentStatus IN ('confirmed','in_progress')"
+               AND appointmentStatus IN ('pending','confirmed','in_progress')"
         );
         $stmt->execute([$d, $time]);
         $booked = (int)$stmt->fetchColumn();
@@ -72,8 +72,19 @@ $servicesJson     = json_encode($services, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HE
 $availabilityJson = json_encode($availability);
 $timeSlotsJson    = json_encode($timeSlots);
 
-/* ---------- Flash ---------- */
+/* ---------- Flash (for errors only) ---------- */
 $flash = $_SESSION['booking_flash'] ?? null;
 unset($_SESSION['booking_flash']);
+
+/* ---------- Booking success popup data ---------- */
+$bookingSuccess = null;
+if (!empty($_GET['booked'])) {
+    $bookingSuccess = [
+        'ref'     => $_GET['ref']     ?? '',
+        'date'    => $_GET['date']    ?? '',
+        'time'    => $_GET['time']    ?? '',
+        'service' => $_GET['service'] ?? '',
+    ];
+}
 
 include __DIR__ . '/services.html';

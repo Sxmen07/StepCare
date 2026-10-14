@@ -69,11 +69,9 @@
   const modalSlider   = document.getElementById('modalSlider');
 
   const closeModalBtn = document.getElementById('closeModal');
-  const closeDetailBtn= document.getElementById('closeDetailBtn');
   const detailBookNow = document.getElementById('detailBookNow');
   const backToDetail  = document.getElementById('backToDetail');
 
-  // Shared (left column) refs
   const sharedImg      = document.getElementById('sharedImg');
   const sharedTitle    = document.getElementById('sharedTitle');
   const sharedCategory = document.getElementById('sharedCategory');
@@ -83,17 +81,14 @@
   const sharedPrice    = document.getElementById('sharedPrice');
   const sharedUnit     = document.getElementById('sharedUnit');
 
-  // Detail panel refs
   const detailDesc = document.getElementById('detailDescription');
   const detailFeat = document.getElementById('detailFeatures');
 
-  // Booking panel refs
   const bookingContainer = document.getElementById('bookingFormContainer');
 
   let activeServiceID = null;
   let isOpen = false;
 
-  /* Slide navigation */
   function slideToDetail() {
     modalSlider.style.transform = 'translateX(0)';
   }
@@ -101,20 +96,18 @@
     modalSlider.style.transform = 'translateX(-50%)';
   }
 
-  /* Populate the shared left column */
   function populateShared(svc) {
     sharedImg.src = svc.serviceImageURL || '../../images/services/placeholder.jpg';
-    sharedTitle.textContent   = svc.serviceName;
+    sharedTitle.textContent    = svc.serviceName;
     sharedCategory.textContent = svc.category || 'General';
-    sharedRating.textContent  = Number(svc.average_rating).toFixed(2);
-    sharedReviews.textContent = `(${svc.review_count} reviews)`;
+    sharedRating.textContent   = Number(svc.average_rating).toFixed(2);
+    sharedReviews.textContent  = `(${svc.review_count} reviews)`;
     sharedDuration.textContent = (svc.durationMin && svc.durationMax)
       ? `Est. ${svc.durationMin}–${svc.durationMax} mins` : '';
-    sharedPrice.textContent   = Number(svc.price).toFixed(2);
-    sharedUnit.textContent    = svc.price_unit || 'visit';
+    sharedPrice.textContent    = Number(svc.price).toFixed(2);
+    sharedUnit.textContent     = svc.price_unit || 'visit';
   }
 
-  /* Populate the detail (right panel 1) */
   function populateDetail(svc) {
     detailDesc.textContent = svc.description || '';
 
@@ -135,7 +128,6 @@
     }
   }
 
-  /* Booking form HTML */
   function buildBookingForm(svc) {
     if (!window.isLoggedIn) {
       return `
@@ -225,7 +217,7 @@
                    class="rounded-lg border border-slate-300 bg-slate-100 text-slate-600
                           px-4 py-3 text-base cursor-not-allowed" />
             <p class="text-xs text-slate-400">
-              Currently we only serve <strong>11600 Penang</strong>.
+              Currently we only serve <strong>Penang</strong> areas.
             </p>
           </div>
         </div>
@@ -335,7 +327,6 @@
     });
   }
 
-  /* Open / close */
   function openModal(serviceId, mode) {
     const svc = getService(serviceId);
     if (!svc) return;
@@ -346,7 +337,6 @@
     bookingContainer.innerHTML = buildBookingForm(svc);
     wireSlotLogic();
 
-    // Set starting position without animation
     modalSlider.style.transition = 'none';
     if (mode === 'book') slideToBooking();
     else                 slideToDetail();
@@ -370,7 +360,6 @@
     isOpen = false;
   }
 
-  /* Grid buttons */
   document.querySelectorAll('.js-open-detail').forEach(btn => {
     btn.addEventListener('click', () => openModal(btn.dataset.serviceId, 'view'));
   });
@@ -378,7 +367,6 @@
     btn.addEventListener('click', () => openModal(btn.dataset.serviceId, 'book'));
   });
 
-  // Slide
   detailBookNow.addEventListener('click', () => {
     if (activeServiceID) slideToBooking();
   });
@@ -386,11 +374,8 @@
     if (activeServiceID) slideToDetail();
   });
 
-  // Close
   closeModalBtn.addEventListener('click', closeModal);
-  closeDetailBtn.addEventListener('click', closeModal);
 
-  // Click outside closes
   modalWrapper.addEventListener('click', e => {
     const card = document.getElementById('modalCard');
     if (!card.contains(e.target)) closeModal();
@@ -399,5 +384,41 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && isOpen) closeModal();
   });
+
+  /* ============================================================
+     BOOKING SUCCESS POPUP
+     ============================================================ */
+  const successModal = document.getElementById('successModal');
+  const successClose = document.getElementById('successClose');
+
+  if (successModal) {
+    successModal.classList.remove('hidden');
+    successModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    // Clean the URL so a refresh doesn't re-show the popup
+    if (window.history.replaceState) {
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+
+    function closeSuccess() {
+      successModal.classList.add('hidden');
+      successModal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    successClose.addEventListener('click', closeSuccess);
+
+    successModal.addEventListener('click', e => {
+      const card = document.getElementById('successCard');
+      if (card && !card.contains(e.target)) closeSuccess();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !successModal.classList.contains('hidden')) {
+        closeSuccess();
+      }
+    });
+  }
 
 })();
