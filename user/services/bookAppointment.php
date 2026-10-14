@@ -120,7 +120,7 @@ $html = "
         </tr>
         <tr>
           <td style='padding:8px 0; color:#64748b;'>Amount</td>
-          <td style='padding:8px 0;'>$" . number_format((float)$service['price'], 2) . " / " . htmlspecialchars($service['price_unit']) . "</td>
+          <td style='padding:8px 0;'>RM" . number_format((float)$service['price'], 2) . " / " . htmlspecialchars($service['price_unit']) . "</td>
         </tr>
       </table>
 
