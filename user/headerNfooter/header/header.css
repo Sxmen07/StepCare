@@ -1,4 +1,11 @@
-/* user/headerNfooter/header/header.css */
+.site-header {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px; /* optional – adjust or remove for full-width */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
 
 .topbar {
     background: rgba(255, 255, 255, 0.2);
@@ -17,13 +24,28 @@
     padding-bottom: 4px;
     border-bottom: 2px solid transparent;
 }
-
-.nav-link:hover {
-    color: #007FFF;
-}
-
+.nav-link:hover { color: #007FFF; }
 .nav-link.active {
     color: #007FFF;
     font-weight: 800;
     border-bottom: 2px solid #007FFF;
+}
+
+/* ---------- Notification bell ---------- */
+/* Shakes for ~40% of the cycle, rests the rest — like a soft alert */
+@keyframes bellPulse {
+    0%,  40%, 100% { transform: rotate(0deg);    }
+    5%,  15%, 25%, 35% { transform: rotate(-9deg); }
+    10%, 20%, 30%      { transform: rotate(9deg);  }
+}
+
+.bell-shake {
+    animation: bellPulse 3s ease-in-out infinite;
+    transform-origin: 50% 6px;   /* pivot near the top of the bell */
+}
+
+/* Slight enlargement of the profile name area */
+#profileToggle {
+    padding-top: 6px;
+    padding-bottom: 6px;
 }

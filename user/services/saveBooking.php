@@ -95,6 +95,23 @@ $stmt->execute([
 ]);
 $appointmentID = $pdo->lastInsertId();
 
+/* ---------- Create a notification for the user ---------- */
+try {
+    $stmt = $pdo->prepare(
+        "INSERT INTO notifications (userID, title, message, type, linkURL)
+         VALUES (?, ?, ?, 'appointment', ?)"
+    );
+    $stmt->execute([
+        $userID,
+        'Booking received',
+        'Your booking for "' . $service['serviceName'] . '" on ' . $prettyDate
+            . ' at ' . $prettyTime . ' has been received. A nurse will be assigned shortly.',
+        '../appointments/appointments.php',
+    ]);
+} catch (Exception $e) {
+    error_log('Notification insert failed: ' . $e->getMessage());
+}
+
 $prettyDate = date('D, d M Y', strtotime($startDateTime));
 $prettyTime = date('g:i A',     strtotime($startDateTime));
 
