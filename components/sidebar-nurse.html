@@ -1,50 +1,67 @@
 <!-- Nurse Sidebar Component -->
-<aside class="w-64 h-screen sticky top-0 glass-sidebar flex flex-col justify-between p-5 z-20">
-  <div>
-    <!-- Logo -->
-    <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-sky-200/50">
-      <img src="images/StepCare.png" alt="StepCare Logo" class="h-8 max-w-[40px] object-contain" />
-      <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent select-none">
-        StepCare
-      </span>
+<aside id="sidebar" class="bg-white border-r border-neutral-200 min-h-screen flex flex-col justify-between transition-all duration-300 w-64 p-4 z-40 select-none shrink-0 shadow-sm">
+  
+  <!-- Top Section: Brand Header & Main Navigation -->
+  <div class="flex flex-col">
+    <!-- Brand Logo Header -->
+    <div class="flex items-center h-14 px-2 mb-6 border-b border-neutral-100 overflow-hidden">
+      <div id="sidebar-logo-box" class="flex items-center gap-3 w-full transition-all">
+        <!-- Logo Image -->
+        <img src="/StepCare/images/StepCare.png" 
+             alt="StepCare Logo" 
+             class="w-8 h-8 object-contain shrink-0 rounded-lg">
+        <!-- Two-tone Brand Text -->
+        <span class="sidebar-text font-black text-xl tracking-tight transition-opacity duration-200 whitespace-nowrap">
+          <span style="color: #3C52C3;">Step</span><span style="color: #10B981;">Care</span>
+        </span>
+      </div>
     </div>
 
-    <div class="px-3 mb-2 text-xs font-bold text-sky-900/60 uppercase tracking-wider">Nurse Portal</div>
+    <!-- Navigation Label -->
+    <div class="sidebar-text text-[11px] font-bold text-neutral-400 tracking-wider uppercase mb-3 px-3">
+      Nurse Portal
+    </div>
 
-    <!-- Navigation Links -->
-    <nav class="space-y-1.5">
-      <a href="nurse-dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="layout-dashboard" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Dashboard</span>
+    <!-- Main Navigation Menu (Looser spacing for relaxed vertical layout) -->
+    <nav class="space-y-3">
+      <a href="/StepCare/nurse/nurse-dashboard.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] group">
+        <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0 text-black"></i>
+        <span class="sidebar-text truncate">Dashboard</span>
       </a>
-      <a href="nurse-job-market.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="briefcase" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Job Market</span>
+
+      <a href="/StepCare/nurse/job-market.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] group">
+        <i data-lucide="briefcase" class="w-5 h-5 shrink-0 text-black"></i>
+        <span class="sidebar-text truncate">Job Market</span>
       </a>
-      <a href="nurse-care-log.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="clipboard-list" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Care Log</span>
+
+      <a href="/StepCare/nurse/care-log.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] group">
+        <i data-lucide="clipboard-list" class="w-5 h-5 shrink-0 text-black"></i>
+        <span class="sidebar-text truncate">Care Log</span>
       </a>
-      <a href="nurse-profile.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="user" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Profile</span>
-      </a>
-      <a href="nurse-settings.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="settings" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Settings</span>
-      </a>
-      <a href="nurse-service.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-700 hover:bg-sky-500/10 hover:text-sky-600 transition group whitespace-nowrap">
-        <i data-lucide="headphones" class="w-5 h-5 text-sky-600 transition group-hover:scale-110 flex-shrink-0"></i>
-        <span>Customer Services</span>
+
+      <a href="/StepCare/components/profile.html?role=nurse" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-black bg-neutral-100 font-semibold text-[15px] group">
+        <i data-lucide="user" class="w-5 h-5 shrink-0 text-black"></i>
+        <span class="sidebar-text truncate">Profile</span>
       </a>
     </nav>
   </div>
 
-  <!-- Log Out -->
-  <div class="pt-4 border-t border-sky-200/50">
-    <button onclick="logout()" class="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl font-medium text-rose-500 hover:bg-rose-500/10 transition group whitespace-nowrap">
-      <i data-lucide="log-out" class="w-5 h-5 text-rose-500 transition group-hover:-translate-x-1 flex-shrink-0"></i>
-      <span>Log Out</span>
+  <!-- Bottom Section: Settings, Customer Service & Hide Sidebar Toggle -->
+  <div class="pt-4 border-t border-neutral-100 space-y-2">
+    <a href="/StepCare/nurse/settings.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] group">
+      <i data-lucide="settings" class="w-5 h-5 shrink-0 text-black"></i>
+      <span class="sidebar-text truncate">Settings</span>
+    </a>
+
+    <a href="/StepCare/nurse/customer-service.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] group">
+      <i data-lucide="headphones" class="w-5 h-5 shrink-0 text-black"></i>
+      <span class="sidebar-text truncate">Customer Services</span>
+    </a>
+
+    <!-- Collapse / Hide Sidebar Button -->
+    <button id="sidebar-toggle-btn" class="sidebar-link w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-[15px] cursor-pointer group">
+      <i id="toggle-icon" data-lucide="panel-left-close" class="w-5 h-5 shrink-0 text-black"></i>
+      <span class="sidebar-text truncate font-semibold">Hide sidebar</span>
     </button>
   </div>
 </aside>
