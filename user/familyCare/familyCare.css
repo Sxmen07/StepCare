@@ -1,0 +1,25 @@
+/* user/familyCare/familyCare.css */
+
+/* Member card focus ring (remove default button outline) */
+.member-card {
+    outline: none;
+}
+.member-card:focus-visible {
+    box-shadow: 0 0 0 3px rgba(60, 82, 195, 0.25);
+}
+
+/* Uppercase input for code entry */
+#enterCodeInput {
+    letter-spacing: 0.4em;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* Smooth transition for list items */
+#activityList > article {
+    animation: fadeUp 0.25s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
