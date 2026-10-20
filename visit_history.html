@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit History | StepCare</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .visit-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .visit-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+    <!-- HEADER -->
+    <header class="bg-[#3C52C3] text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex
+                    flex-wrap items-center justify-between gap-4">
+
+            <h1 class="text-2xl font-bold">StepCare</h1>
+
+            <nav class="flex flex-wrap gap-5 text-sm font-medium">
+                <a href="dashboard.html" class="hover:text-blue-200">
+                    Dashboard
+                </a>
+
+                <a href="schedule.html" class="hover:text-blue-200">
+                    Schedule
+                </a>
+
+                <a href="visit_history.html"
+                   class="text-blue-200 underline underline-offset-4">
+                    Visits
+                </a>
+
+                <a href="reports.html" class="hover:text-blue-200">
+                    Reports
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- PAGE TITLE -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold">Visit History</h2>
+
+            <p class="text-gray-500 mt-2">
+                View patient visits and track their progress.
+            </p>
+        </div>
+
+        <!-- PATIENT VISIT CARDS -->
+        <div id="visitList"
+             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- JOHN TAN -->
+            <div class="visit-card bg-white rounded-xl border
+                        shadow-sm overflow-hidden"
+                 data-patient-id="P001">
+
+                <div class="p-5">
+
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Patient ID: P001
+                            </p>
+
+                            <h3 class="text-xl font-bold mt-1">
+                                John Tan
+                            </h3>
+
+                            <p class="text-sm text-gray-500 mt-2">
+                                20 September 2026
+                            </p>
+                        </div>
+
+                        <span data-status
+                              class="px-3 py-1 rounded-full text-xs
+                                     font-semibold bg-blue-100 text-blue-700">
+                            Scheduled
+                        </span>
+                    </div>
+
+                    <div class="mt-5">
+                        <p class="text-sm font-semibold mb-1">
+                            Location
+                        </p>
+
+                        <p class="text-sm text-gray-500">
+                            No. 18, Jalan Harmoni 3,
+                            10200 George Town, Penang
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold mb-2">
+                            Services
+                        </p>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Wound Care
+                            </span>
+
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Vital Monitoring
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS -->
+                    <div class="mt-5">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-500">
+                                Visit Progress
+                            </span>
+
+                            <span data-percentage
+                                  class="font-bold text-[#3C52C3]">
+                                0%
+                            </span>
+                        </div>
+
+                        <div class="w-full bg-gray-200 rounded-full
+                                    h-2.5 overflow-hidden">
+
+                            <div data-progress-bar
+                                 class="bg-[#3C52C3] h-2.5 rounded-full
+                                        transition-all duration-500"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+
+                        <p data-current-stage
+                           class="text-xs text-gray-500 mt-2">
+                            Current stage: Visit Scheduled
+                        </p>
+                    </div>
+
+                    <a href="patient_details.html?id=P001"
+                       class="block text-center bg-[#3C52C3] text-white
+                              font-semibold rounded-lg px-4 py-3 mt-5
+                              hover:bg-blue-800 transition">
+                        View More
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- MARY LEE -->
+            <div class="visit-card bg-white rounded-xl border
+                        shadow-sm overflow-hidden"
+                 data-patient-id="P002">
+
+                <div class="p-5">
+
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Patient ID: P002
+                            </p>
+
+                            <h3 class="text-xl font-bold mt-1">
+                                Mary Lee
+                            </h3>
+
+                            <p class="text-sm text-gray-500 mt-2">
+                                22 September 2026
+                            </p>
+                        </div>
+
+                        <span data-status
+                              class="px-3 py-1 rounded-full text-xs
+                                     font-semibold bg-blue-100 text-blue-700">
+                            Scheduled
+                        </span>
+                    </div>
+
+                    <div class="mt-5">
+                        <p class="text-sm font-semibold mb-1">
+                            Location
+                        </p>
+
+                        <p class="text-sm text-gray-500">
+                            No. 25, Jalan Sentosa 2,
+                            14000 Bukit Mertajam, Penang
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold mb-2">
+                            Services
+                        </p>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Home Nursing
+                            </span>
+
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Medication Support
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS -->
+                    <div class="mt-5">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-500">
+                                Visit Progress
+                            </span>
+
+                            <span data-percentage
+                                  class="font-bold text-[#3C52C3]">
+                                0%
+                            </span>
+                        </div>
+
+                        <div class="w-full bg-gray-200 rounded-full
+                                    h-2.5 overflow-hidden">
+
+                            <div data-progress-bar
+                                 class="bg-[#3C52C3] h-2.5 rounded-full
+                                        transition-all duration-500"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+
+                        <p data-current-stage
+                           class="text-xs text-gray-500 mt-2">
+                            Current stage: Visit Scheduled
+                        </p>
+                    </div>
+
+                    <a href="patient_details.html?id=P002"
+                       class="block text-center bg-[#3C52C3] text-white
+                              font-semibold rounded-lg px-4 py-3 mt-5
+                              hover:bg-blue-800 transition">
+                        View More
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- DAVID WONG -->
+            <div class="visit-card bg-white rounded-xl border
+                        shadow-sm overflow-hidden"
+                 data-patient-id="P003">
+
+                <div class="p-5">
+
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Patient ID: P003
+                            </p>
+
+                            <h3 class="text-xl font-bold mt-1">
+                                David Wong
+                            </h3>
+
+                            <p class="text-sm text-gray-500 mt-2">
+                                18 September 2026
+                            </p>
+                        </div>
+
+                        <span data-status
+                              class="px-3 py-1 rounded-full text-xs
+                                     font-semibold bg-blue-100 text-blue-700">
+                            Scheduled
+                        </span>
+                    </div>
+
+                    <div class="mt-5">
+                        <p class="text-sm font-semibold mb-1">
+                            Location
+                        </p>
+
+                        <p class="text-sm text-gray-500">
+                            No. 12, Lorong Murni 4,
+                            12000 Butterworth, Penang
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold mb-2">
+                            Services
+                        </p>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Vital Monitoring
+                            </span>
+
+                            <span class="bg-blue-50 text-[#3C52C3]
+                                         px-3 py-1 rounded-full text-xs">
+                                Home Nursing
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS -->
+                    <div class="mt-5">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-500">
+                                Visit Progress
+                            </span>
+
+                            <span data-percentage
+                                  class="font-bold text-[#3C52C3]">
+                                0%
+                            </span>
+                        </div>
+
+                        <div class="w-full bg-gray-200 rounded-full
+                                    h-2.5 overflow-hidden">
+
+                            <div data-progress-bar
+                                 class="bg-[#3C52C3] h-2.5 rounded-full
+                                        transition-all duration-500"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+
+                        <p data-current-stage
+                           class="text-xs text-gray-500 mt-2">
+                            Current stage: Visit Scheduled
+                        </p>
+                    </div>
+
+                    <a href="patient_details.html?id=P003"
+                       class="block text-center bg-[#3C52C3] text-white
+                              font-semibold rounded-lg px-4 py-3 mt-5
+                              hover:bg-blue-800 transition">
+                        View More
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#3C52C3] text-white px-8 py-8 mt-10">
+        <div class="max-w-7xl mx-auto flex flex-wrap
+                    justify-between gap-4">
+
+            <div>
+                <h3 class="text-xl font-bold">StepCare</h3>
+
+                <p class="text-sm text-blue-100 mt-2">
+                    Accredited in-home nursing and compassionate
+                    caregiver support delivered to your home.
+                </p>
+            </div>
+
+            <p class="text-sm text-blue-100">
+                © 2026 StepCare. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        "use strict";
+
+        /*
+         * Keep these stage names and the storage key consistent
+         * with patient_details.html.
+         */
+        const visitStages = [
+            "Visit Scheduled",
+            "Nurse En Route",
+            "Nurse Arrived",
+            "Checked In",
+            "Initial Assessment",
+            "Care in Progress",
+            "Care Review",
+            "Checked Out",
+            "Visit Completed"
+        ];
+
+        function getVisitProgress(patientId) {
+            const key = "stepcare_visit_progress_" + patientId;
+
+            try {
+                const saved = localStorage.getItem(key);
+
+                // No progress has been recorded yet.
+                if (!saved) {
+                    return {
+                        stage: 0,
+                        percentage: 0,
+                        status: "Scheduled",
+                        stageName: visitStages[0]
+                    };
+                }
+
+                const record = JSON.parse(saved);
+
+                if (
+                    !record ||
+                    record.patientId !== patientId ||
+                    !Array.isArray(record.history)
+                ) {
+                    throw new Error("Invalid visit progress record");
+                }
+
+                // Read only valid, recorded stage indexes.
+                const recordedStages = record.history
+                    .map(entry => entry.stageIndex)
+                    .filter(index =>
+                        Number.isInteger(index) &&
+                        index >= 0 &&
+                        index < visitStages.length
+                    );
+
+                // The scheduled stage must be recorded first.
+                if (!recordedStages.includes(0)) {
+                    throw new Error("Scheduled stage is missing");
+                }
+
+                // Find the furthest stage actually recorded.
+                const stage = Math.max(...recordedStages);
+
+                const percentage = Math.round(
+                    (stage / (visitStages.length - 1)) * 100
+                );
+
+                let status;
+
+                if (stage === visitStages.length - 1) {
+                    status = "Completed";
+                } else if (stage === 0) {
+                    status = "Scheduled";
+                } else {
+                    status = "In Progress";
+                }
+
+                return {
+                    stage: stage,
+                    percentage: percentage,
+                    status: status,
+                    stageName: visitStages[stage]
+                };
+
+            } catch (error) {
+                console.error(
+                    "Unable to read progress for " + patientId,
+                    error
+                );
+
+                return {
+                    stage: 0,
+                    percentage: 0,
+                    status: "Scheduled",
+                    stageName: visitStages[0]
+                };
+            }
+        }
+
+        function updateVisitCards() {
+            const cards = document.querySelectorAll("[data-patient-id]");
+
+            cards.forEach(card => {
+                const patientId = card.dataset.patientId;
+                const progress = getVisitProgress(patientId);
+
+                // Update the status badge.
+                const statusElement = card.querySelector("[data-status]");
+
+                statusElement.textContent = progress.status;
+
+                statusElement.className =
+                    "px-3 py-1 rounded-full text-xs font-semibold ";
+
+                if (progress.status === "Completed") {
+                    statusElement.classList.add(
+                        "bg-green-100",
+                        "text-green-700"
+                    );
+                } else if (progress.status === "In Progress") {
+                    statusElement.classList.add(
+                        "bg-yellow-100",
+                        "text-yellow-800"
+                    );
+                } else {
+                    statusElement.classList.add(
+                        "bg-blue-100",
+                        "text-blue-700"
+                    );
+                }
+
+                // Update the percentage.
+                card.querySelector("[data-percentage]").textContent =
+                    progress.percentage + "%";
+
+                // Update the progress bar.
+                card.querySelector("[data-progress-bar]").style.width =
+                    progress.percentage + "%";
+
+                // Update the current stage label.
+                card.querySelector("[data-current-stage]").textContent =
+                    "Current stage: " + progress.stageName;
+            });
+        }
+
+        // Load the latest saved progress when the page opens.
+        updateVisitCards();
+
+        // Refresh the cards when the user returns to this page.
+        window.addEventListener("pageshow", updateVisitCards);
+
+        // Refresh if another tab updates a patient's progress.
+        window.addEventListener("storage", function(event) {
+            if (
+                event.key === null ||
+                event.key.startsWith("stepcare_visit_progress_")
+            ) {
+                updateVisitCards();
+            }
+        });
+    </script>
+
+</body>
+</html>

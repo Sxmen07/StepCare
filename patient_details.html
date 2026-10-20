@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Details | StepCare</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+        }
+
+        .step-line {
+            position: absolute;
+            left: 19px;
+            top: 42px;
+            bottom: -12px;
+            width: 3px;
+            background: #e5e7eb;
+        }
+
+        .step-line.completed {
+            background: #3C52C3;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #e5e7eb;
+            color: #6b7280;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .step-circle.completed {
+            background: #3C52C3;
+            color: white;
+        }
+
+        .step-circle.current {
+            background: #dbeafe;
+            color: #3C52C3;
+            border: 2px solid #3C52C3;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+<!-- HEADER -->
+<header class="bg-[#3C52C3] text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap
+                items-center justify-between gap-4">
+
+        <h1 class="text-2xl font-bold">StepCare</h1>
+
+        <nav class="flex flex-wrap gap-5 text-sm font-medium">
+            <a href="dashboard.html" class="hover:text-blue-200">Dashboard</a>
+            <a href="schedule.html" class="hover:text-blue-200">Schedule</a>
+            <a href="visit_history.html" class="hover:text-blue-200">Visits</a>
+            <a href="reports.html" class="hover:text-blue-200">Reports</a>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- PAGE TITLE -->
+    <div class="mb-6">
+        <a href="visit_history.html"
+           class="text-[#3C52C3] hover:underline text-sm">
+            ← Back to Visit History
+        </a>
+
+        <h2 class="text-3xl font-bold mt-3">Patient Visit Details</h2>
+
+        <p class="text-gray-500 mt-1">
+            View patient information and record each visit stage.
+        </p>
+    </div>
+
+    <!-- PATIENT INFORMATION -->
+    <section class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <div class="flex flex-wrap justify-between items-start gap-4">
+
+            <div>
+                <p class="text-sm text-gray-500">Patient Information</p>
+                <h3 id="patientName" class="text-2xl font-bold mt-1">
+                    Loading...
+                </h3>
+                <p id="patientId" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+
+            <span id="overallStatus"
+                  class="px-4 py-2 rounded-full text-sm font-semibold">
+                Loading...
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+
+            <div>
+                <p class="text-sm text-gray-500">Visit Date</p>
+                <p id="visitDate" class="font-medium mt-1"></p>
+            </div>
+
+            <div>
+                <p class="text-sm text-gray-500">Assigned Nurse</p>
+                <p id="nurseName" class="font-medium mt-1">Fiona</p>
+            </div>
+
+            <div>
+                <p class="text-sm text-gray-500">Patient Address</p>
+                <p id="patientAddress" class="font-medium mt-1"></p>
+            </div>
+
+            <div>
+                <p class="text-sm text-gray-500">Services</p>
+                <p id="patientServices" class="font-medium mt-1"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VISIT PROGRESS -->
+    <section class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+
+        <div class="flex flex-wrap justify-between items-start gap-3">
+            <div>
+                <h3 class="text-xl font-bold">Visit Progress Timeline</h3>
+                <p class="text-sm text-gray-500 mt-1">
+                    Confirm each stage after completing the required action.
+                </p>
+            </div>
+
+            <span id="stageCounter"
+                  class="text-sm font-semibold text-[#3C52C3]">
+                Stage 1 of 9
+            </span>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="mt-6">
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-gray-500">Overall progress</span>
+                <span id="progressPercentage" class="font-bold">0%</span>
+            </div>
+
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div id="progressBar"
+                     class="bg-[#3C52C3] h-3 rounded-full transition-all duration-500"
+                     style="width: 0%">
+                </div>
+            </div>
+        </div>
+
+        <!-- CURRENT STAGE -->
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <p class="text-sm text-gray-500">Current recorded stage</p>
+            <h4 id="currentStageName"
+                class="text-lg font-bold text-[#3C52C3] mt-1">
+                Visit Scheduled
+            </h4>
+            <p id="currentStageDescription"
+               class="text-sm text-gray-600 mt-1"></p>
+        </div>
+
+        <!-- STAGE NOTE -->
+        <div class="mt-6">
+            <label for="stageNote" class="block font-semibold mb-2">
+                Stage Notes (Optional)
+            </label>
+
+            <textarea id="stageNote"
+                      rows="3"
+                      maxlength="1000"
+                      placeholder="Enter relevant visit notes before confirming the next stage..."
+                      class="w-full border rounded-lg p-3 focus:outline-none
+                             focus:ring-2 focus:ring-blue-300"></textarea>
+
+            <p class="text-xs text-gray-500 mt-1">
+                Notes will be saved with the stage confirmation.
+            </p>
+        </div>
+
+        <!-- CONFIRM BUTTON -->
+        <div class="mt-4">
+            <button id="confirmStageBtn"
+                    type="button"
+                    class="w-full sm:w-auto bg-[#3C52C3] text-white
+                           px-6 py-3 rounded-lg font-semibold
+                           hover:bg-blue-800 transition">
+                Confirm Next Stage
+            </button>
+
+            <p id="actionMessage" role="status" aria-live="polite"
+               class="text-sm mt-3"></p>
+        </div>
+
+        <!-- VERTICAL TIMELINE -->
+        <div class="mt-8">
+            <h4 class="font-bold text-lg mb-6">Stage History</h4>
+            <div id="timeline" class="space-y-6"></div>
+        </div>
+    </section>
+
+    <!-- CARE UPDATES -->
+    <section class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h3 class="text-xl font-bold">Care Updates</h3>
+        <p class="text-sm text-gray-500 mt-1 mb-5">
+            Updates recorded for this demonstration.
+        </p>
+
+        <div id="careUpdates" class="space-y-4"></div>
+    </section>
+
+    <!-- NURSE NOTES -->
+    <section class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h3 class="text-xl font-bold">Nurse Notes & Messages</h3>
+        <p class="text-sm text-gray-500 mt-1 mb-5">
+            Add notes as the assigned nurse.
+        </p>
+
+        <form id="messageForm" class="space-y-3">
+            <label for="messageText" class="block font-semibold">
+                New Note
+            </label>
+
+            <textarea id="messageText"
+                      rows="3"
+                      maxlength="1000"
+                      required
+                      placeholder="Write a care update or visit note..."
+                      class="w-full border rounded-lg p-3 focus:outline-none
+                             focus:ring-2 focus:ring-blue-300"></textarea>
+
+            <button type="submit"
+                    class="bg-[#3C52C3] text-white px-5 py-2 rounded-lg
+                           hover:bg-blue-800 transition">
+                Save Nurse Note
+            </button>
+        </form>
+
+        <div id="messageList" class="space-y-4 mt-6"></div>
+    </section>
+
+    <p class="text-xs text-gray-500 mb-6">
+        Demonstration only: sample patient information and browser-based
+        storage are used. Do not enter real patient medical information.
+    </p>
+</main>
+
+<!-- FOOTER -->
+<footer class="bg-[#3C52C3] text-white px-6 py-8 mt-10">
+    <div class="max-w-7xl mx-auto flex flex-wrap
+                justify-between gap-4">
+        <div>
+            <h3 class="text-xl font-bold">StepCare</h3>
+            <p class="text-sm text-blue-100 mt-2">
+                Compassionate care, delivered to your home.
+            </p>
+        </div>
+
+        <p class="text-sm text-blue-100">
+            © 2026 StepCare. All rights reserved.
+        </p>
+    </div>
+</footer>
+
+<script>
+"use strict";
+
+/*
+    DEMONSTRATION DATA
+    Replace these sample records with data from your PHP/MySQL backend.
+*/
+
+const patients = {
+    P001: {
+        id: "P001",
+        name: "John Tan",
+        visitDate: "20 September 2026",
+        address: "No. 18, Jalan Harmoni 3, 10200 George Town, Penang",
+        services: ["Wound Care", "Vital Monitoring"],
+        nurse: "Fiona",
+        scheduledAt: "2026-09-20T09:00:00"
+    },
+
+    P002: {
+        id: "P002",
+        name: "Mary Lee",
+        visitDate: "22 September 2026",
+        address: "No. 25, Jalan Sentosa 2, 14000 Bukit Mertajam, Penang",
+        services: ["Home Nursing", "Medication Support"],
+        nurse: "Fiona",
+        scheduledAt: "2026-09-22T10:00:00"
+    },
+
+    P003: {
+        id: "P003",
+        name: "David Wong",
+        visitDate: "18 September 2026",
+        address: "No. 12, Lorong Murni 4, 12000 Butterworth, Penang",
+        services: ["Vital Monitoring", "Home Nursing"],
+        nurse: "Fiona",
+        scheduledAt: "2026-09-18T11:00:00"
+    }
+};
+
+const stages = [
+    {
+        name: "Visit Scheduled",
+        description: "The visit appointment has been scheduled."
+    },
+    {
+        name: "Nurse En Route",
+        description: "The nurse confirms they are travelling to the patient."
+    },
+    {
+        name: "Nurse Arrived",
+        description: "The nurse confirms arrival at the patient's location."
+    },
+    {
+        name: "Checked In",
+        description: "The nurse confirms the start of the patient visit."
+    },
+    {
+        name: "Initial Assessment",
+        description: "The nurse completes the initial patient assessment."
+    },
+    {
+        name: "Care in Progress",
+        description: "The nurse confirms that the planned care is underway."
+    },
+    {
+        name: "Care Review",
+        description: "The nurse reviews the care provided and patient condition."
+    },
+    {
+        name: "Checked Out",
+        description: "The nurse confirms that the visit has ended."
+    },
+    {
+        name: "Visit Completed",
+        description: "The nurse confirms the visit is complete."
+    }
+];
+
+/*
+    The patient ID comes from the URL, for example:
+    patient_details.html?id=P001
+*/
+
+const params = new URLSearchParams(window.location.search);
+const requestedId = params.get("id");
+const patient = patients[requestedId] || patients.P001;
+const patientId = patient.id;
+
+/*
+    Each patient has a separate browser-storage key.
+    This is a demonstration, not permanent database storage.
+*/
+
+const storageKey = "stepcare_visit_progress_" + patientId;
+const notesKey = "stepcare_nurse_notes_" + patientId;
+
+let visitRecord;
+let nurseNotes = [];
+
+/* Escape user-entered text before displaying it in HTML. */
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(character) {
+        const replacements = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        };
+
+        return replacements[character];
+    });
+}
+
+/* Format a timestamp using the browser's local timezone. */
+
+function formatTimestamp(timestamp) {
+    if (!timestamp) return "Not recorded";
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Invalid timestamp";
+    }
+
+    return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+}
+
+/* Save the visit record in the current browser. */
+
+function saveVisitRecord() {
+    localStorage.setItem(storageKey, JSON.stringify(visitRecord));
+}
+
+/*
+    Initialise the record.
+    The first stage is seeded from the sample appointment date.
+    In a real system, this timestamp should come from the database
+    when the appointment is created.
+*/
+
+function initialiseVisitRecord() {
+    let savedRecord = null;
+
+    try {
+        const saved = localStorage.getItem(storageKey);
+        savedRecord = saved ? JSON.parse(saved) : null;
+    } catch (error) {
+        console.error("Could not read saved visit progress:", error);
+    }
+
+    if (
+        savedRecord &&
+        savedRecord.patientId === patientId &&
+        Array.isArray(savedRecord.history) &&
+        savedRecord.history.length > 0 &&
+        savedRecord.history[0].stageIndex === 0
+    ) {
+        visitRecord = savedRecord;
+    } else {
+        visitRecord = {
+            patientId: patientId,
+            currentStage: 0,
+            history: [
+                {
+                    stageIndex: 0,
+                    stageName: stages[0].name,
+                    timestamp: new Date(patient.scheduledAt).toISOString(),
+                    nurse: patient.nurse,
+                    note: "Appointment scheduled."
+                }
+            ]
+        };
+
+        saveVisitRecord();
+    }
+
+    // Repair invalid or missing current-stage values.
+    const highestRecordedStage = Math.max(
+        ...visitRecord.history.map(item => item.stageIndex)
+    );
+
+    visitRecord.currentStage = Math.min(
+        stages.length - 1,
+        Math.max(0, highestRecordedStage)
+    );
+
+    saveVisitRecord();
+}
+
+/* Load nurse notes for this patient. */
+
+function loadNurseNotes() {
+    try {
+        const saved = localStorage.getItem(notesKey);
+        nurseNotes = saved ? JSON.parse(saved) : [];
+        if (!Array.isArray(nurseNotes)) nurseNotes = [];
+    } catch (error) {
+        nurseNotes = [];
+    }
+}
+
+/* Display the patient information. */
+
+function renderPatientInformation() {
+    document.getElementById("patientName").textContent = patient.name;
+    document.getElementById("patientId").textContent =
+        "Patient ID: " + patient.id;
+
+    document.getElementById("visitDate").textContent = patient.visitDate;
+    document.getElementById("nurseName").textContent = patient.nurse;
+    document.getElementById("patientAddress").textContent = patient.address;
+    document.getElementById("patientServices").textContent =
+        patient.services.join(", ");
+}
+
+/* Find the saved history entry for a stage. */
+
+function getStageRecord(stageIndex) {
+    return visitRecord.history.find(
+        entry => entry.stageIndex === stageIndex
+    );
+}
+
+/* Update the progress bar, status and stage counter. */
+
+function renderProgressSummary() {
+    const current = visitRecord.currentStage;
+    const percentage = Math.round(
+        (current / (stages.length - 1)) * 100
+    );
+
+    document.getElementById("progressBar").style.width =
+        percentage + "%";
+
+    document.getElementById("progressPercentage").textContent =
+        percentage + "%";
+
+    document.getElementById("stageCounter").textContent =
+        "Stage " + (current + 1) + " of " + stages.length;
+
+    document.getElementById("currentStageName").textContent =
+        stages[current].name;
+
+    document.getElementById("currentStageDescription").textContent =
+        stages[current].description;
+
+    const status = document.getElementById("overallStatus");
+
+    if (current === stages.length - 1) {
+        status.textContent = "Completed";
+        status.className =
+            "px-4 py-2 rounded-full text-sm font-semibold " +
+            "bg-green-100 text-green-700";
+    } else if (current === 0) {
+        status.textContent = "Scheduled";
+        status.className =
+            "px-4 py-2 rounded-full text-sm font-semibold " +
+            "bg-blue-100 text-blue-700";
+    } else {
+        status.textContent = "In Progress";
+        status.className =
+            "px-4 py-2 rounded-full text-sm font-semibold " +
+            "bg-yellow-100 text-yellow-800";
+    }
+
+    const button = document.getElementById("confirmStageBtn");
+
+    if (current >= stages.length - 1) {
+        button.textContent = "Visit Completed";
+        button.disabled = true;
+    } else {
+        button.textContent = "Confirm: " + stages[current + 1].name;
+        button.disabled = false;
+    }
+}
+
+/* Render the vertical timeline and every recorded timestamp. */
+
+function renderTimeline() {
+    const timeline = document.getElementById("timeline");
+    const current = visitRecord.currentStage;
+
+    timeline.innerHTML = stages.map((stage, index) => {
+        const record = getStageRecord(index);
+        const isCompleted = Boolean(record);
+        const isCurrent = index === current;
+        const isLast = index === stages.length - 1;
+
+        let circleClass = "step-circle";
+        let circleText = String(index + 1);
+
+        if (isCompleted) {
+            circleClass += " completed";
+            circleText = "✓";
+        } else if (isCurrent) {
+            circleClass += " current";
+        }
+
+        let statusText = "Upcoming";
+        let statusClass = "text-gray-400";
+
+        if (record) {
+            statusText = "Recorded";
+            statusClass = "text-green-700";
+        } else if (isCurrent) {
+            statusText = "Current";
+            statusClass = "text-[#3C52C3]";
+        }
+
+        const lineClass = isCompleted ? "step-line completed" : "step-line";
+
+        return `
+            <div class="relative flex gap-4">
+                ${!isLast ? `<div class="${lineClass}"></div>` : ""}
+
+                <div class="${circleClass}">${circleText}</div>
+
+                <div class="flex-1 pb-2 min-w-0">
+                    <div class="flex flex-wrap justify-between gap-2">
+                        <h5 class="font-bold ${
+                            isCompleted || isCurrent
+                                ? "text-gray-800"
+                                : "text-gray-400"
+                        }">
+                            ${escapeHTML(stage.name)}
+                        </h5>
+
+                        <span class="text-sm font-semibold ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-gray-500 mt-1">
+                        ${escapeHTML(stage.description)}
+                    </p>
+
+                    ${
+                        record
+                            ? `
+                                <div class="mt-3 bg-gray-50 border rounded-lg p-3">
+                                    <p class="text-sm">
+                                        <strong>Recorded:</strong>
+                                        ${escapeHTML(formatTimestamp(record.timestamp))}
+                                    </p>
+                                    <p class="text-sm mt-1">
+                                        <strong>Confirmed by:</strong>
+                                        ${escapeHTML(record.nurse)}
+                                    </p>
+                                    ${
+                                        record.note
+                                            ? `
+                                                <p class="text-sm mt-1 break-words">
+                                                    <strong>Note:</strong>
+                                                    ${escapeHTML(record.note)}
+                                                </p>
+                                            `
+                                            : ""
+                                    }
+                                </div>
+                            `
+                            : `
+                                <p class="text-xs text-gray-400 mt-2">
+                                    Waiting for confirmation
+                                </p>
+                            `
+                    }
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+/* Render sample care updates. */
+
+function renderCareUpdates() {
+    const updates = [
+        {
+            title: "Appointment Information",
+            text: "Please ensure the patient is ready for the scheduled visit.",
+            timestamp: patient.scheduledAt
+        },
+        {
+            title: "Assigned Nurse",
+            text: patient.nurse + " is listed as the assigned nurse.",
+            timestamp: patient.scheduledAt
+        }
+    ];
+
+    document.getElementById("careUpdates").innerHTML =
+        updates.map(update => `
+            <div class="border-l-4 border-[#3C52C3] pl-4 py-1">
+                <h4 class="font-semibold">
+                    ${escapeHTML(update.title)}
+                </h4>
+                <p class="text-sm text-gray-600 mt-1">
+                    ${escapeHTML(update.text)}
+                </p>
+                <p class="text-xs text-gray-400 mt-2">
+                    ${escapeHTML(formatTimestamp(update.timestamp))}
+                </p>
+            </div>
+        `).join("");
+}
+
+/*
+    Confirm one stage at a time.
+    The timestamp is created only after the nurse confirms.
+*/
+
+function confirmNextStage() {
+    const nextIndex = visitRecord.currentStage + 1;
+
+    if (nextIndex >= stages.length) {
+        return;
+    }
+
+    // Prevent recording an already completed stage.
+    if (getStageRecord(nextIndex)) {
+        document.getElementById("actionMessage").textContent =
+            "This stage has already been recorded.";
+
+        return;
+    }
+
+    const nextStage = stages[nextIndex];
+    const noteField = document.getElementById("stageNote");
+    const note = noteField.value.trim();
+
+    const confirmed = window.confirm(
+        "Confirm this visit stage?\n\n" +
+        "Patient: " + patient.name + "\n" +
+        "Stage: " + nextStage.name + "\n\n" +
+        "The system will record the current date and time."
+    );
+
+    if (!confirmed) return;
+
+    const timestamp = new Date().toISOString();
+
+    const entry = {
+        stageIndex: nextIndex,
+        stageName: nextStage.name,
+        timestamp: timestamp,
+        nurse: patient.nurse,
+        note: note
+    };
+
+    // Append a new history entry; do not overwrite earlier entries.
+    visitRecord.history.push(entry);
+    visitRecord.currentStage = nextIndex;
+
+    try {
+        saveVisitRecord();
+
+        noteField.value = "";
+
+        document.getElementById("actionMessage").textContent =
+            nextStage.name + " recorded at " +
+            formatTimestamp(timestamp) + ".";
+
+        renderAll();
+    } catch (error) {
+        // Restore the previous in-memory state if browser storage fails.
+        visitRecord.history.pop();
+        visitRecord.currentStage = nextIndex - 1;
+
+        document.getElementById("actionMessage").textContent =
+            "Could not save this stage in browser storage. Please try again.";
+    }
+}
+
+/* Add a nurse note with its own timestamp. */
+
+function saveNurseNote(event) {
+    event.preventDefault();
+
+    const field = document.getElementById("messageText");
+    const text = field.value.trim();
+
+    if (!text) return;
+
+    nurseNotes.push({
+        sender: patient.nurse,
+        text: text,
+        timestamp: new Date().toISOString()
+    });
+
+    try {
+        localStorage.setItem(notesKey, JSON.stringify(nurseNotes));
+        field.value = "";
+        renderNurseNotes();
+    } catch (error) {
+        nurseNotes.pop();
+
+        alert("Could not save the note in browser storage.");
+    }
+}
+
+/* Display saved nurse notes. */
+
+function renderNurseNotes() {
+    const list = document.getElementById("messageList");
+
+    if (nurseNotes.length === 0) {
+        list.innerHTML = `
+            <p class="text-sm text-gray-400">
+                No nurse notes have been added yet.
+            </p>
+        `;
+        return;
+    }
+
+    list.innerHTML = nurseNotes.slice().reverse().map(note => `
+        <div class="border rounded-lg p-4">
+            <div class="flex flex-wrap justify-between gap-2">
+                <p class="font-semibold">
+                    ${escapeHTML(note.sender)}
+                </p>
+                <p class="text-xs text-gray-400">
+                    ${escapeHTML(formatTimestamp(note.timestamp))}
+                </p>
+            </div>
+
+            <p class="text-sm mt-2 whitespace-pre-wrap break-words">${escapeHTML(note.text)}</p>
+        </div>
+    `).join("");
+}
+
+/* Refresh every progress-related part of the page. */
+
+function renderAll() {
+    renderProgressSummary();
+    renderTimeline();
+}
+
+/* Initialise page. */
+
+renderPatientInformation();
+initialiseVisitRecord();
+loadNurseNotes();
+renderAll();
+renderCareUpdates();
+renderNurseNotes();
+
+document.getElementById("confirmStageBtn")
+    .addEventListener("click", confirmNextStage);
+
+document.getElementById("messageForm")
+    .addEventListener("submit", saveNurseNote);
+</script>
+
+</body>
+</html>

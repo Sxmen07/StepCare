@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Reports & Updates - StepCare</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-[#3C52C3] text-white px-8 py-4">
+
+        <div class="flex justify-between items-center flex-wrap gap-4">
+
+            <h1 class="text-2xl font-bold">
+                StepCare
+            </h1>
+
+            <nav class="space-x-6 text-sm">
+                <a href="#" class="hover:underline">Dashboard</a>
+                <a href="#" class="hover:underline">Schedule</a>
+                <a href="#" class="hover:underline">Visits</a>
+                <a href="#" class="hover:underline">Reports</a>
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-8">
+
+        <h2 class="text-2xl font-bold text-gray-800">
+            Visit Reports & Updates
+        </h2>
+
+        <p class="text-gray-500 mt-1 mb-6">
+            View patient feedback, visit reports and updates submitted by users.
+        </p>
+
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+            <div class="bg-white rounded-lg shadow p-5">
+                <p class="text-gray-500 text-sm">
+                    Total Reports
+                </p>
+
+                <p class="text-3xl font-bold text-[#3C52C3] mt-2">
+                    12
+                </p>
+            </div>
+
+
+            <div class="bg-white rounded-lg shadow p-5">
+                <p class="text-gray-500 text-sm">
+                    New Updates
+                </p>
+
+                <p class="text-3xl font-bold text-orange-500 mt-2">
+                    3
+                </p>
+            </div>
+
+
+            <div class="bg-white rounded-lg shadow p-5">
+                <p class="text-gray-500 text-sm">
+                    Reviewed Reports
+                </p>
+
+                <p class="text-3xl font-bold text-green-600 mt-2">
+                    9
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- Reports List -->
+        <div class="bg-white rounded-lg shadow p-6">
+
+            <div class="flex justify-between items-center flex-wrap gap-4 mb-5">
+
+                <h3 class="text-lg font-semibold">
+                    Patient Reports
+                </h3>
+
+                <!-- Filter -->
+                <select
+                    id="statusFilter"
+                    class="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3C52C3]"
+                    onchange="filterReports()">
+
+                    <option value="all">All Reports</option>
+                    <option value="New">New</option>
+                    <option value="Reviewed">Reviewed</option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Report 1 -->
+            <div class="report-card border rounded-lg p-5 mb-4"
+                 data-status="New">
+
+                <div class="flex justify-between items-start flex-wrap gap-3 mb-4">
+
+                    <div>
+                        <h4 class="font-semibold text-gray-800">
+                            John Tan
+                        </h4>
+
+                        <p class="text-gray-500 text-sm mt-1">
+                            Report ID: R001
+                        </p>
+                    </div>
+
+                    <span class="status-label bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs">
+                        New
+                    </span>
+
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Report Type
+                        </p>
+
+                        <p class="font-medium">
+                            Care Feedback
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Submitted Date
+                        </p>
+
+                        <p class="font-medium">
+                            20 September 2026
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4 mb-4">
+
+                    <p class="text-gray-500 text-sm mb-2">
+                        Report Details
+                    </p>
+
+                    <p class="text-gray-700 text-sm">
+                        Thank you for the home nursing service. The nurse was
+                        helpful and explained the medication schedule clearly.
+                    </p>
+
+                </div>
+
+
+                <div class="flex justify-end">
+
+                    <button
+                        onclick="markReviewed(this)"
+                        class="bg-[#3C52C3] text-white px-4 py-2 rounded hover:bg-blue-800 transition">
+
+                        Mark as Reviewed
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Report 2 -->
+            <div class="report-card border rounded-lg p-5 mb-4"
+                 data-status="New">
+
+                <div class="flex justify-between items-start flex-wrap gap-3 mb-4">
+
+                    <div>
+                        <h4 class="font-semibold text-gray-800">
+                            Mary Lee
+                        </h4>
+
+                        <p class="text-gray-500 text-sm mt-1">
+                            Report ID: R002
+                        </p>
+                    </div>
+
+                    <span class="status-label bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs">
+                        New
+                    </span>
+
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Report Type
+                        </p>
+
+                        <p class="font-medium">
+                            Care Update
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Submitted Date
+                        </p>
+
+                        <p class="font-medium">
+                            22 September 2026
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4 mb-4">
+
+                    <p class="text-gray-500 text-sm mb-2">
+                        Report Details
+                    </p>
+
+                    <p class="text-gray-700 text-sm">
+                        Please confirm the next visit time. We would also like
+                        to request an update regarding the upcoming care plan.
+                    </p>
+
+                </div>
+
+
+                <div class="flex justify-end">
+
+                    <button
+                        onclick="markReviewed(this)"
+                        class="bg-[#3C52C3] text-white px-4 py-2 rounded hover:bg-blue-800 transition">
+
+                        Mark as Reviewed
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Report 3 -->
+            <div class="report-card border rounded-lg p-5"
+                 data-status="Reviewed">
+
+                <div class="flex justify-between items-start flex-wrap gap-3 mb-4">
+
+                    <div>
+                        <h4 class="font-semibold text-gray-800">
+                            David Wong
+                        </h4>
+
+                        <p class="text-gray-500 text-sm mt-1">
+                            Report ID: R003
+                        </p>
+                    </div>
+
+                    <span class="status-label bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+                        Reviewed
+                    </span>
+
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Report Type
+                        </p>
+
+                        <p class="font-medium">
+                            Visit Feedback
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500 text-sm">
+                            Submitted Date
+                        </p>
+
+                        <p class="font-medium">
+                            18 September 2026
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded p-4 mb-4">
+
+                    <p class="text-gray-500 text-sm mb-2">
+                        Report Details
+                    </p>
+
+                    <p class="text-gray-700 text-sm">
+                        The visit went smoothly. The patient was comfortable
+                        with the care provided and had no additional requests.
+                    </p>
+
+                </div>
+
+
+                <div class="flex justify-end">
+
+                    <button
+                        disabled
+                        class="bg-gray-200 text-gray-500 px-4 py-2 rounded cursor-not-allowed">
+
+                        Already Reviewed
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="bg-[#3C52C3] text-white text-center py-6 mt-10">
+
+        <p class="text-sm">
+            © 2026 StepCare. All rights reserved.
+        </p>
+
+    </footer>
+
+
+    <!-- Report Functions -->
+    <script>
+
+        function markReviewed(button) {
+
+            const report = button.closest(".report-card");
+
+            report.dataset.status = "Reviewed";
+
+            const statusLabel = report.querySelector(".status-label");
+
+            statusLabel.textContent = "Reviewed";
+            statusLabel.className =
+                "status-label bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs";
+
+            button.textContent = "Already Reviewed";
+            button.disabled = true;
+
+            button.className =
+                "bg-gray-200 text-gray-500 px-4 py-2 rounded cursor-not-allowed";
+
+            filterReports();
+
+        }
+
+
+        function filterReports() {
+
+            const selectedStatus =
+                document.getElementById("statusFilter").value;
+
+            const reports =
+                document.querySelectorAll(".report-card");
+
+            reports.forEach(function(report) {
+
+                if (
+                    selectedStatus === "all" ||
+                    report.dataset.status === selectedStatus
+                ) {
+                    report.style.display = "block";
+                } else {
+                    report.style.display = "none";
+                }
+
+            });
+
+        }
+
+    </script>
+
+</body>
+</html>
