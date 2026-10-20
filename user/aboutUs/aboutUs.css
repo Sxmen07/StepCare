@@ -1,0 +1,69 @@
+/* user/aboutUs/aboutUs.css */
+
+/* ============================================================
+   SECTION 1: VERTICAL MARQUEE
+   ============================================================ */
+@keyframes scrollVertical {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); } /* Scrolls exactly half the height (the duplicated set) */
+}
+
+.marquee-container {
+  position: relative;
+  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-content {
+  animation: scrollVertical 15s linear infinite;
+  /* Pause on hover to let the user look */
+  will-change: transform;
+}
+
+.marquee-container:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+/* ============================================================
+   SECTION 4: HORIZONTAL REVIEW MARQUEE
+   ============================================================ */
+@keyframes scrollHorizontal {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); } /* Scrolls one full set (since there are 3 copies) */
+}
+
+.marquee-container-horizontal {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.marquee-content-horizontal {
+  animation: scrollHorizontal 30s linear infinite;
+  will-change: transform;
+}
+
+.marquee-content-horizontal:hover {
+  animation-play-state: paused;
+}
+
+/* ============================================================
+   GENERAL SCROLL BEHAVIOR
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Utility to hide scrollbar but keep scrolling */
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
