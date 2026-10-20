@@ -10,12 +10,10 @@
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* 侧边栏平滑折叠过渡 */
     .sidebar-text {
       transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out;
       white-space: nowrap;
     }
-    /* 自定义纤细滚动条 */
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
     }
@@ -216,7 +214,7 @@
         })
         .catch(err => console.error("Topbar load failed:", err));
 
-      // 3. 载入数据库真实统计与任务队列
+      // 3. 载入数据库数据
       loadDashboardData();
 
       function loadDashboardData() {
@@ -228,17 +226,14 @@
               return;
             }
 
-            // 欢迎标语问候
             const adminName = localStorage.getItem('stepcare_username') || data.admin.name || "Admin";
             document.getElementById('admin-display-name').textContent = adminName;
 
-            // 4个药丸卡片指标
             document.getElementById('stat-revenue').textContent = data.metrics.total_revenue;
             document.getElementById('stat-appointments').textContent = data.metrics.active_appointments;
             document.getElementById('stat-users').textContent = data.metrics.total_users;
             document.getElementById('stat-nurses').textContent = data.metrics.pending_nurses;
 
-            // 填充中间近期预约表格
             const tbody = document.getElementById('table-recent-appointments');
             if (!data.recent_appointments || data.recent_appointments.length === 0) {
               tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-neutral-400">No appointments recorded yet.</td></tr>`;
@@ -269,7 +264,6 @@
               }).join('');
             }
 
-            // 填充右侧 Sticky 卡片：待处理请假
             const leaveList = document.getElementById('list-pending-leaves');
             const leaveBadge = document.getElementById('badge-leave-count');
             leaveBadge.textContent = data.pending_leaves.length;
@@ -290,7 +284,6 @@
               `).join('');
             }
 
-            // 填充右侧 Sticky 卡片：待审核护士
             const verifList = document.getElementById('list-nurse-verifications');
             const verifBadge = document.getElementById('badge-verif-count');
             verifBadge.textContent = data.pending_nurse_list.length;
@@ -311,7 +304,6 @@
               `).join('');
             }
 
-            // 右侧总待办计数徽章
             document.getElementById('badge-total-pending').textContent = data.pending_leaves.length + data.pending_nurse_list.length;
           })
           .catch(err => console.error("Error loading dashboard metrics:", err));
@@ -333,9 +325,14 @@
         const currentPath = window.location.pathname.toLowerCase();
         sidebarLinks.forEach(link => {
           const href = link.getAttribute('href');
-          if (href && currentPath.includes(href.toLowerCase().split('/').pop())) {
+          if (!href) return;
+          const targetFile = href.toLowerCase().split('/').pop().split('?')[0];
+          if (currentPath.endsWith(targetFile)) {
             link.classList.add('bg-neutral-100', 'font-semibold', 'text-black');
             link.classList.remove('text-neutral-700');
+          } else {
+            link.classList.remove('bg-neutral-100', 'font-semibold', 'text-black');
+            link.classList.add('text-neutral-700');
           }
         });
 
