@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Admin Dashboard</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .sidebar-text {
+      transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] min-h-screen flex text-neutral-800 antialiased overflow-x-hidden">
+
+  <!-- Left: Dynamic Admin Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0"></div>
+
+  <!-- Right: Dynamic Workspace Area -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Top: Dynamic Topbar Container -->
+    <div id="topbar-container" class="w-full"></div>
+
+    <!-- Main Empty Workspace -->
+    <main class="flex-1 p-8">
+      <!-- Leave blank for future development -->
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. 加载 Sidebar
+      fetch('/StepCare/components/sidebar-admin.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('sidebar-container').innerHTML = html;
+          lucide.createIcons();
+          initSidebarControls();
+        })
+        .catch(err => console.error("Sidebar load failed:", err));
+
+      // 2. 加载 Topbar 并独立初始化
+      fetch('/StepCare/components/topbar.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('topbar-container').innerHTML = html;
+          lucide.createIcons();
+          initTopbarControls();
+        })
+        .catch(err => console.error("Topbar load failed:", err));
+
+      // ========== 侧边栏平滑过渡与折叠控制 ==========
+      function initSidebarControls() {
+        const sidebar      = document.getElementById('sidebar');
+        const toggleBtn    = document.getElementById('sidebar-toggle-btn');
+        const iconWrapper  = document.getElementById('toggle-icon-wrapper');
+        const sidebarTexts = document.querySelectorAll('.sidebar-text');
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const logoBox      = document.getElementById('sidebar-logo-box');
+
+        if (!sidebar || !toggleBtn) return;
+
+        // 设置更细腻的宽度过渡
+        sidebar.classList.remove('transition-all');
+        sidebar.classList.add('transition-[width]', 'duration-300', 'ease-in-out');
+
+        // 自动高亮当前页面
+        const currentPath = window.location.pathname.toLowerCase();
+        sidebarLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          if (href && currentPath.includes(href.toLowerCase().split('/').pop())) {
+            link.classList.add('bg-neutral-100', 'font-semibold', 'text-black');
+            link.classList.remove('text-neutral-700');
+          }
+        });
+
+        let isCollapsed = localStorage.getItem('stepcare_sidebar_collapsed') === 'true';
+
+        function applySidebarState() {
+          if (isCollapsed) {
+            sidebar.classList.remove('w-56');
+            sidebar.classList.add('w-20');
+
+            sidebarTexts.forEach(el => {
+              el.classList.add('hidden', 'opacity-0');
+            });
+
+            if (logoBox) {
+              logoBox.classList.add('justify-center');
+              logoBox.classList.remove('gap-2.5');
+            }
+            sidebarLinks.forEach(link => {
+              link.classList.remove('px-3');
+              link.classList.add('justify-center', 'px-0');
+            });
+
+            if (iconWrapper) {
+              iconWrapper.classList.add('rotate-180');
+            }
+          } else {
+            sidebar.classList.remove('w-20');
+            sidebar.classList.add('w-56');
+
+            sidebarTexts.forEach(el => {
+              el.classList.remove('hidden');
+              setTimeout(() => el.classList.remove('opacity-0'), 50);
+            });
+
+            if (logoBox) {
+              logoBox.classList.remove('justify-center');
+              logoBox.classList.add('gap-2.5');
+            }
+            sidebarLinks.forEach(link => {
+              link.classList.remove('justify-center', 'px-0');
+              link.classList.add('px-3');
+            });
+
+            if (iconWrapper) {
+              iconWrapper.classList.remove('rotate-180');
+            }
+          }
+        }
+
+        applySidebarState();
+
+        toggleBtn.addEventListener('click', () => {
+          isCollapsed = !isCollapsed;
+          localStorage.setItem('stepcare_sidebar_collapsed', isCollapsed);
+          applySidebarState();
+        });
+      }
+
+      // ========== Topbar 交互逻辑修复 ==========
+      function initTopbarControls() {
+        const titleEl = document.getElementById('topbar-page-title');
+        if (titleEl) titleEl.textContent = "Dashboard";
+
+        // 用户名与头像读取
+        const currentUser = localStorage.getItem('stepcare_username') || "Admin";
+        const currentUserId = localStorage.getItem('stepcare_user_id') || "UID_001";
+        const userPhotoUrl = localStorage.getItem('stepcare_user_photo');
+
+        const userNameEl = document.getElementById('topbar-user-name');
+        const userBtn = document.getElementById('user-menu-btn');
+        const initialsEl = document.getElementById('topbar-avatar-initials');
+
+        if (userNameEl) userNameEl.textContent = currentUser;
+
+        if (userPhotoUrl && userBtn) {
+          userBtn.innerHTML = `<img src="${userPhotoUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+        } else if (initialsEl) {
+          initialsEl.textContent = currentUser.charAt(0).toUpperCase();
+        }
+
+        // 下拉菜单点击切换
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userDropdown = document.getElementById('user-dropdown-menu');
+
+        if (userMenuBtn && userDropdown) {
+          userMenuBtn.onclick = function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('hidden');
+          };
+
+          // 点击空白区域关闭下拉菜单
+          document.addEventListener('click', (e) => {
+            if (!userDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
+              userDropdown.classList.add('hidden');
+            }
+          });
+        }
+
+        // 复制 User ID
+        const copyBtn = document.getElementById('copy-userid-btn');
+        const copyBadge = document.getElementById('copy-badge');
+        if (copyBtn) {
+          copyBtn.onclick = function(e) {
+            e.stopPropagation();
+            navigator.clipboard.writeText(currentUserId).then(() => {
+              if (copyBadge) {
+                copyBadge.classList.remove('hidden');
+                setTimeout(() => { copyBadge.classList.add('hidden'); }, 1500);
+              }
+            });
+          };
+        }
+
+        // 登出弹窗交互
+        const openLogoutBtn = document.getElementById('open-logout-btn');
+        const logoutModal = document.getElementById('topbar-logout-modal');
+        const cancelLogoutBtn = document.getElementById('cancel-topbar-logout');
+        const confirmLogoutBtn = document.getElementById('confirm-topbar-logout');
+
+        if (openLogoutBtn && logoutModal) {
+          openLogoutBtn.onclick = function(e) {
+            e.stopPropagation();
+            if (userDropdown) userDropdown.classList.add('hidden');
+            logoutModal.classList.remove('hidden');
+            logoutModal.classList.add('flex');
+          };
+
+          if (cancelLogoutBtn) {
+            cancelLogoutBtn.onclick = function() {
+              logoutModal.classList.add('hidden');
+              logoutModal.classList.remove('flex');
+            };
+          }
+
+          if (confirmLogoutBtn) {
+            confirmLogoutBtn.onclick = function() {
+              localStorage.clear();
+              window.location.href = '/StepCare/loginNsignup/login.php';
+            };
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
