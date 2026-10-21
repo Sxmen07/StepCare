@@ -1,72 +1,138 @@
-<!-- Admin Sidebar Component -->
-<aside id="sidebar" class="bg-white border-r border-neutral-200 min-h-screen flex flex-col justify-between transition-all duration-300 w-56 p-3 z-40 select-none shrink-0 shadow-sm">
+<!-- Global Modular Admin Sidebar Component -->
+<aside id="sidebar" class="h-full bg-white border-r border-neutral-200 w-64 flex flex-col justify-between select-none shrink-0 transition-[width] duration-300 ease-in-out">
   
-  <!-- Top Section: Brand Header & Main Navigation -->
-  <div class="flex flex-col">
-    <!-- Brand Logo Header -->
-    <div class="flex items-center h-14 px-2 mb-4 border-b border-neutral-100 overflow-hidden">
-      <div id="sidebar-logo-box" class="flex items-center gap-2.5 w-full transition-all">
-        <img src="/StepCare/images/StepCare.png" 
-             alt="StepCare Logo" 
-             class="w-7 h-7 object-contain shrink-0 rounded-lg">
-        <span class="sidebar-text font-black text-lg tracking-tight transition-opacity duration-200 whitespace-nowrap">
-          <span style="color: #3C52C3;">Step</span><span style="color: #10B981;">Care</span>
-        </span>
+  <!-- Upper Section -->
+  <div>
+    <!-- Logo Box (Using /StepCare/images/StepCare.png with Brand Colored Text) -->
+    <div id="sidebar-logo-box" class="h-20 flex items-center px-6 gap-3.5 border-b border-neutral-100 overflow-hidden">
+      <img src="/StepCare/images/StepCare.png" alt="StepCare Logo" class="w-8 h-8 object-contain shrink-0" onerror="this.src='/StepCare/images/services/logo.png'">
+      <div class="sidebar-text text-xl font-black tracking-tight whitespace-nowrap">
+        <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
       </div>
     </div>
 
-    <!-- Navigation Label -->
-    <div class="sidebar-text text-[11px] font-bold text-neutral-400 tracking-wider uppercase mb-2 px-2.5">
-      Admin Portal
+    <!-- Main Navigation List (Larger Icons, Increased Padding & Spacing) -->
+    <div class="p-4 space-y-1.5">
+      <p class="sidebar-text text-[11px] font-bold text-neutral-400 uppercase tracking-wider px-3 mb-3">Admin Portal</p>
+      
+      <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+        <i data-lucide="layout-grid" class="w-5 h-5 shrink-0"></i>
+        <span class="sidebar-text">Dashboard</span>
+      </a>
+
+      <a href="/StepCare/admin/users.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+        <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+        <span class="sidebar-text">Users</span>
+      </a>
+
+      <a href="/StepCare/admin/notifications/notifications.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+        <i data-lucide="bell" class="w-5 h-5 shrink-0"></i>
+        <span class="sidebar-text">Notifications</span>
+      </a>
+
+      <a href="/StepCare/admin/care-logs.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+        <i data-lucide="clipboard-list" class="w-5 h-5 shrink-0"></i>
+        <span class="sidebar-text">Care Logs</span>
+      </a>
+
+      <a href="/StepCare/admin/profile.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+        <i data-lucide="user" class="w-5 h-5 shrink-0"></i>
+        <span class="sidebar-text">Profile</span>
+      </a>
     </div>
-
-    <!-- Main Navigation Menu -->
-    <nav class="space-y-2">
-      <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Dashboard</span>
-      </a>
-
-      <a href="/StepCare/admin/job-markets.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="briefcase" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Job Markets</span>
-      </a>
-
-      <a href="/StepCare/admin/users.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="users" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Users</span>
-      </a>
-
-      <a href="/StepCare/admin/care-logs.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Care Logs</span>
-      </a>
-
-      <a href="/StepCare/components/profile.html?role=admin" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="user" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Profile</span>
-      </a>
-    </nav>
   </div>
 
-  <!-- Bottom Section: Utility Links & Collapse Toggle -->
-  <div class="pt-3 border-t border-neutral-100 space-y-1.5">
-    <a href="/StepCare/admin/settings.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-      <i data-lucide="settings" class="w-4 h-4 shrink-0 text-black"></i>
-      <span class="sidebar-text truncate">Settings</span>
+  <!-- Bottom Section -->
+  <div class="p-4 border-t border-neutral-100 space-y-1.5">
+    <a href="/StepCare/admin/settings.html" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition">
+      <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
+      <span class="sidebar-text">Settings</span>
     </a>
 
-    <a href="/StepCare/admin/customer-service.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-      <i data-lucide="headphones" class="w-4 h-4 shrink-0 text-black"></i>
-      <span class="sidebar-text truncate">Customer Services</span>
-    </a>
-
-    <!-- Bottom Collapse Toggle Button -->
-    <button id="sidebar-toggle-btn" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm cursor-pointer group">
-      <span id="toggle-icon-wrapper" class="shrink-0 transition-transform duration-300">
-        <i data-lucide="panel-left-close" class="w-4 h-4 text-black"></i>
-      </span>
-      <span class="sidebar-text truncate font-semibold">Hide sidebar</span>
+    <!-- Collapse / Expand Toggle Button -->
+    <button id="sidebar-toggle-btn" type="button" class="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-neutral-600 hover:text-black hover:bg-neutral-100 transition cursor-pointer">
+      <div id="toggle-icon-wrapper" class="transition-transform duration-300">
+        <i data-lucide="panel-left-close" class="w-5 h-5 shrink-0"></i>
+      </div>
+      <span class="sidebar-text">Hide sidebar</span>
     </button>
   </div>
 </aside>
+
+<!-- Self-Contained Sidebar Logic Script -->
+<script>
+(function() {
+  function initSidebar() {
+    if (window.lucide) lucide.createIcons();
+
+    const sidebar      = document.getElementById('sidebar');
+    const toggleBtn    = document.getElementById('sidebar-toggle-btn');
+    const iconWrapper  = document.getElementById('toggle-icon-wrapper');
+    const sidebarTexts = document.querySelectorAll('.sidebar-text');
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const logoBox      = document.getElementById('sidebar-logo-box');
+
+    if (!sidebar || !toggleBtn) return;
+
+    // Apply active highlight to matching link
+    const currentPath = window.location.pathname.toLowerCase();
+    sidebarLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      const targetFile = href.toLowerCase().split('/').pop().split('?')[0];
+      if (currentPath.endsWith(targetFile)) {
+        link.classList.add('bg-neutral-100', 'font-bold', 'text-black');
+        link.classList.remove('text-neutral-600');
+      } else {
+        link.classList.remove('bg-neutral-100', 'font-bold', 'text-black');
+        link.classList.add('text-neutral-600');
+      }
+    });
+
+    let isCollapsed = localStorage.getItem('stepcare_sidebar_collapsed') === 'true';
+
+    function renderState() {
+      if (isCollapsed) {
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-20');
+        sidebarTexts.forEach(el => el.classList.add('hidden'));
+
+        if (logoBox) {
+          logoBox.classList.add('justify-center');
+          logoBox.classList.remove('px-6', 'gap-3.5');
+        }
+        sidebarLinks.forEach(link => {
+          link.classList.remove('px-3.5');
+          link.classList.add('justify-center', 'px-0');
+        });
+        if (iconWrapper) iconWrapper.classList.add('rotate-180');
+      } else {
+        sidebar.classList.remove('w-20');
+        sidebar.classList.add('w-64');
+        sidebarTexts.forEach(el => el.classList.remove('hidden'));
+
+        if (logoBox) {
+          logoBox.classList.remove('justify-center');
+          logoBox.classList.add('px-6', 'gap-3.5');
+        }
+        sidebarLinks.forEach(link => {
+          link.classList.remove('justify-center', 'px-0');
+          link.classList.add('px-3.5');
+        });
+        if (iconWrapper) iconWrapper.classList.remove('rotate-180');
+      }
+    }
+
+    renderState();
+
+    toggleBtn.onclick = function(e) {
+      e.preventDefault();
+      isCollapsed = !isCollapsed;
+      localStorage.setItem('stepcare_sidebar_collapsed', isCollapsed);
+      renderState();
+    };
+  }
+
+  setTimeout(initSidebar, 15);
+})();
+</script>
