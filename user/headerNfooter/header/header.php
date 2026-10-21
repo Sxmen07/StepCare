@@ -13,7 +13,7 @@ $isLoggedIn = !empty($_SESSION['userID']);
 $firstName = $_SESSION['firstName']    ?? '';
 $userPhoto = $_SESSION['userPhotoURL'] ?? '';
 if ($userPhoto === '') {
-    $userPhoto = '../../images/default-user.png';
+    $userPhoto = '/StepCare/images/default-user.png';
 }
 
 /* ---- Current page (for highlighting the nav link) ---- */
@@ -26,23 +26,34 @@ $pendingAppointments = 0;
 $unreadNotifications = 0;
 
 if ($isLoggedIn && isset($pdo)) {
+
+    /* --- Pending appointments --- */
     try {
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM appointments
-             WHERE userID = ? AND appointmentStatus = 'pending'"
+            "SELECT COUNT(*)
+               FROM appointments
+              WHERE userID = ?
+                AND appointmentStatus = 'pending'"
         );
         $stmt->execute([$_SESSION['userID']]);
         $pendingAppointments = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        error_log('Header pendingAppointments error: ' . $e->getMessage());
+    }
 
+    /* --- Unread notifications (matches your new schema) --- */
+    try {
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM notifications
-             WHERE userID = ? AND isRead = 0"
+            "SELECT COUNT(*)
+               FROM notifications
+              WHERE recipientType = 'user'
+                AND recipientID   = ?
+                AND isRead        = 0"
         );
         $stmt->execute([$_SESSION['userID']]);
         $unreadNotifications = (int)$stmt->fetchColumn();
     } catch (Exception $e) {
-        // Fail silently — badges just won't show
-        error_log('Header counts error: ' . $e->getMessage());
+        error_log('Header unreadNotifications error: ' . $e->getMessage());
     }
 }
 

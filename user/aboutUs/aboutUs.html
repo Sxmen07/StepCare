@@ -1,40 +1,244 @@
-<?php
-session_start();
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-    <link rel="stylesheet" href="../headerNfooter/header/header.css">
-    <link rel="stylesheet" href="aboutUs.css">
-    <title>About Us - StepCare</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="../headerNfooter/header/header.css" />
+  <link rel="stylesheet" href="aboutUs.css" />
+  <title>About Us — StepCare</title>
 </head>
 
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 antialiased overflow-x-hidden scroll-smooth">
 
-    <?php include __DIR__ . '/../headerNfooter/header/header.php'; ?>
+  <?php include __DIR__ . '/../headerNfooter/header/header.php'; ?>
 
-    <main class="flex-1">
-        <div>
+  <!-- ============================================================ -->
+  <!-- SECTION 1: INTRODUCTION                                      -->
+  <!-- ============================================================ -->
+  <!-- Adjusted to fit screen exactly minus header, centered content -->
+  <section class="relative min-h-[calc(100vh-80px)] flex items-center pt-10 pb-12 overflow-hidden">
+    <div class="mx-auto max-w-7xl px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      
+      <!-- Left: Text -->
+      <div class="reveal-on-scroll translate-y-12 opacity-0 transition-all duration-1000 ease-out">
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#3C52C3] leading-[1.1] mb-6 tracking-tight">
+          Healthcare,<br> 
+          <span class="text-[#10B981]">Redefined</span> at Home.
+        </h1>
+        <p class="text-lg md:text-xl text-slate-600 leading-relaxed mb-8 max-w-lg">
+          StepCare brings certified, compassionate nurses directly to your doorstep. 
+          We believe recovery and care are best experienced in the comfort of your own home.
+        </p>
+        <div class="flex gap-4">
+          <a href="../services/services.php" 
+             class="rounded-full bg-[#3C52C3] px-8 py-4 text-white font-bold shadow-lg 
+                    hover:bg-[#2f41a0] hover:-translate-y-1 transition duration-300">
+            Book a Service
+          </a>
+          <a href="#services" 
+             class="rounded-full border-2 border-slate-300 px-8 py-4 font-bold text-slate-700
+                    hover:border-[#3C52C3] hover:text-[#3C52C3] transition duration-300">
+            Explore Services
+          </a>
+        </div>
+      </div>
 
+      <!-- Right: Auto-scrolling Marquee (Reduced height so it doesn't overflow laptop screens) -->
+      <div class="relative h-[45vh] lg:h-[65vh] overflow-hidden rounded-3xl reveal-on-scroll translate-y-12 opacity-0 transition-all duration-1000 delay-200 ease-out">
+        <div class="absolute inset-0 bg-gradient-to-b from-slate-50/20 via-transparent to-slate-50/80 z-10 pointer-events-none"></div>
+        <div class="marquee-container h-full w-full flex flex-col">
+          <div class="marquee-content flex flex-col gap-4" id="imageMarquee"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: DATA & STATS                                      -->
+  <!-- ============================================================ -->
+  <!-- Centered vertically to fit the exact screen height -->
+  <section class="min-h-[calc(100vh-80px)] flex flex-col justify-center py-12 bg-[#E8F7FF] relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 left-0 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute bottom-0 right-0 w-80 h-80 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/3 translate-y-1/3"></div>
+
+    <div class="mx-auto max-w-7xl px-6 relative z-10 text-center w-full">
+      <h2 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3] mb-12 reveal-on-scroll opacity-0">
+        Our StepCare in Numbers
+      </h2>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <!-- Stat 1 -->
+        <div class="reveal-on-scroll opacity-0 translate-y-8 transition-all duration-700 delay-100">
+          <p class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#3C52C3] mb-2 flex items-baseline justify-center gap-1">
+            <span class="counter" data-target="<?= $stats['rating'] ?>" data-decimals="1">0.0</span>
+          </p>
+          <p class="text-sm md:text-base font-bold text-slate-600 uppercase tracking-widest">Average Rating</p>
         </div>
 
-        <div>
-
+        <!-- Stat 2 -->
+        <div class="reveal-on-scroll opacity-0 translate-y-8 transition-all duration-700 delay-200">
+          <p class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#3C52C3] mb-2 flex items-baseline justify-center">
+            <span class="counter" data-target="<?= $stats['services'] ?>">0</span><span class="text-4xl">+</span>
+          </p>
+          <p class="text-sm md:text-base font-bold text-slate-600 uppercase tracking-widest">Visits Completed</p>
         </div>
 
-        <div>
-            
+        <!-- Stat 3 -->
+        <div class="reveal-on-scroll opacity-0 translate-y-8 transition-all duration-700 delay-300">
+          <p class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#3C52C3] mb-2 flex items-baseline justify-center">
+            <span class="counter" data-target="<?= $stats['nurses'] ?>">0</span><span class="text-4xl">+</span>
+          </p>
+          <p class="text-sm md:text-base font-bold text-slate-600 uppercase tracking-widest">Expert Nurses</p>
         </div>
-    </main>
 
-    <div id="footer"></div>
+        <!-- Stat 4 -->
+        <div class="reveal-on-scroll opacity-0 translate-y-8 transition-all duration-700 delay-400">
+          <p class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#3C52C3] mb-2 flex items-baseline justify-center">
+            <span class="counter" data-target="<?= $stats['families'] ?>">0</span><span class="text-4xl">+</span>
+          </p>
+          <p class="text-sm md:text-base font-bold text-slate-600 uppercase tracking-widest">Happy Families</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- header's behavior -->
-    <script src="../headerNfooter/header/header.js"></script>
-    <script src="../headerNfooter/headerNfooter.js"></script>
+  <!-- ============================================================ -->
+  <!-- SECTION 3: WHAT WE PROVIDE                                   -->
+  <!-- ============================================================ -->
+  <!-- Centered vertically to fit the exact screen height -->
+  <section id="services" class="min-h-[calc(100vh-80px)] flex flex-col justify-center py-12 bg-white">
+    <div class="mx-auto max-w-7xl px-6 w-full">
+
+      <!-- Header -->
+      <div class="text-center mb-8 reveal-on-scroll opacity-0">
+        <h2 class="text-[#3C52C3] text-3xl md:text-4xl font-extrabold mb-3">What We Provide</h2>
+        <p class="text-base md:text-lg text-slate-500 max-w-2xl mx-auto">
+          From specialized post-operative care to compassionate family support, our services are tailored to meet your family's unique needs.
+        </p>
+      </div>
+
+      <!-- Two columns (items-stretch ensures they are the same height) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
+
+        <!-- LEFT: Services Provided -->
+        <div class="reveal-on-scroll opacity-0 flex flex-col">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-10 h-1.5 bg-[#3C52C3] rounded-full"></span>
+            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900">Our Services</h3>
+          </div>
+
+          <div class="flex-1 rounded-2xl bg-slate-50 border border-slate-200 p-6 shadow-sm">
+            <div class="flex flex-col gap-3 h-full justify-between">
+              <?php
+                $serviceItems = [
+                  ['name' => 'Elderly Care',         'desc' => 'Fall prevention, mobility exercises, and vitals monitoring.'],
+                  ['name' => 'Post-Operative',       'desc' => 'Wound dressing, drain management, and infection surveillance.'],
+                  ['name' => 'Neuro Rehab',          'desc' => 'Stroke recovery, swallowing oversight, and gait assistance.'],
+                  ['name' => 'Postnatal',            'desc' => 'Lactation consulting, newborn checks, and maternal healing.'],
+                  ['name' => 'Hospice & Palliative', 'desc' => 'Pain management, comfort care, and family guidance.'],
+                  ['name' => 'Chronic Care',         'desc' => 'Diabetic foot care, blood perfusion checks, and specialized dressings.'],
+                ];
+              ?>
+
+              <?php foreach ($serviceItems as $i => $svc): ?>
+                <div class="bounce-wrapper" style="--i: <?= $i ?>">
+                  <div class="group cursor-default transition-all duration-300 hover:translate-x-1">
+                    <h4 class="text-base font-bold text-slate-900 group-hover:text-[#3C52C3] transition-colors">
+                      <?= $svc['name'] ?>
+                    </h4>
+                    <p class="text-sm text-slate-500 mt-0.5 leading-snug">
+                      <?= $svc['desc'] ?>
+                    </p>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Benefits of Family Care -->
+        <div class="reveal-on-scroll opacity-0 flex flex-col">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-10 h-1.5 bg-[#10B981] rounded-full"></span>
+            <h3 class="text-xl md:text-2xl font-extrabold text-slate-900">Benefits of Family Care</h3>
+          </div>
+
+          <div class="flex-1 rounded-2xl bg-gradient-to-br from-[#E8F7FF] via-white to-[#F0FDF4] border border-slate-200 p-6 shadow-sm">
+            <div class="flex flex-col gap-3 h-full justify-between">
+              <?php
+                $benefits = [
+                  ['title' => 'Faster Recovery at Home', 'desc' => 'Familiar surroundings reduce stress and accelerate healing.'],
+                  ['title' => 'One-on-One Attention',    'desc' => 'Every visit is dedicated to your loved one, not shared across a ward.'],
+                  ['title' => 'Family Involvement',      'desc' => 'Stay informed and participate in every step of the care plan.'],
+                  ['title' => 'Lower Readmission Risk',  'desc' => 'Continuous monitoring catches complications before they escalate.'],
+                  ['title' => 'Emotional Comfort',       'desc' => 'Patients feel secure and supported by both nurses and family.'],
+                  ['title' => 'Cost-Effective Care',     'desc' => 'Quality clinical care without the overhead of hospital stays.'],
+                ];
+              ?>
+
+              <?php foreach ($benefits as $i => $b): ?>
+                <div class="bounce-wrapper" style="--i: <?= $i + 3 ?>">
+                  <div class="benefit-item flex items-start gap-3 group cursor-default transition-all duration-300 hover:translate-x-1">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-[#10B981] text-white
+                                 flex items-center justify-center
+                                 shadow-sm shadow-[#10B981]/40 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                           stroke-width="3" stroke="currentColor" class="w-3.5 h-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <h4 class="text-base font-bold text-slate-900 leading-tight group-hover:text-[#10B981] transition-colors">
+                        <?= $b['title'] ?>
+                      </h4>
+                      <p class="text-sm text-slate-600 leading-snug mt-0.5">
+                        <?= $b['desc'] ?>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: CUSTOMER REVIEWS                                  -->
+  <!-- ============================================================ -->
+  <!-- Centered vertically to fit the exact screen height -->
+  <section class="min-h-[calc(100vh-80px)] flex flex-col justify-center py-12 bg-slate-900 overflow-hidden relative">
+    <!-- Background styling -->
+    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+    
+    <div class="relative z-10 w-full">
+      <div class="text-center mb-12 reveal-on-scroll opacity-0">
+        <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Our Services Feedback</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Real stories from families who trusted StepCare.</p>
+      </div>
+
+      <!-- Stair rolling marquee -->
+      <div class="marquee-container-horizontal w-full overflow-hidden flex">
+        <div class="marquee-content-horizontal flex gap-6 px-3" id="reviewMarquee">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+<?php include __DIR__ . '/../headerNfooter/footer/footer.php'; ?>
+
+  <script>
+    window.marqueeImages = <?= $marqueeImagesJson ?>;
+    window.reviewData    = <?= json_encode($reviews) ?>;
+    window.statsData     = <?= $statsJson ?>;
+  </script>
+  <script src="aboutUs.js"></script>
 </body>
 </html>
