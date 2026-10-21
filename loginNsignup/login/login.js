@@ -132,15 +132,96 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   toStep2.addEventListener('click', () => {
-    // Validate step 1
-    const required = ['firstName', 'lastName', 'email', 'phoneNumber', 'emergencyContactName', 'emergencyContactPhone'];
-    for (let id of required) {
-      if (!document.getElementById(id).value.trim()) {
-        alert('Please fill out all required fields.');
-        document.getElementById(id).focus();
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    const ic = document.getElementById('IC').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const emergencyName = document.getElementById('emergencyContactName').value.trim();
+    const emergencyPhone = document.getElementById('emergencyContactPhone').value.trim();
+
+    // 1. Required fields check
+    if (!firstName || !lastName || !email || !phoneNumber || !emergencyName || !emergencyPhone) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+
+    // 2. First name & Last name: No numbers
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+      alert('First name and Last name must not contain numbers or special characters.');
+      document.getElementById('firstName').focus();
+      return;
+    }
+
+    // 3. Email must end with @gmail.com
+    if (!email.endsWith('@gmail.com')) {
+      alert('Email must end with @gmail.com');
+      document.getElementById('email').focus();
+      return;
+    }
+
+    // 4. Phone number: Numeric only (no hyphens)
+    const phoneRegex = /^\d+$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      alert('Phone number must be numeric only (no dashes/hyphens).');
+      document.getElementById('phoneNumber').focus();
+      return;
+    }
+
+    // 5. IC validation & Auto-fill DOB
+    if (ic !== '') {
+      if (!/^\d{12}$/.test(ic)) {
+        alert('IC must be 12 digits numeric without hyphens.');
+        document.getElementById('IC').focus();
+        return;
+      }
+
+      // Extract Year, Month, Day from IC (e.g., 031109010001 -> yy = 03, mm = 11, dd = 09)
+      const yy = parseInt(ic.substring(0, 2), 10);
+      const mm = ic.substring(2, 4);
+      const dd = ic.substring(4, 6);
+
+      // Assume 20xx for 00-49, 19xx for 50-99
+      const fullYear = yy <= 50 ? 2000 + yy : 1900 + yy;
+      
+      // Auto-set DOB field if it exists in your form
+      const dobInput = document.getElementById('dateOfBirth');
+      if (dobInput) {
+        dobInput.value = `${fullYear}-${mm}-${dd}`;
+      }
+    }
+
+    // 6. Address: Cannot be all numbers, must contain text and commas
+    if (address !== '') {
+      if (/^\d+$/.test(address)) {
+        alert('Address cannot be all numbers.');
+        document.getElementById('address').focus();
+        return;
+      }
+      if (!/[A-Za-z]/.test(address)) {
+        alert('Address must contain text characters.');
+        document.getElementById('address').focus();
         return;
       }
     }
+
+    // 7. Emergency contact name: Text only
+    if (!nameRegex.test(emergencyName)) {
+      alert('Emergency contact name must contain text only.');
+      document.getElementById('emergencyContactName').focus();
+      return;
+    }
+
+    // 8. Emergency contact phone: Numeric only
+    if (!phoneRegex.test(emergencyPhone)) {
+      alert('Emergency contact phone must be numeric only.');
+      document.getElementById('emergencyContactPhone').focus();
+      return;
+    }
+
+    // Proceed to Step 2 if all checks pass
     step1.classList.add('hidden');
     step2.classList.remove('hidden');
     step2.classList.add('flex');

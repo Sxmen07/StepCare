@@ -20,9 +20,55 @@ $emergencyContactPhone = trim($_POST['emergencyContactPhone'] ?? '');
 $password              = $_POST['password'] ?? '';
 $confirmPassword       = $_POST['confirmPassword'] ?? '';
 
-/* ---------- NEW: Check Terms & Conditions ---------- */
+/* ---------- Check Terms & Conditions ---------- */
 if (!isset($_POST['terms']) || $_POST['terms'] !== 'on') {
     header('Location: login.html?mode=signup&error=terms');
+    exit;
+}
+
+/* ---------- Custom Validations ---------- */
+$nameRegex = '/^[A-Za-z\s]+$/';
+$phoneRegex = '/^\d+$/';
+
+// First & Last Name check (no numbers)
+if (!preg_match($nameRegex, $firstName) || !preg_match($nameRegex, $lastName)) {
+    header('Location: login.html?mode=signup&error=invalid_name');
+    exit;
+}
+
+// Email must end with @gmail.com
+if (!str_ends_with($email, '@gmail.com')) {
+    header('Location: login.html?mode=signup&error=gmail_only');
+    exit;
+}
+
+// Phone number numeric check (no dashes)
+if (!preg_match($phoneRegex, $phoneNumber)) {
+    header('Location: login.html?mode=signup&error=invalid_phone');
+    exit;
+}
+
+// IC validation (12 digits numeric if provided)
+if ($IC !== '' && !preg_match('/^\d{12}$/', $IC)) {
+    header('Location: login.html?mode=signup&error=invalid_ic');
+    exit;
+}
+
+// Address check (cannot be all numbers)
+if ($address !== '' && (ctype_digit($address) || !preg_match('/[A-Za-z]/', $address))) {
+    header('Location: login.html?mode=signup&error=invalid_address');
+    exit;
+}
+
+// Emergency Contact Name check (text only)
+if (!preg_match($nameRegex, $emergencyContactName)) {
+    header('Location: login.html?mode=signup&error=invalid_emergency_name');
+    exit;
+}
+
+// Emergency Contact Phone check (numeric only)
+if (!preg_match($phoneRegex, $emergencyContactPhone)) {
+    header('Location: login.html?mode=signup&error=invalid_emergency_phone');
     exit;
 }
 
