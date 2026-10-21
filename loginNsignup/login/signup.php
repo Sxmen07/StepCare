@@ -2,7 +2,7 @@
 require __DIR__ . '/../../config/db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: signup.html');
+    header('Location: login.html?mode=signup');
     exit;
 }
 
@@ -20,40 +20,46 @@ $emergencyContactPhone = trim($_POST['emergencyContactPhone'] ?? '');
 $password              = $_POST['password'] ?? '';
 $confirmPassword       = $_POST['confirmPassword'] ?? '';
 
+/* ---------- NEW: Check Terms & Conditions ---------- */
+if (!isset($_POST['terms']) || $_POST['terms'] !== 'on') {
+    header('Location: login.html?mode=signup&error=terms');
+    exit;
+}
+
 /* ---------- Required fields ---------- */
 if ($firstName === '' || $lastName === '' || $email === '' ||
     $phoneNumber === '' || $emergencyContactName === '' ||
     $emergencyContactPhone === '' || $password === '') {
-    header('Location: signup.html?error=empty');
+    header('Location: login.html?mode=signup&error=empty');
     exit;
 }
 
 /* ---------- Email format ---------- */
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    header('Location: signup.html?error=invalid');
+    header('Location: login.html?mode=signup&error=invalid');
     exit;
 }
 
 /* ---------- Block reserved domains ---------- */
 if (str_ends_with($email, '@nurse.stepcare.com') ||
     str_ends_with($email, '@admin.stepcare.com')) {
-    header('Location: signup.html?error=reserved');
+    header('Location: login.html?mode=signup&error=reserved');
     exit;
 }
 
 /* ---------- Password policy ---------- */
 if (strlen($password) < 8) {
-    header('Location: signup.html?error=short');
+    header('Location: login.html?mode=signup&error=short');
     exit;
 }
 if (!preg_match('/[a-zA-Z]/', $password) ||
     !preg_match('/\d/',       $password) ||
     !preg_match('/[^a-zA-Z0-9]/', $password)) {
-    header('Location: signup.html?error=weak');
+    header('Location: login.html?mode=signup&error=weak');
     exit;
 }
 if ($password !== $confirmPassword) {
-    header('Location: signup.html?error=mismatch');
+    header('Location: login.html?mode=signup&error=mismatch');
     exit;
 }
 
@@ -63,7 +69,7 @@ $stmt->bind_param('s', $email);
 $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows > 0) {
-    header('Location: signup.html?error=exists');
+    header('Location: login.html?mode=signup&error=exists');
     exit;
 }
 $stmt->close();
@@ -103,7 +109,7 @@ $stmt->bind_param(
 if (!$stmt->execute()) {
     $stmt->close();
     $conn->close();
-    header('Location: signup.html?error=server');
+    header('Location: login.html?mode=signup&error=server');
     exit;
 }
 
@@ -111,5 +117,6 @@ $stmt->close();
 $conn->close();
 
 /* ---------- Redirect to login with success message ---------- */
-header('Location: ../login/login.html?signup=success');
+header('Location: login.html?signup=success');
 exit;
+?>
