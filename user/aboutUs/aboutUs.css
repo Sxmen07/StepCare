@@ -25,6 +25,46 @@
 }
 
 /* ============================================================
+   SECTION 3: BOUNCE-IN ANIMATION
+   ============================================================ */
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: translateY(28px); }
+  55%  { opacity: 1; transform: translateY(-12px); }
+  78%  { transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Hidden until parent gets .is-revealed */
+.bounce-wrapper {
+  opacity: 0;
+  transform: translateY(28px);
+  will-change: transform, opacity;
+}
+
+.reveal-on-scroll.is-revealed .bounce-wrapper {
+  animation: bounceIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+/* Subtle lift on hover (separate from entrance bounce) */
+.service-card {
+  transition: transform 0.25s ease,
+              background-color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+.service-card:hover {
+  transform: translateY(-4px);
+}
+
+.benefit-item {
+  transition: transform 0.25s ease;
+}
+.benefit-item:hover {
+  transform: translateX(4px);
+}
+
+/* ============================================================
    SECTION 4: HORIZONTAL REVIEW MARQUEE
    ============================================================ */
 @keyframes scrollHorizontal {

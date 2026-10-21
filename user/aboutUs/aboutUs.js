@@ -16,7 +16,7 @@
       if (entry.isIntersecting) {
         // Remove the utility classes that hide it, and add ones that show it
         entry.target.classList.remove('opacity-0', 'translate-y-12', 'translate-y-8', 'translate-x-[-50px]');
-        entry.target.classList.add('opacity-100', 'translate-y-0', 'translate-x-0');
+        entry.target.classList.add('is-revealed', 'opacity-100', 'translate-y-0', 'translate-x-0');
         
         // If it's the stats section, trigger the counter
         if (entry.target.classList.contains('counter-trigger')) {
