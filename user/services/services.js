@@ -3,30 +3,50 @@
   'use strict';
 
   /* ============================================================
-     FILTERS
+     FILTERS (WITH SMOOTH ANIMATION)
      ============================================================ */
   const searchInput = document.getElementById('searchInput');
   const chips       = document.querySelectorAll('.cat-chip');
   const cards       = document.querySelectorAll('.svc-card');
   const emptyState  = document.getElementById('emptyState');
   const resultCount = document.getElementById('resultCount');
+  const servicesGrid = document.getElementById('servicesGrid'); // Added
 
   let activeCat  = 'all';
   let activeTerm = '';
+  let filterTimeout = null; // Added to handle rapid clicking
 
   function applyFilter() {
-    let visible = 0;
-    cards.forEach(card => {
-      const cat  = card.dataset.cat;
-      const text = card.dataset.text || '';
-      const ok   = (activeCat === 'all' || cat === activeCat) &&
-                   (activeTerm === '' || text.includes(activeTerm));
-      if (ok) { card.classList.remove('hidden'); visible++; }
-      else    { card.classList.add('hidden'); }
-    });
-    emptyState.classList.toggle('hidden', visible > 0);
-    resultCount.textContent = visible === 0 ? '' :
-      `Showing ${visible} service${visible === 1 ? '' : 's'}`;
+    if (!servicesGrid) return;
+    clearTimeout(filterTimeout);
+
+    // 1. Fade out and slightly scale down the grid
+    servicesGrid.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    servicesGrid.style.opacity = '0';
+    servicesGrid.style.transform = 'scale(0.98) translateY(10px)';
+    servicesGrid.style.pointerEvents = 'none'; // Prevent clicking during animation
+
+    // 2. Wait for fade-out, then update the DOM and fade back in
+    filterTimeout = setTimeout(() => {
+      let visible = 0;
+      cards.forEach(card => {
+        const cat  = card.dataset.cat;
+        const text = card.dataset.text || '';
+        const ok   = (activeCat === 'all' || cat === activeCat) &&
+                     (activeTerm === '' || text.includes(activeTerm));
+        if (ok) { card.classList.remove('hidden'); visible++; }
+        else    { card.classList.add('hidden'); }
+      });
+      
+      emptyState.classList.toggle('hidden', visible > 0);
+      resultCount.textContent = visible === 0 ? '' :
+        `Showing ${visible} service${visible === 1 ? '' : 's'}`;
+
+      // 3. Fade the grid back in
+      servicesGrid.style.opacity = '1';
+      servicesGrid.style.transform = 'scale(1) translateY(0)';
+      servicesGrid.style.pointerEvents = 'auto';
+    }, 200); // Matches the CSS transition duration above
   }
 
   let searchTimer = null;
@@ -35,7 +55,7 @@
     searchTimer = setTimeout(() => {
       activeTerm = searchInput.value.trim().toLowerCase();
       applyFilter();
-    }, 200);
+    }, 300); // Increased slightly to let typing finish before animating
   });
 
   chips.forEach(chip => {
@@ -172,7 +192,7 @@
     detailReviewsList.innerHTML = '';
     const reviews = getRandomReviews(svc.serviceID);
     
-        reviews.forEach(r => {
+    reviews.forEach(r => {
         const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         const initial = r.firstName ? r.firstName.charAt(0) : 'U';
         
@@ -196,7 +216,7 @@
                     </div>
                     <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
                 </div>
-                <!-- Made stars bigger and removed the date from here -->
+                <!-- Made stars bigger -->
                 <div class="text-amber-500 text-sm tracking-widest">
                     ${stars}
                 </div>

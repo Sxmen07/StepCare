@@ -10,16 +10,27 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    /* Apple-style smooth spring transition */
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .cat-chip:hover {
     border-color: #3C52C3;
     color: #3C52C3;
+    transform: translateY(-1px);
+}
+.cat-chip:active {
+    transform: scale(0.92); /* Bouncy squish effect */
 }
 .cat-chip.is-active {
     background: #3C52C3;
     color: white;
     border-color: #3C52C3;
+    box-shadow: 0 4px 12px rgba(60, 82, 195, 0.25); /* Subtle glow */
+}
+
+/* Smooth filtering animation preparation */
+#servicesGrid {
+    will-change: opacity, transform;
 }
 
 /* Hide filtered cards */
