@@ -62,7 +62,7 @@
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target); // Stop observing once revealed
+        observer.unobserve(entry.target); 
       }
     });
   }, revealOptions);
@@ -87,16 +87,15 @@
   function getRandomReviews(serviceID) {
     const reviews = window.reviewsData[serviceID] || [];
     
-    // If DB is empty, provide dummy reviews for demo
+    // Fallback dummy reviews with dates if DB is empty
     if (reviews.length === 0) {
         return [
-            { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M." },
-            { rating: 4, comment: "Arrived on time and very helpful. Highly recommended.", firstName: "David", lastName: "T." },
-            { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L." }
+            { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M.", createdAt: "2026-10-15 10:00:00" },
+            { rating: 4, comment: "Arrived on time and very helpful. Highly recommended.", firstName: "David", lastName: "T.", createdAt: "2026-10-12 14:30:00" },
+            { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L.", createdAt: "2026-10-10 09:15:00" }
         ];
     }
     
-    // Shuffle and pick 5-10
     const shuffled = [...reviews].sort(() => 0.5 - Math.random());
     const count = Math.min(Math.floor(Math.random() * 6) + 5, shuffled.length);
     return shuffled.slice(0, count);
@@ -173,26 +172,42 @@
     detailReviewsList.innerHTML = '';
     const reviews = getRandomReviews(svc.serviceID);
     
-    reviews.forEach(r => {
+        reviews.forEach(r => {
         const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         const initial = r.firstName ? r.firstName.charAt(0) : 'U';
         
+        // Format Date
+        let formattedDate = '';
+        if (r.createdAt) {
+            const dateObj = new Date(r.createdAt.replace(' ', 'T'));
+            formattedDate = dateObj.toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
+        }
+        
         const div = document.createElement('div');
-        div.className = 'rounded-xl bg-slate-50 p-4 border border-slate-100';
+        // Added flex and flex-col to make the card a flex container
+        div.className = 'rounded-xl bg-slate-50 p-4 border border-slate-100 flex flex-col';
         div.innerHTML = `
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-[#3C52C3]/10 text-[#3C52C3] flex items-center justify-center font-bold text-xs">
                         ${initial}
                     </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
-                        <p class="text-[10px] text-slate-400">Verified Customer</p>
-                    </div>
+                    <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
                 </div>
-                <div class="text-amber-500 text-xs tracking-widest">${stars}</div>
+                <!-- Made stars bigger and removed the date from here -->
+                <div class="text-amber-500 text-sm tracking-widest">
+                    ${stars}
+                </div>
             </div>
+            
             <p class="text-sm text-slate-600 leading-relaxed">"${esc(r.comment)}"</p>
+            
+            <!-- Date added to the bottom right -->
+            <div class="mt-auto pt-4 flex justify-end">
+                <div class="text-[11px] font-medium text-slate-400">${formattedDate}</div>
+            </div>
         `;
         detailReviewsList.appendChild(div);
     });
@@ -464,7 +479,6 @@
     successModal.classList.add('flex');
     document.body.style.overflow = 'hidden';
 
-    // Clean the URL so a refresh doesn't re-show the popup
     if (window.history.replaceState) {
       window.history.replaceState({}, document.title, location.pathname);
     }

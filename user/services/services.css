@@ -66,7 +66,7 @@
 #modalWrapper .overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ============================================================
-   NEW: SCROLL REVEAL ANIMATION (Shade in)
+   SCROLL REVEAL ANIMATION (Shade in)
    ============================================================ */
 .reveal-on-scroll {
     opacity: 0;
