@@ -40,7 +40,7 @@
 }
 
 .bell-shake {
-    animation: bellPulse 3s ease-in-out infinite;
+    animation: bellPulse 2s ease-in-out 3;
     transform-origin: 50% 6px;   /* pivot near the top of the bell */
 }
 

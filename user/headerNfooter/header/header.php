@@ -24,6 +24,7 @@ if (!isset($currentPage)) {
 /* ---- Counts for badges (only if logged in and DB available) ---- */
 $pendingAppointments = 0;
 $unreadNotifications = 0;
+$recentNotifications = []; // NEW: Holds the actual list of notifications
 
 if ($isLoggedIn && isset($pdo)) {
 
@@ -41,7 +42,7 @@ if ($isLoggedIn && isset($pdo)) {
         error_log('Header pendingAppointments error: ' . $e->getMessage());
     }
 
-    /* --- Unread notifications (matches your new schema) --- */
+    /* --- Unread notifications count --- */
     try {
         $stmt = $pdo->prepare(
             "SELECT COUNT(*)
@@ -55,7 +56,24 @@ if ($isLoggedIn && isset($pdo)) {
     } catch (Exception $e) {
         error_log('Header unreadNotifications error: ' . $e->getMessage());
     }
+
+    /* --- NEW: Fetch the latest 5 notifications for the dropdown --- */
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT notificationID, title, message, linkURL, isRead, createdAt
+               FROM notifications
+              WHERE recipientType = 'user'
+                AND recipientID   = ?
+              ORDER BY createdAt DESC
+              LIMIT 5"
+        );
+        $stmt->execute([$_SESSION['userID']]);
+        $recentNotifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('Header recentNotifications error: ' . $e->getMessage());
+    }
 }
 
 /* ---- Hand off to the view ---- */
 include __DIR__ . '/header.html';
+?>
