@@ -50,6 +50,28 @@
   applyFilter();
 
   /* ============================================================
+     SCROLL REVEAL ANIMATION
+     ============================================================ */
+  const revealElements = document.querySelectorAll('.reveal-on-scroll');
+  const revealOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const revealObserver = new IntersectionObserver(function(entries, observer) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target); // Stop observing once revealed
+      }
+    });
+  }, revealOptions);
+
+  revealElements.forEach(el => {
+    revealObserver.observe(el);
+  });
+
+  /* ============================================================
      HELPERS
      ============================================================ */
   function esc(str) {
@@ -60,6 +82,24 @@
 
   function getService(id) {
     return (window.servicesData || []).find(s => String(s.serviceID) === String(id));
+  }
+  
+  function getRandomReviews(serviceID) {
+    const reviews = window.reviewsData[serviceID] || [];
+    
+    // If DB is empty, provide dummy reviews for demo
+    if (reviews.length === 0) {
+        return [
+            { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M." },
+            { rating: 4, comment: "Arrived on time and very helpful. Highly recommended.", firstName: "David", lastName: "T." },
+            { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L." }
+        ];
+    }
+    
+    // Shuffle and pick 5-10
+    const shuffled = [...reviews].sort(() => 0.5 - Math.random());
+    const count = Math.min(Math.floor(Math.random() * 6) + 5, shuffled.length);
+    return shuffled.slice(0, count);
   }
 
   /* ============================================================
@@ -83,6 +123,7 @@
 
   const detailDesc = document.getElementById('detailDescription');
   const detailFeat = document.getElementById('detailFeatures');
+  const detailReviewsList = document.getElementById('detailReviewsList');
 
   const bookingContainer = document.getElementById('bookingFormContainer');
 
@@ -111,6 +152,7 @@
   function populateDetail(svc) {
     detailDesc.textContent = svc.description || '';
 
+    // Features
     detailFeat.innerHTML = '';
     const features = svc.features ? svc.features.split('|||') : [];
     if (features.length === 0) {
@@ -126,6 +168,34 @@
         detailFeat.appendChild(li);
       });
     }
+
+    // Reviews
+    detailReviewsList.innerHTML = '';
+    const reviews = getRandomReviews(svc.serviceID);
+    
+    reviews.forEach(r => {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const initial = r.firstName ? r.firstName.charAt(0) : 'U';
+        
+        const div = document.createElement('div');
+        div.className = 'rounded-xl bg-slate-50 p-4 border border-slate-100';
+        div.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-[#3C52C3]/10 text-[#3C52C3] flex items-center justify-center font-bold text-xs">
+                        ${initial}
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
+                        <p class="text-[10px] text-slate-400">Verified Customer</p>
+                    </div>
+                </div>
+                <div class="text-amber-500 text-xs tracking-widest">${stars}</div>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">"${esc(r.comment)}"</p>
+        `;
+        detailReviewsList.appendChild(div);
+    });
   }
 
   function buildBookingForm(svc) {
@@ -216,9 +286,7 @@
             <input type="text" name="postcode" readonly value="11600"
                    class="rounded-lg border border-slate-300 bg-slate-100 text-slate-600
                           px-4 py-3 text-base cursor-not-allowed" />
-            <p class="text-xs text-slate-400">
-              Currently we only serve <strong>Penang</strong> areas.
-            </p>
+            <p class="text-xs text-slate-400">Currently we only serve <strong>Penang</strong> areas.</p>
           </div>
         </div>
 
