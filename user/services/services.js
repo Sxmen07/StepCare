@@ -233,7 +233,7 @@
     });
   }
 
-  function buildBookingForm(svc) {
+    function buildBookingForm(svc) {
     if (!window.isLoggedIn) {
       return `
         <div class="rounded-xl bg-amber-50 border border-amber-200 p-5 text-amber-800">
@@ -247,6 +247,23 @@
         </div>`;
     }
 
+    // --- NEW LOGIC: Calculate if we should start from today or tomorrow ---
+    let effectiveMinDate = window.todayISO;
+    const slots = Object.keys(window.timeSlots || {});
+    
+    if (slots.length > 0) {
+      // Find the latest slot of the day (e.g., '16:00:00')
+      const lastSlot = slots[slots.length - 1]; 
+      
+      // If current server time is past the last slot, disable today entirely
+      if (window.serverTimeNow >= lastSlot) {
+        const tomorrow = new Date(window.todayISO);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        effectiveMinDate = tomorrow.toISOString().split('T')[0];
+      }
+    }
+    // ---------------------------------------------------------------------
+
     return `
       <form action="saveBooking.php" method="POST" class="flex flex-col gap-5" id="bookingForm">
         <input type="hidden" name="serviceID" value="${esc(svc.serviceID)}" />
@@ -256,7 +273,7 @@
             Preferred date <span class="text-red-500">*</span>
           </label>
           <input id="bkDate" type="date" name="startDate" required
-                 min="${window.todayISO}" max="${window.maxISO}"
+                 min="${effectiveMinDate}" max="${window.maxISO}"
                  class="rounded-lg border border-slate-300 px-4 py-3 text-base
                         focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
         </div>
@@ -372,8 +389,21 @@
     const availability = window.availability || {};
     const timeSlots    = window.timeSlots    || {};
 
-    function slotButton(time, label, remaining) {
-      const disabled = remaining <= 0;
+    function slotButton(time, label, remaining, isPast) {
+      // Disable if it's full OR if it's in the past
+      const disabled = remaining <= 0 || isPast;
+      
+      let subText = `${remaining} left`;
+      let subColor = 'text-slate-500';
+
+      if (isPast) {
+        subText = 'Passed';
+        subColor = 'text-red-500 font-semibold';
+      } else if (remaining <= 0) {
+        subText = 'Full';
+        subColor = 'text-red-500 font-semibold';
+      }
+
       const wrap = document.createElement('label');
       wrap.className = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
       wrap.innerHTML = `
@@ -383,10 +413,10 @@
                     transition select-none
                     hover:border-[#3C52C3]/50
                     peer-checked:border-[#3C52C3] peer-checked:bg-[#3C52C3]/5
-                    ${disabled ? 'opacity-50' : ''}">
+                    ${disabled ? 'opacity-50 bg-slate-50' : ''}">
           <p class="text-sm font-bold text-slate-800">${label}</p>
-          <p class="text-xs mt-0.5 ${disabled ? 'text-red-500 font-semibold' : 'text-slate-500'}">
-            ${disabled ? 'Full' : `${remaining} left`}
+          <p class="text-xs mt-0.5 ${subColor}">
+            ${subText}
           </p>
         </div>`;
       return wrap;
@@ -401,6 +431,7 @@
         hintEl.textContent = 'Please select a date first to see available slots.';
         return;
       }
+      
       morningSlots.innerHTML = '';
       afternoonSlots.innerHTML = '';
       morningGroup.classList.remove('hidden');
@@ -408,9 +439,18 @@
       hintEl.classList.add('hidden');
 
       const dayMap = availability[d] || {};
+      // Check if the user selected today's date
+      const isToday = (d === window.todayISO);
+      const currentTime = window.serverTimeNow || "00:00:00";
+
       Object.entries(timeSlots).forEach(([time, meta]) => {
         const remaining = dayMap[time] ?? 0;
-        const el = slotButton(time, meta.label, remaining);
+        
+        // A slot is in the past if it's today AND the slot time is less than the current server time
+        const isPast = isToday && (time < currentTime);
+
+        const el = slotButton(time, meta.label, remaining, isPast);
+        
         if (meta.period === 'Morning') morningSlots.appendChild(el);
         else                           afternoonSlots.appendChild(el);
       });

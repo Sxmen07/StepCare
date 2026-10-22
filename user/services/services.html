@@ -215,7 +215,7 @@
       <div class="md:w-1/2 flex-1 overflow-hidden relative border-t md:border-t-0 md:border-l border-slate-100">
         <div id="modalSlider" class="flex h-full w-[200%] transition-transform duration-500 ease-in-out">
 
-                    <!-- PANEL 1 — DETAIL & REVIEWS -->
+          <!-- PANEL 1 — DETAIL & REVIEWS -->
           <section class="w-1/2 h-full flex flex-col relative pt-16 md:pt-20">
             
             <!-- Description & Features -->
@@ -275,8 +275,11 @@
 
   <!-- SUCCESS MODAL -->
   <?php if (!empty($bookingSuccess)): ?>
-  <div id="successModal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
-    <div id="successCard" class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden text-center">
+  <!-- Added animate-backdrop here -->
+  <div id="successModal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-backdrop">
+    <!-- Added animate-success-modal here -->
+    <div id="successCard" class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden text-center animate-success-modal">
+      
       <div class="relative bg-gradient-to-br from-[#10B981] to-[#059669] pt-10 pb-12 px-8 overflow-hidden">
         <div class="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-white/10"></div>
         <div class="absolute -bottom-20 -left-12 w-44 h-44 rounded-full bg-white/5"></div>
@@ -325,6 +328,7 @@
     window.defaultPatient = <?= json_encode($defaultPatientName) ?>;
     window.todayISO       = <?= json_encode(date('Y-m-d')) ?>;
     window.maxISO         = <?= json_encode(date('Y-m-d', strtotime('+29 days'))) ?>;
+    window.serverTimeNow  = <?= json_encode($serverTimeNow) ?>;
   </script>
   <script src="services.js"></script>
 </body>

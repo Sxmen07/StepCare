@@ -92,6 +92,7 @@ $servicesJson     = json_encode($services, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HE
 $reviewsJson      = json_encode($reviewsByService, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $availabilityJson = json_encode($availability);
 $timeSlotsJson    = json_encode($timeSlots);
+$serverTimeNow    = date('H:i:s');
 
 /* ---------- Flash ---------- */
 $flash = $_SESSION['booking_flash'] ?? null;
