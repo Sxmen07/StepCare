@@ -3,30 +3,50 @@
   'use strict';
 
   /* ============================================================
-     FILTERS
+     FILTERS (WITH SMOOTH ANIMATION)
      ============================================================ */
   const searchInput = document.getElementById('searchInput');
   const chips       = document.querySelectorAll('.cat-chip');
   const cards       = document.querySelectorAll('.svc-card');
   const emptyState  = document.getElementById('emptyState');
   const resultCount = document.getElementById('resultCount');
+  const servicesGrid = document.getElementById('servicesGrid'); // Added
 
   let activeCat  = 'all';
   let activeTerm = '';
+  let filterTimeout = null; // Added to handle rapid clicking
 
   function applyFilter() {
-    let visible = 0;
-    cards.forEach(card => {
-      const cat  = card.dataset.cat;
-      const text = card.dataset.text || '';
-      const ok   = (activeCat === 'all' || cat === activeCat) &&
-                   (activeTerm === '' || text.includes(activeTerm));
-      if (ok) { card.classList.remove('hidden'); visible++; }
-      else    { card.classList.add('hidden'); }
-    });
-    emptyState.classList.toggle('hidden', visible > 0);
-    resultCount.textContent = visible === 0 ? '' :
-      `Showing ${visible} service${visible === 1 ? '' : 's'}`;
+    if (!servicesGrid) return;
+    clearTimeout(filterTimeout);
+
+    // 1. Fade out and slightly scale down the grid
+    servicesGrid.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    servicesGrid.style.opacity = '0';
+    servicesGrid.style.transform = 'scale(0.98) translateY(10px)';
+    servicesGrid.style.pointerEvents = 'none'; // Prevent clicking during animation
+
+    // 2. Wait for fade-out, then update the DOM and fade back in
+    filterTimeout = setTimeout(() => {
+      let visible = 0;
+      cards.forEach(card => {
+        const cat  = card.dataset.cat;
+        const text = card.dataset.text || '';
+        const ok   = (activeCat === 'all' || cat === activeCat) &&
+                     (activeTerm === '' || text.includes(activeTerm));
+        if (ok) { card.classList.remove('hidden'); visible++; }
+        else    { card.classList.add('hidden'); }
+      });
+      
+      emptyState.classList.toggle('hidden', visible > 0);
+      resultCount.textContent = visible === 0 ? '' :
+        `Showing ${visible} service${visible === 1 ? '' : 's'}`;
+
+      // 3. Fade the grid back in
+      servicesGrid.style.opacity = '1';
+      servicesGrid.style.transform = 'scale(1) translateY(0)';
+      servicesGrid.style.pointerEvents = 'auto';
+    }, 200); // Matches the CSS transition duration above
   }
 
   let searchTimer = null;
@@ -35,7 +55,7 @@
     searchTimer = setTimeout(() => {
       activeTerm = searchInput.value.trim().toLowerCase();
       applyFilter();
-    }, 200);
+    }, 300); // Increased slightly to let typing finish before animating
   });
 
   chips.forEach(chip => {
@@ -50,6 +70,28 @@
   applyFilter();
 
   /* ============================================================
+     SCROLL REVEAL ANIMATION
+     ============================================================ */
+  const revealElements = document.querySelectorAll('.reveal-on-scroll');
+  const revealOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const revealObserver = new IntersectionObserver(function(entries, observer) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target); 
+      }
+    });
+  }, revealOptions);
+
+  revealElements.forEach(el => {
+    revealObserver.observe(el);
+  });
+
+  /* ============================================================
      HELPERS
      ============================================================ */
   function esc(str) {
@@ -60,6 +102,23 @@
 
   function getService(id) {
     return (window.servicesData || []).find(s => String(s.serviceID) === String(id));
+  }
+  
+  function getRandomReviews(serviceID) {
+    const reviews = window.reviewsData[serviceID] || [];
+    
+    // Fallback dummy reviews with dates if DB is empty
+    if (reviews.length === 0) {
+        return [
+            { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M.", createdAt: "2026-10-15 10:00:00" },
+            { rating: 4, comment: "Arrived on time and very helpful. Highly recommended.", firstName: "David", lastName: "T.", createdAt: "2026-10-12 14:30:00" },
+            { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L.", createdAt: "2026-10-10 09:15:00" }
+        ];
+    }
+    
+    const shuffled = [...reviews].sort(() => 0.5 - Math.random());
+    const count = Math.min(Math.floor(Math.random() * 6) + 5, shuffled.length);
+    return shuffled.slice(0, count);
   }
 
   /* ============================================================
@@ -83,6 +142,7 @@
 
   const detailDesc = document.getElementById('detailDescription');
   const detailFeat = document.getElementById('detailFeatures');
+  const detailReviewsList = document.getElementById('detailReviewsList');
 
   const bookingContainer = document.getElementById('bookingFormContainer');
 
@@ -111,6 +171,7 @@
   function populateDetail(svc) {
     detailDesc.textContent = svc.description || '';
 
+    // Features
     detailFeat.innerHTML = '';
     const features = svc.features ? svc.features.split('|||') : [];
     if (features.length === 0) {
@@ -126,9 +187,53 @@
         detailFeat.appendChild(li);
       });
     }
+
+    // Reviews
+    detailReviewsList.innerHTML = '';
+    const reviews = getRandomReviews(svc.serviceID);
+    
+    reviews.forEach(r => {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const initial = r.firstName ? r.firstName.charAt(0) : 'U';
+        
+        // Format Date
+        let formattedDate = '';
+        if (r.createdAt) {
+            const dateObj = new Date(r.createdAt.replace(' ', 'T'));
+            formattedDate = dateObj.toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
+        }
+        
+        const div = document.createElement('div');
+        // Added flex and flex-col to make the card a flex container
+        div.className = 'rounded-xl bg-slate-50 p-4 border border-slate-100 flex flex-col';
+        div.innerHTML = `
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-[#3C52C3]/10 text-[#3C52C3] flex items-center justify-center font-bold text-xs">
+                        ${initial}
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
+                </div>
+                <!-- Made stars bigger -->
+                <div class="text-amber-500 text-sm tracking-widest">
+                    ${stars}
+                </div>
+            </div>
+            
+            <p class="text-sm text-slate-600 leading-relaxed">"${esc(r.comment)}"</p>
+            
+            <!-- Date added to the bottom right -->
+            <div class="mt-auto pt-4 flex justify-end">
+                <div class="text-[11px] font-medium text-slate-400">${formattedDate}</div>
+            </div>
+        `;
+        detailReviewsList.appendChild(div);
+    });
   }
 
-  function buildBookingForm(svc) {
+    function buildBookingForm(svc) {
     if (!window.isLoggedIn) {
       return `
         <div class="rounded-xl bg-amber-50 border border-amber-200 p-5 text-amber-800">
@@ -142,6 +247,23 @@
         </div>`;
     }
 
+    // --- NEW LOGIC: Calculate if we should start from today or tomorrow ---
+    let effectiveMinDate = window.todayISO;
+    const slots = Object.keys(window.timeSlots || {});
+    
+    if (slots.length > 0) {
+      // Find the latest slot of the day (e.g., '16:00:00')
+      const lastSlot = slots[slots.length - 1]; 
+      
+      // If current server time is past the last slot, disable today entirely
+      if (window.serverTimeNow >= lastSlot) {
+        const tomorrow = new Date(window.todayISO);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        effectiveMinDate = tomorrow.toISOString().split('T')[0];
+      }
+    }
+    // ---------------------------------------------------------------------
+
     return `
       <form action="saveBooking.php" method="POST" class="flex flex-col gap-5" id="bookingForm">
         <input type="hidden" name="serviceID" value="${esc(svc.serviceID)}" />
@@ -151,7 +273,7 @@
             Preferred date <span class="text-red-500">*</span>
           </label>
           <input id="bkDate" type="date" name="startDate" required
-                 min="${window.todayISO}" max="${window.maxISO}"
+                 min="${effectiveMinDate}" max="${window.maxISO}"
                  class="rounded-lg border border-slate-300 px-4 py-3 text-base
                         focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
         </div>
@@ -216,9 +338,7 @@
             <input type="text" name="postcode" readonly value="11600"
                    class="rounded-lg border border-slate-300 bg-slate-100 text-slate-600
                           px-4 py-3 text-base cursor-not-allowed" />
-            <p class="text-xs text-slate-400">
-              Currently we only serve <strong>Penang</strong> areas.
-            </p>
+            <p class="text-xs text-slate-400">Currently we only serve <strong>Penang</strong> areas.</p>
           </div>
         </div>
 
@@ -269,8 +389,21 @@
     const availability = window.availability || {};
     const timeSlots    = window.timeSlots    || {};
 
-    function slotButton(time, label, remaining) {
-      const disabled = remaining <= 0;
+    function slotButton(time, label, remaining, isPast) {
+      // Disable if it's full OR if it's in the past
+      const disabled = remaining <= 0 || isPast;
+      
+      let subText = `${remaining} left`;
+      let subColor = 'text-slate-500';
+
+      if (isPast) {
+        subText = 'Passed';
+        subColor = 'text-red-500 font-semibold';
+      } else if (remaining <= 0) {
+        subText = 'Full';
+        subColor = 'text-red-500 font-semibold';
+      }
+
       const wrap = document.createElement('label');
       wrap.className = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
       wrap.innerHTML = `
@@ -280,10 +413,10 @@
                     transition select-none
                     hover:border-[#3C52C3]/50
                     peer-checked:border-[#3C52C3] peer-checked:bg-[#3C52C3]/5
-                    ${disabled ? 'opacity-50' : ''}">
+                    ${disabled ? 'opacity-50 bg-slate-50' : ''}">
           <p class="text-sm font-bold text-slate-800">${label}</p>
-          <p class="text-xs mt-0.5 ${disabled ? 'text-red-500 font-semibold' : 'text-slate-500'}">
-            ${disabled ? 'Full' : `${remaining} left`}
+          <p class="text-xs mt-0.5 ${subColor}">
+            ${subText}
           </p>
         </div>`;
       return wrap;
@@ -298,6 +431,7 @@
         hintEl.textContent = 'Please select a date first to see available slots.';
         return;
       }
+      
       morningSlots.innerHTML = '';
       afternoonSlots.innerHTML = '';
       morningGroup.classList.remove('hidden');
@@ -305,9 +439,18 @@
       hintEl.classList.add('hidden');
 
       const dayMap = availability[d] || {};
+      // Check if the user selected today's date
+      const isToday = (d === window.todayISO);
+      const currentTime = window.serverTimeNow || "00:00:00";
+
       Object.entries(timeSlots).forEach(([time, meta]) => {
         const remaining = dayMap[time] ?? 0;
-        const el = slotButton(time, meta.label, remaining);
+        
+        // A slot is in the past if it's today AND the slot time is less than the current server time
+        const isPast = isToday && (time < currentTime);
+
+        const el = slotButton(time, meta.label, remaining, isPast);
+        
         if (meta.period === 'Morning') morningSlots.appendChild(el);
         else                           afternoonSlots.appendChild(el);
       });
@@ -396,7 +539,6 @@
     successModal.classList.add('flex');
     document.body.style.overflow = 'hidden';
 
-    // Clean the URL so a refresh doesn't re-show the popup
     if (window.history.replaceState) {
       window.history.replaceState({}, document.title, location.pathname);
     }
