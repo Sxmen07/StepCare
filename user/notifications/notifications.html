@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="../headerNfooter/header/header.css" />
+  <link rel="stylesheet" href="notifications.css" />
+  <title>Notifications — StepCare</title>
+</head>
+<body class="min-h-dvh bg-slate-50 antialiased">
+
+  <?php include __DIR__ . '/../headerNfooter/header/header.php'; ?>
+
+  <main class="w-full max-w-[1800px] mx-auto px-6 py-12">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3] mb-3">Notifications</h1>
+        <p class="text-slate-600 max-w-2xl leading-relaxed">
+          Stay updated with your appointments and account activity.
+        </p>
+      </div>
+      
+      <?php if ($unreadCount > 0): ?>
+        <button type="button" id="markAllReadBtn" 
+                class="inline-flex items-center justify-center text-sm font-semibold text-[#3C52C3] hover:text-[#007FFF] transition bg-blue-50 px-5 py-2.5 rounded-lg shrink-0">
+          Mark all as read
+        </button>
+      <?php endif; ?>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 mb-6 border-b border-slate-200 pb-4">
+      <button type="button" class="filter-tab px-4 py-2 rounded-lg text-sm font-bold bg-[#3C52C3] text-white transition" data-filter="all">
+        All
+      </button>
+      <button type="button" class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition" data-filter="unread">
+        Unread (<?= $unreadCount ?>)
+      </button>
+      <button type="button" class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition" data-filter="read">
+        Read
+      </button>
+    </div>
+
+    <!-- Notification List -->
+    <div id="fullNotificationList" class="space-y-3">
+      <?php if (empty($notifications)): ?>
+        <div class="text-center py-20 bg-white rounded-2xl ring-1 ring-slate-200">
+          <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1">You're all caught up!</h3>
+          <p class="text-slate-500">You have no notifications right now.</p>
+        </div>
+      <?php else: ?>
+        <?php foreach ($notifications as $notif): ?>
+          <?php
+            // Calculate time ago
+            $notifTime = strtotime($notif['createdAt']);
+            $timeDiff  = time() - $notifTime;
+            
+            if ($timeDiff < 60) {
+                $timeAgo = 'Just now';
+            } elseif ($timeDiff < 3600) {
+                $timeAgo = floor($timeDiff / 60) . ' mins ago';
+            } elseif ($timeDiff < 86400) {
+                $timeAgo = floor($timeDiff / 3600) . ' hours ago';
+            } else {
+                $timeAgo = date('d M Y, g:i A', $notifTime);
+            }
+
+            $isRead  = (int)$notif['isRead'];
+            $bgClass = $isRead ? 'bg-white' : 'bg-blue-50/50 border-blue-100';
+            $url     = $notif['linkURL'] ?: '/StepCare/user/appointments/appointments.php';
+          ?>
+          
+          <!-- Notification Card -->
+          <div class="notif-item flex items-center justify-between p-4 rounded-2xl border border-slate-200 <?= $bgClass ?> transition hover:shadow-md"
+               id="notif-row-<?= $notif['notificationID'] ?>"
+               data-status="<?= $isRead ? 'read' : 'unread' ?>">
+            
+            <a href="<?= htmlspecialchars($url) ?>" 
+               class="flex-1 flex items-start gap-4 min-w-0 pr-4"
+               onclick="markAsReadBeforeNav(<?= $notif['notificationID'] ?>)">
+              
+              <!-- Unread Dot -->
+              <div class="flex-shrink-0 mt-1.5 unread-dot <?= $isRead ? 'hidden' : '' ?>">
+                <span class="block w-2.5 h-2.5 rounded-full bg-[#3C52C3]"></span>
+              </div>
+              <div class="flex-shrink-0 mt-1.5 read-dot <?= $isRead ? '' : 'hidden' ?>">
+                <span class="block w-2.5 h-2.5 rounded-full bg-transparent"></span>
+              </div>
+              
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-bold text-slate-800 leading-snug truncate">
+                  <?= htmlspecialchars($notif['title']) ?>
+                </h3>
+                <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+                  <?= htmlspecialchars($notif['message']) ?>
+                </p>
+                <p class="text-xs font-semibold text-slate-400 mt-2">
+                  <?= $timeAgo ?>
+                </p>
+              </div>
+            </a>
+
+            <!-- Toggle Button -->
+            <button type="button" 
+                    class="notif-toggle-btn flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-[#3C52C3] hover:bg-slate-200 transition"
+                    data-id="<?= $notif['notificationID'] ?>"
+                    data-isread="<?= $isRead ?>"
+                    title="<?= $isRead ? 'Mark as unread' : 'Mark as read' ?>">
+              
+              <?php if ($isRead): ?>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>
+              <?php else: ?>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+              <?php endif; ?>
+            </button>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </main>
+
+  <script src="notifications.js"></script>
+</body>
+</html>
