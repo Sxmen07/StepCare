@@ -2,6 +2,10 @@
 (function () {
   'use strict';
 
+  // If the user is not logged in, selfData will be null. 
+  // We don't need to run any JS on the landing page.
+  if (!window.selfData) return; 
+
   /* ============================================================
      DATA
      ============================================================ */
