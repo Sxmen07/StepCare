@@ -25,6 +25,26 @@ $categories = $pdo->query(
      ORDER BY category"
 )->fetchAll(PDO::FETCH_COLUMN);
 
+/* ---------- Fetch Reviews (grouped by service) ---------- */
+$reviewsByService = [];
+try {
+    $stmt = $pdo->query("
+        SELECT c.serviceID, c.rating, c.comment, c.createdAt, 
+               u.firstName, u.lastName 
+        FROM serviceComments c
+        JOIN users u ON u.userID = c.userID
+        WHERE c.isHidden = 0
+        ORDER BY c.createdAt DESC
+    ");
+    $allReviews = $stmt->fetchAll();
+    
+    foreach ($allReviews as $r) {
+        $reviewsByService[$r['serviceID']][] = $r;
+    }
+} catch (Exception $e) {
+    // Table might not exist yet, fail silently
+}
+
 /* ---------- Time slots (fixed) ---------- */
 $timeSlots = [
     '08:00:00' => ['label' => '8:00 AM',  'period' => 'Morning'],
@@ -58,7 +78,7 @@ for ($i = 0; $i < 30; $i++) {
     $cursor->modify('+1 day');
 }
 
-/* ---------- Pre-fill patient name from the logged-in user ---------- */
+/* ---------- Pre-fill patient name ---------- */
 $defaultPatientName = '';
 if (!empty($_SESSION['userID'])) {
     $stmt = $pdo->prepare('SELECT firstName, lastName FROM users WHERE userID = ?');
@@ -69,14 +89,15 @@ if (!empty($_SESSION['userID'])) {
 
 /* ---------- Encode for JS ---------- */
 $servicesJson     = json_encode($services, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$reviewsJson      = json_encode($reviewsByService, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $availabilityJson = json_encode($availability);
 $timeSlotsJson    = json_encode($timeSlots);
+$serverTimeNow    = date('H:i:s');
 
-/* ---------- Flash (for errors only) ---------- */
+/* ---------- Flash ---------- */
 $flash = $_SESSION['booking_flash'] ?? null;
 unset($_SESSION['booking_flash']);
 
-/* ---------- Booking success popup data ---------- */
 $bookingSuccess = null;
 if (!empty($_GET['booked'])) {
     $bookingSuccess = [

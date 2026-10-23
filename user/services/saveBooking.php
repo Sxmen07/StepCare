@@ -77,6 +77,10 @@ $address .= ' Penang';
 $durationMin = (int)($service['durationMin'] ?: 60);
 $endDateTime = date('Y-m-d H:i:s', strtotime("$startDateTime +$durationMin minutes"));
 
+// Define pretty date/time BEFORE notifications so we can use them
+$prettyDate = date('D, d M Y', strtotime($startDateTime));
+$prettyTime = date('g:i A',     strtotime($startDateTime));
+
 $stmt = $pdo->prepare('SELECT firstName, email FROM users WHERE userID = ?');
 $stmt->execute([$userID]);
 $user = $stmt->fetch();
@@ -95,8 +99,22 @@ $stmt->execute([
 ]);
 $appointmentID = $pdo->lastInsertId();
 
-$prettyDate = date('D, d M Y', strtotime($startDateTime));
-$prettyTime = date('g:i A',     strtotime($startDateTime));
+/* ---------- Create a notification for the user ---------- */
+try {
+    $stmt = $pdo->prepare(
+        "INSERT INTO notifications (recipientType, recipientID, title, message, type, linkURL)
+         VALUES ('user', ?, ?, ?, 'appointment', ?)"
+    );
+    $stmt->execute([
+        $userID,
+        'Booking Received',
+        'Your booking for "' . $service['serviceName'] . '" on ' . $prettyDate
+            . ' at ' . $prettyTime . ' has been received. A nurse will be assigned shortly.',
+        '/StepCare/user/appointments/appointments.php',
+    ]);
+} catch (Exception $e) {
+    error_log('Notification insert failed: ' . $e->getMessage());
+}
 
 /* ---------- Send confirmation email ---------- */
 $html = "

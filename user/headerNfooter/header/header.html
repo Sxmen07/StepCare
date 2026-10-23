@@ -1,7 +1,7 @@
-<header class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white border-b border-[#3C52C3]">
+<header class=" site-header sticky top-0 z-50 flex items-center justify-between px-6 py-4">
 
     <!-- Logo -->
-    <a href="../aboutUs/aboutUs.php" class="flex items-center gap-2 text-4xl font-bold">
+    <a href="/StepCare/user/aboutUs/aboutUs.php" class="flex items-center gap-2 text-4xl font-bold">
         <img src="/StepCare/images/StepCare.png" alt="StepCare" class="w-10 h-10">
         <span>
             <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
@@ -11,8 +11,8 @@
     <!-- Nav links -->
     <ul class="flex gap-12 list-none p-0 m-0">
         <li>
-            <a href="/StepCare/user/aboutUs/aboutUs.php" 
-                class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>">
+            <a href="/StepCare/user/aboutUs/aboutUs.php"
+               class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>">
                 About Us
             </a>
         </li>
@@ -32,46 +32,182 @@
 
     <!-- Right side -->
     <?php if ($isLoggedIn): ?>
-        <div class="relative" id="profileMenu">
-            <button type="button" id="profileToggle"
-                    class="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-slate-100 transition">
-                <img src="<?= htmlspecialchars($userPhoto) ?>"
-                     alt="Profile"
-                     class="w-9 h-9 rounded-full object-cover border-2 border-[#3C52C3]">
-                <span class="font-semibold text-slate-700">
-                    <?= htmlspecialchars($firstName) ?>
-                </span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500"
-                     fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
-                </svg>
-            </button>
+        <div class="flex items-center gap-3">
 
-            <div id="profileDropdown"
-                 class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-white
-                        ring-1 ring-slate-200 shadow-lg overflow-hidden">
-                <a href="../profile/profile.php"
-                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                    👤 My Profile
-                </a>
-                <a href="../history/history.php"
-                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                    📋 My History
-                </a>
-                <a href="../appointments/appointments.php"
-                   class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                    📅 My Appointments
-                </a>
-                <hr class="border-slate-200">
-                <a href="../../loginNsignup/login/logout.php"
-                   class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
-                    🚪 Logout
-                </a>
+            <!-- ================= NOTIFICATION BELL ================= -->
+            <div class="relative" id="notificationMenu">
+                <button type="button" id="notificationToggle"
+                        class="relative w-11 h-11 rounded-full flex items-center justify-center
+                               text-slate-600 hover:bg-slate-100 hover:text-[#3C52C3]
+                               transition"
+                        aria-label="Notifications">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none" viewBox="0 0 24 24"
+                         stroke-width="1.8" stroke="currentColor"
+                         class="w-6 h-6 <?= $unreadNotifications > 0 ? 'bell-shake' : '' ?>">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                    </svg>
+
+                    <!-- Added ID here to easily target it in JS -->
+                    <span id="headerNotifBadge" class="absolute top-1.5 right-1.5 w-3 h-3 rounded-full
+                                 bg-red-500 ring-2 ring-white animate-pulse <?= $unreadNotifications > 0 ? '' : 'hidden' ?>"></span>
+                </button>
+
+                <!-- Notification dropdown -->
+                <div id="notificationDropdown"
+                     class="hidden absolute right-0 mt-2 w-80 rounded-xl bg-white
+                            ring-1 ring-slate-200 shadow-lg overflow-hidden">
+                    
+                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <p class="text-sm font-bold text-slate-800">Notifications</p>
+                        <?php if ($unreadNotifications > 0): ?>
+                            <button type="button" id="markAllReadBtn" class="text-xs font-semibold text-[#3C52C3] hover:text-[#007FFF] transition">
+                                Mark all read
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="max-h-80 overflow-y-auto" id="notificationList">
+                        <?php if (!empty($recentNotifications)): ?>
+                            <?php foreach ($recentNotifications as $notif): ?>
+                                <?php
+                                    // Calculate time ago
+                                    $notifTime = strtotime($notif['createdAt']);
+                                    $timeDiff  = time() - $notifTime;
+                                    
+                                    if ($timeDiff < 60) {
+                                        $timeAgo = 'Just now';
+                                    } elseif ($timeDiff < 3600) {
+                                        $timeAgo = floor($timeDiff / 60) . ' mins ago';
+                                    } elseif ($timeDiff < 86400) {
+                                        $timeAgo = floor($timeDiff / 3600) . ' hours ago';
+                                    } else {
+                                        $timeAgo = date('d M', $notifTime);
+                                    }
+
+                                    $isRead  = (int)$notif['isRead'];
+                                    $bgClass = $isRead ? 'bg-white' : 'bg-slate-50/80';
+                                    $url     = $notif['linkURL'] ?: '/StepCare/user/appointments/appointments.php';
+                                ?>
+                                <!-- Notification Item -->
+                                <div class="relative group border-b border-slate-100 hover:bg-slate-50 transition <?= $bgClass ?>" 
+                                     id="notif-row-<?= $notif['notificationID'] ?>">
+                                    
+                                    <!-- Main clickable link area -->
+                                    <a href="<?= htmlspecialchars($url) ?>" 
+                                       class="block px-4 py-3 pr-12"
+                                       onclick="markAsReadBeforeNav(<?= $notif['notificationID'] ?>)">
+                                        <div class="flex items-start gap-3">
+                                            <!-- Unread Dot -->
+                                            <div class="flex-shrink-0 mt-1 unread-dot <?= $isRead ? 'hidden' : '' ?>">
+                                                <span class="block w-2 h-2 rounded-full bg-[#3C52C3]"></span>
+                                            </div>
+                                            
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 leading-snug truncate">
+                                                    <?= htmlspecialchars($notif['title']) ?>
+                                                </p>
+                                                <p class="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                                                    <?= htmlspecialchars($notif['message']) ?>
+                                                </p>
+                                                <p class="text-[10px] font-semibold text-slate-400 mt-1.5">
+                                                    <?= $timeAgo ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <!-- Toggle Read/Unread Button -->
+                                    <button type="button" 
+                                            class="notif-toggle-btn absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-[#3C52C3] hover:bg-slate-200 transition"
+                                            data-id="<?= $notif['notificationID'] ?>"
+                                            data-isread="<?= $isRead ?>"
+                                            title="<?= $isRead ? 'Mark as unread' : 'Mark as read' ?>">
+                                        
+                                        <?php if ($isRead): ?>
+                                            <!-- Envelope Open (Read) -->
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>
+                                        <?php else: ?>
+                                            <!-- Envelope Closed (Unread) -->
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                                        <?php endif; ?>
+                                    </button>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <!-- Empty State -->
+                            <div class="px-4 py-8 text-center" id="emptyNotificationState">
+                                <p class="text-sm text-slate-500">No new notifications</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <a href="/StepCare/user/notifications/notifications.php"
+                       class="block px-4 py-2.5 text-xs font-semibold text-center
+                              text-[#3C52C3] bg-slate-50 hover:bg-slate-100
+                              border-t border-slate-100 transition">
+                        View all notifications
+                    </a>
+                </div>
+            </div> <!-- CRITICAL FIX: This closing tag was missing! -->
+
+            <!-- ================= PROFILE ================= -->
+            <div class="relative" id="profileMenu">
+                <button type="button" id="profileToggle"
+                        class="flex items-center gap-3 rounded-full pl-1.5 pr-4 py-1.5
+                               hover:bg-slate-100 transition">
+                    <img src="<?= htmlspecialchars($userPhoto) ?>"
+                         alt="Profile"
+                         class="w-10 h-10 rounded-full object-cover border-2 border-[#3C52C3]">
+                    <span class="text-base font-semibold text-slate-700">
+                        <?= htmlspecialchars($firstName) ?>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500"
+                         fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                    </svg>
+                </button>
+
+                <div id="profileDropdown"
+                     class="hidden absolute right-0 mt-2 w-52 rounded-xl bg-white
+                            ring-1 ring-slate-200 shadow-lg overflow-hidden">
+
+                    <a href="/StepCare/user/profile/profile.php"
+                       class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                        My Profile
+                    </a>
+
+                    <a href="/StepCare/user/history/history.php"
+                       class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                        My History
+                    </a>
+
+                    <a href="/StepCare/user/appointments/appointments.php"
+                       class="flex items-center justify-between px-4 py-2.5 text-sm
+                              text-slate-700 hover:bg-slate-50">
+                        <span>My Appointments</span>
+                        <?php if ($pendingAppointments > 0): ?>
+                            <span class="inline-flex items-center justify-center
+                                         min-w-[22px] h-[22px] px-1.5 rounded-full
+                                         bg-[#3C52C3] text-white text-[11px] font-bold">
+                                <?= $pendingAppointments ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+
+                    <hr class="border-slate-200">
+
+                    <a href="/StepCare/loginNsignup/login/logout.php"
+                       class="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
+                        Logout
+                    </a>
+                </div>
             </div>
         </div>
     <?php else: ?>
-        <a href="../../loginNsignup/login/login.html"
+        <a href="/StepCare/loginNsignup/login/login.html"
            class="px-4 py-2 rounded-lg bg-[#3C52C3] text-white text-sm
                   hover:bg-[#2f41a0] transition">
             Login / Sign Up
@@ -80,14 +216,156 @@
 </header>
 
 <script>
-function toggleProfileMenu() {
-    document.getElementById('profileDropdown').classList.toggle('hidden');
-}
-document.addEventListener('click', function (e) {
-    const menu = document.getElementById('profileMenu');
-    const dropdown = document.getElementById('profileDropdown');
-    if (menu && !menu.contains(e.target)) {
-        dropdown.classList.add('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    /* ============================================================
+       1. DROPDOWN BEHAVIOR
+       ============================================================ */
+    function setupDropdown(toggleId, dropdownId, menuId) {
+        const toggle   = document.getElementById(toggleId);
+        const dropdown = document.getElementById(dropdownId);
+        const menu     = document.getElementById(menuId);
+        if (!toggle || !dropdown || !menu) return;
+
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.header-dropdown').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            dropdown.classList.toggle('hidden');
+        });
+    }
+
+    const profileDrop = document.getElementById('profileDropdown');
+    const notifDrop   = document.getElementById('notificationDropdown');
+    if (profileDrop) profileDrop.classList.add('header-dropdown');
+    if (notifDrop)   notifDrop.classList.add('header-dropdown');
+
+    setupDropdown('profileToggle',      'profileDropdown',      'profileMenu');
+    setupDropdown('notificationToggle', 'notificationDropdown', 'notificationMenu');
+
+    // Click outside closes all
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('.header-dropdown').forEach(d => {
+            const menu = d.parentElement;
+            if (menu && !menu.contains(e.target)) d.classList.add('hidden');
+        });
+    });
+
+    // ESC closes all
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.header-dropdown').forEach(d => d.classList.add('hidden'));
+        }
+    });
+
+    /* ============================================================
+       2. NOTIFICATION MARK AS READ / UNREAD LOGIC
+       ============================================================ */
+    const markAllBtn = document.getElementById('markAllReadBtn');
+    const notifList  = document.getElementById('notificationList');
+    const headerBadge = document.getElementById('headerNotifBadge');
+    
+    // Function to send AJAX request
+    function updateNotificationStatus(id, status, callback) {
+        fetch('/StepCare/user/headerNfooter/header/markNotification.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}&status=${status}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && callback) callback();
+        })
+        .catch(err => console.error('Error updating notification:', err));
+    }
+
+    // Handle individual toggle buttons
+    if (notifList) {
+        notifList.addEventListener('click', function(e) {
+            const toggleBtn = e.target.closest('.notif-toggle-btn');
+            if (!toggleBtn) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const id         = toggleBtn.dataset.id;
+            const currentVal = parseInt(toggleBtn.dataset.isread);
+            const newVal     = currentVal === 1 ? 0 : 1;
+
+            updateNotificationStatus(id, newVal, () => {
+                // Update UI
+                toggleBtn.dataset.isread = newVal;
+                const row = document.getElementById(`notif-row-${id}`);
+                const dot = row.querySelector('.unread-dot');
+                
+                if (newVal === 1) {
+                    row.classList.remove('bg-slate-50/80');
+                    row.classList.add('bg-white');
+                    dot.classList.add('hidden');
+                    toggleBtn.title = 'Mark as unread';
+                    toggleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>';
+                } else {
+                    row.classList.remove('bg-white');
+                    row.classList.add('bg-slate-50/80');
+                    dot.classList.remove('hidden');
+                    toggleBtn.title = 'Mark as read';
+                    toggleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>';
+                }
+                
+                // Show red dot if there are unread notifications
+                if (headerBadge) {
+                    if (newVal === 0) {
+                        headerBadge.classList.remove('hidden');
+                    } else {
+                        // Check if ANY dots are left unread
+                        const unreadDots = document.querySelectorAll('.unread-dot:not(.hidden)');
+                        if (unreadDots.length === 0) {
+                            headerBadge.classList.add('hidden');
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // Handle "Mark all read" button
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('/StepCare/user/headerNfooter/header/markNotification.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'mark_all=1'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update all UI elements
+                    document.querySelectorAll('.notif-toggle-btn').forEach(btn => {
+                        btn.dataset.isread = 1;
+                        btn.title = 'Mark as unread';
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>';
+                    });
+                    document.querySelectorAll('.unread-dot').forEach(dot => dot.classList.add('hidden'));
+                    document.querySelectorAll('[id^="notif-row-"]').forEach(row => {
+                        row.classList.remove('bg-slate-50/80');
+                        row.classList.add('bg-white');
+                    });
+                    
+                    markAllBtn.remove(); // Hide the button
+                    if (headerBadge) headerBadge.classList.add('hidden'); // Hide red dot
+                }
+            });
+        });
     }
 });
+
+// Helper function for clicking the main link (marks as read without waiting)
+function markAsReadBeforeNav(id) {
+    fetch('/StepCare/user/headerNfooter/header/markNotification.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id=${id}&status=1`
+    }).catch(err => console.error(err));
+}
 </script>

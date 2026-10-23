@@ -2,5 +2,6 @@
 session_start();
 session_unset();
 session_destroy();
-header('Location: /Stepcare/loginNsignup/login/login.html');
+header('Location: /StepCare/loginNsignup/login/login.html');
 exit;
+?>

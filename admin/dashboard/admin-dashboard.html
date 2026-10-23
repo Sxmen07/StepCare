@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Admin Dashboard</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+
+  <!-- Left: Modular Self-Contained Sidebar -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
+
+  <!-- Right: Dynamic Workspace Area -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- Top: Modular Self-Contained Topbar -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Main Workspace: Scrollable Content + Sticky Right Card -->
+    <div class="flex-1 flex overflow-hidden p-8 gap-8">
+      
+      <!-- Center Main Column (Scrollable Content Page) -->
+      <section class="flex-1 flex flex-col min-w-0 overflow-y-auto pr-2 custom-scrollbar space-y-6">
+        
+        <!-- Welcome Section -->
+        <div>
+          <p class="text-sm font-semibold text-neutral-400">Welcome back,</p>
+          <h2 id="admin-display-name" class="text-3xl font-black text-neutral-900 tracking-tight mt-0.5">
+            Admin
+          </h2>
+        </div>
+
+        <!-- 4 Pill-shaped Metric Cards -->
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <!-- Metric 1: Revenue -->
+          <div class="bg-white border border-neutral-200 rounded-full px-5 py-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 text-neutral-800">
+              <i data-lucide="circle-dollar-sign" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider truncate">Revenue</p>
+              <p class="text-sm font-black text-neutral-900 truncate">RM <span id="stat-revenue">0.00</span></p>
+            </div>
+          </div>
+
+          <!-- Metric 2: Active Bookings -->
+          <div class="bg-white border border-neutral-200 rounded-full px-5 py-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 text-neutral-800">
+              <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider truncate">Active Bookings</p>
+              <p class="text-sm font-black text-neutral-900 truncate" id="stat-appointments">0</p>
+            </div>
+          </div>
+
+          <!-- Metric 3: Total Users -->
+          <div class="bg-white border border-neutral-200 rounded-full px-5 py-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 text-neutral-800">
+              <i data-lucide="users" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider truncate">Registered Users</p>
+              <p class="text-sm font-black text-neutral-900 truncate" id="stat-users">0</p>
+            </div>
+          </div>
+
+          <!-- Metric 4: Pending Nurses -->
+          <div class="bg-white border border-neutral-200 rounded-full px-5 py-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0 text-amber-600">
+              <i data-lucide="shield-alert" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider truncate">Verify Nurses</p>
+              <p class="text-sm font-black text-neutral-900 truncate" id="stat-nurses">0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Main Workspace Big Card -->
+        <div class="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm flex flex-col space-y-4">
+          <div class="flex items-center justify-between border-b border-neutral-100 pb-4">
+            <div>
+              <h3 class="text-base font-bold text-neutral-900">Recent Service Bookings</h3>
+              <p class="text-xs text-neutral-400">Real-time appointments dispatched across StepCare</p>
+            </div>
+            <a href="/StepCare/admin/care-logs.html" class="text-xs font-semibold text-neutral-500 hover:text-black transition">
+              View All
+            </a>
+          </div>
+
+          <!-- Appointments Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="text-neutral-400 font-bold border-b border-neutral-100 uppercase tracking-wider text-[10px]">
+                  <th class="pb-3 px-2">Patient / Family</th>
+                  <th class="pb-3 px-2">Care Package</th>
+                  <th class="pb-3 px-2">Assigned Nurse</th>
+                  <th class="pb-3 px-2">Price</th>
+                  <th class="pb-3 px-2">Status</th>
+                </tr>
+              </thead>
+              <tbody id="table-recent-appointments" class="divide-y divide-neutral-100 text-neutral-700">
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-neutral-400">Loading appointments...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Sticky Action & Approval Card -->
+      <aside class="w-80 shrink-0 sticky top-0 self-start">
+        <div class="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm flex flex-col h-[calc(100vh-8.5rem)] justify-between">
+          
+          <div class="space-y-6 overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <div>
+                <h3 class="text-sm font-bold text-neutral-900">Action Queue</h3>
+                <p class="text-[11px] text-neutral-400">Pending tasks needing admin review</p>
+              </div>
+              <span id="badge-total-pending" class="w-5 h-5 rounded-full bg-black text-white text-[10px] flex items-center justify-center font-bold">0</span>
+            </div>
+
+            <!-- Sub-section 1: Off-day Requests -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+                  <i data-lucide="calendar-off" class="w-3.5 h-3.5 text-neutral-400"></i>
+                  Off-day Requests
+                </span>
+                <span id="badge-leave-count" class="text-[10px] text-neutral-400 font-bold">0</span>
+              </div>
+              <div id="list-pending-leaves" class="space-y-2">
+                <p class="text-xs text-neutral-400 py-2">No pending leave requests.</p>
+              </div>
+            </div>
+
+            <!-- Sub-section 2: Unverified Nurses Queue -->
+            <div class="space-y-3 pt-3 border-t border-neutral-100">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+                  <i data-lucide="user-check" class="w-3.5 h-3.5 text-neutral-400"></i>
+                  Nurse Verifications
+                </span>
+                <span id="badge-verif-count" class="text-[10px] text-neutral-400 font-bold">0</span>
+              </div>
+              <div id="list-nurse-verifications" class="space-y-2">
+                <p class="text-xs text-neutral-400 py-2">No new applicants pending.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Shortcut Button -->
+          <div class="pt-4 border-t border-neutral-100">
+            <a href="/StepCare/admin/users.html" class="w-full py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+              <span>Manage All Staff</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Inject Modular Sidebar
+      fetch('/StepCare/components/sidebar-admin.html')
+        .then(res => res.text())
+        .then(html => injectComponent('sidebar-container', html));
+
+      // 2. Inject Modular Topbar
+      fetch('/StepCare/components/topbar.html')
+        .then(res => res.text())
+        .then(html => {
+          injectComponent('topbar-container', html);
+          const title = document.getElementById('topbar-page-title');
+          if (title) title.textContent = "Dashboard";
+        });
+
+      function injectComponent(containerId, html) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = html;
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+      }
+
+      // 3. Fetch Dashboard Statistics
+      fetch('/StepCare/admin/dashboard/get_dashboard_stats.php')
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) return;
+
+          // Welcome greeting
+          const adminName = localStorage.getItem('stepcare_username') || data.admin.name || "Admin";
+          document.getElementById('admin-display-name').textContent = adminName;
+
+          // Metric cards
+          document.getElementById('stat-revenue').textContent = data.metrics.total_revenue;
+          document.getElementById('stat-appointments').textContent = data.metrics.active_appointments;
+          document.getElementById('stat-users').textContent = data.metrics.total_users;
+          document.getElementById('stat-nurses').textContent = data.metrics.pending_nurses;
+
+          // Center table
+          const tbody = document.getElementById('table-recent-appointments');
+          if (!data.recent_appointments || data.recent_appointments.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-neutral-400">No appointments recorded yet.</td></tr>`;
+          } else {
+            tbody.innerHTML = data.recent_appointments.map(a => {
+              const statusStyles = {
+                pending: 'bg-amber-50 text-amber-700 border-amber-200',
+                confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
+                in_progress: 'bg-purple-50 text-purple-700 border-purple-200',
+                completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                cancelled: 'bg-neutral-100 text-neutral-500 border-neutral-200'
+              };
+              const badgeStyle = statusStyles[a.appointmentStatus] || 'bg-neutral-100 text-neutral-600 border-neutral-200';
+
+              return `
+                <tr class="hover:bg-neutral-50/70 transition">
+                  <td class="py-3 px-2 font-semibold text-neutral-900">${a.userName}</td>
+                  <td class="py-3 px-2 text-neutral-600 max-w-[200px] truncate">${a.serviceName}</td>
+                  <td class="py-3 px-2 text-neutral-500">${a.nurseName}</td>
+                  <td class="py-3 px-2 font-semibold text-neutral-900">RM ${parseFloat(a.price).toFixed(2)}</td>
+                  <td class="py-3 px-2">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${badgeStyle} capitalize">
+                      ${a.appointmentStatus.replace('_', ' ')}
+                    </span>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+          // Sticky side items
+          const leaveList = document.getElementById('list-pending-leaves');
+          const leaveBadge = document.getElementById('badge-leave-count');
+          leaveBadge.textContent = data.pending_leaves.length;
+
+          if (data.pending_leaves.length === 0) {
+            leaveList.innerHTML = `<p class="text-xs text-neutral-400 py-1">No pending leave requests.</p>`;
+          } else {
+            leaveList.innerHTML = data.pending_leaves.map(l => `
+              <div class="p-2.5 rounded-xl border border-neutral-100 bg-neutral-50/60 flex items-center justify-between">
+                <div class="min-w-0 pr-2">
+                  <p class="text-xs font-bold text-neutral-900 truncate">${l.firstName} ${l.lastName}</p>
+                  <p class="text-[10px] text-neutral-400">${l.requestDate}</p>
+                </div>
+                <a href="/StepCare/admin/users.html" class="px-2 py-0.5 bg-neutral-900 text-white rounded-lg text-[10px] font-semibold hover:bg-neutral-700 shrink-0">
+                  Review
+                </a>
+              </div>
+            `).join('');
+          }
+
+          const verifList = document.getElementById('list-nurse-verifications');
+          const verifBadge = document.getElementById('badge-verif-count');
+          verifBadge.textContent = data.pending_nurse_list.length;
+
+          if (data.pending_nurse_list.length === 0) {
+            verifList.innerHTML = `<p class="text-xs text-neutral-400 py-1">No applicants awaiting approval.</p>`;
+          } else {
+            verifList.innerHTML = data.pending_nurse_list.map(n => `
+              <div class="p-2.5 rounded-xl border border-neutral-100 bg-neutral-50/60 flex items-center justify-between">
+                <div class="min-w-0 pr-2">
+                  <p class="text-xs font-bold text-neutral-900 truncate">${n.firstName} ${n.lastName}</p>
+                  <p class="text-[10px] text-neutral-400 truncate">${n.specialization || 'General Nurse'}</p>
+                </div>
+                <a href="/StepCare/admin/users.html" class="px-2 py-0.5 bg-[#3C52C3] text-white rounded-lg text-[10px] font-semibold hover:bg-[#3245a8] shrink-0">
+                  Verify
+                </a>
+              </div>
+            `).join('');
+          }
+
+          document.getElementById('badge-total-pending').textContent = data.pending_leaves.length + data.pending_nurse_list.length;
+          if (window.lucide) lucide.createIcons();
+        })
+        .catch(err => console.error("Dashboard metrics error:", err));
+    });
+  </script>
+</body>
+</html>
