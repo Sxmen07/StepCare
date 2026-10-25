@@ -316,6 +316,39 @@
     </div>
   </div>
 
+    <!-- CANCEL CONFIRMATION MODAL -->
+  <div id="cancelConfirmModal" class="fixed inset-0 z-[160] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden text-center animate-success-modal">
+      <div class="p-6">
+        <!-- Warning Icon -->
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Cancel Appointment?</h3>
+        <p class="text-sm text-slate-500 mb-8 leading-relaxed">
+          This action cannot be undone. Are you sure you want to cancel this appointment?
+        </p>
+
+        <div class="flex flex-col gap-3">
+          <!-- Confirm Button (Disabled initially with countdown) -->
+          <button type="button" id="btnConfirmCancel" disabled
+                  class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed">
+            Wait 10s...
+          </button>
+          
+          <!-- Keep Button (Safe action) -->
+          <button type="button" id="btnKeepAppt"
+                  class="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+            Keep Appointment
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden data for the modal (each card's full payload) -->
   <script id="apptData" type="application/json">
     <?= json_encode($appointments, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>

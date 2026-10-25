@@ -214,57 +214,116 @@
 
   document.querySelectorAll('.js-cancel-btn').forEach(checkCancelEligibility);
 
-  document.querySelectorAll('.js-cancel-btn').forEach(btn => {
+    document.querySelectorAll('.js-cancel-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       if (this.disabled) return;
+      
+      // Store context
+      activeCancelData = {
+        btn: this,
+        card: this.closest('.appt-card'),
+        id: this.closest('.appt-card').dataset.id
+      };
+      
+      openCancelModal();
+    });
+  });
 
-      if (!confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
-        return;
+  /* ============================================================
+     CUSTOM CANCEL MODAL LOGIC & 10s COUNTDOWN
+     ============================================================ */
+  const cancelConfirmModal = document.getElementById('cancelConfirmModal');
+  const btnConfirmCancel = document.getElementById('btnConfirmCancel');
+  const btnKeepAppt = document.getElementById('btnKeepAppt');
+  
+  let cancelTimer = null;
+  let activeCancelData = null;
+
+  function openCancelModal() {
+    cancelConfirmModal.classList.remove('hidden');
+    cancelConfirmModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    // Reset timer state
+    if (cancelTimer) clearInterval(cancelTimer);
+    let timeLeft = 10;
+    
+    btnConfirmCancel.disabled = true;
+    btnConfirmCancel.className = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
+    btnConfirmCancel.textContent = `Wait ${timeLeft}s...`;
+
+    // Start countdown
+    cancelTimer = setInterval(() => {
+      timeLeft--;
+      if (timeLeft > 0) {
+        btnConfirmCancel.textContent = `Wait ${timeLeft}s...`;
+      } else {
+        clearInterval(cancelTimer);
+        btnConfirmCancel.disabled = false;
+        btnConfirmCancel.className = 'w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white hover:bg-red-700 active:scale-[0.98] transition';
+        btnConfirmCancel.textContent = 'Yes, Cancel Appointment';
       }
+    }, 1000);
+  }
 
-      const card = this.closest('.appt-card');
-      const apptID = card.dataset.id;
-      const originalText = this.textContent;
+  function closeCancelModal() {
+    cancelConfirmModal.classList.add('hidden');
+    cancelConfirmModal.classList.remove('flex');
+    document.body.style.overflow = '';
+    if (cancelTimer) clearInterval(cancelTimer);
+    activeCancelData = null;
+  }
 
-      this.disabled = true;
-      this.textContent = 'Cancelling...';
+  // Keep Appointment Click
+  btnKeepAppt.addEventListener('click', closeCancelModal);
+  
+  // Click outside to close
+  cancelConfirmModal.addEventListener('click', (e) => {
+    if (e.target === cancelConfirmModal) closeCancelModal();
+  });
 
-      fetch('cancelBooking.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `appointmentID=${apptID}`
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          this.remove();
-          
-          card.dataset.status = 'cancelled';
-          // FIXED: Using the specific js-status-badge class
-          const badge = card.querySelector('.js-status-badge');
-          if (badge) {
-            badge.textContent = 'Cancelled';
-            badge.className = 'js-status-badge inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] ring-1 flex-shrink-0 bg-red-100 text-red-700 ring-red-200';
-          }
-          
-          alert('Appointment successfully cancelled.');
-          applyFilter(); 
+  // Confirm Cancel Click
+  btnConfirmCancel.addEventListener('click', function() {
+    if (this.disabled || !activeCancelData) return;
+    
+    const { btn, card, id } = activeCancelData;
+    closeCancelModal(); // Close the modal immediately
+    
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
 
-          // Reload after a short delay to update the top filter chip counts smoothly
-          setTimeout(() => { window.location.reload(); }, 800);
-          
-        } else {
-          alert(data.message || 'Failed to cancel appointment.');
-          this.disabled = false;
-          this.textContent = originalText;
+    fetch('cancelBooking.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `appointmentID=${id}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.remove(); // Remove cancel button
+        
+        card.dataset.status = 'cancelled';
+        const badge = card.querySelector('.js-status-badge');
+        if (badge) {
+          badge.textContent = 'Cancelled';
+          badge.className = 'js-status-badge inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] ring-1 flex-shrink-0 bg-red-100 text-red-700 ring-red-200';
         }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('An error occurred. Please try again.');
-        this.disabled = false;
-        this.textContent = originalText;
-      });
+        
+        applyFilter(); 
+        setTimeout(() => { window.location.reload(); }, 800);
+        
+      } else {
+        alert(data.message || 'Failed to cancel appointment.');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('An error occurred. Please try again.');
+      btn.disabled = false;
+      btn.textContent = originalText;
     });
   });
 
