@@ -55,3 +55,24 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* ============================================================
+   MODAL ANIMATION (Moved from services.css)
+   ============================================================ */
+@keyframes successPop {
+    0% { opacity: 0; transform: scale(0.9) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-success-modal {
+    animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes backdropFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-backdrop {
+    animation: backdropFade 0.3s ease-out forwards;
+}
