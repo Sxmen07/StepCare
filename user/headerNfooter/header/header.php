@@ -13,7 +13,7 @@ $isLoggedIn = !empty($_SESSION['userID']);
 $firstName = $_SESSION['firstName']    ?? '';
 $userPhoto = $_SESSION['userPhotoURL'] ?? '';
 if ($userPhoto === '') {
-    $userPhoto = '/StepCare/images/default-user.png';
+    $userPhoto = '/StepCare/images/default.jpg';
 }
 
 /* ---- Current page (for highlighting the nav link) ---- */
