@@ -1,6 +1,8 @@
+<!-- Admin Sidebar Component (Self-Contained) -->
 <aside id="admin-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden">
   
   <div class="flex flex-col min-w-0">
+    <!-- Brand Logo -->
     <div class="h-16 px-6 flex items-center shrink-0">
       <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="flex items-center gap-2 overflow-hidden">
         <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-7 h-7 object-contain shrink-0" onerror="this.src='/StepCare/images/services/logo.png'">
@@ -10,6 +12,7 @@
       </a>
     </div>
 
+    <!-- Navigation List -->
     <div class="py-2 space-y-1">
       <div class="px-6 py-1.5 overflow-hidden">
         <p class="sidebar-text text-xs font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
@@ -41,7 +44,31 @@
         </span>
       </a>
 
-      <!-- 3. Notifications -->
+      <!-- 3. Applications (Leave & Off-day Requests) -->
+      <a href="/StepCare/admin/applications/admin-applications.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="applications">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Applications
+        </span>
+      </a>
+
+      <!-- 4. Reviews (Nurse Reviews & Comments Moderation) -->
+      <a href="/StepCare/admin/reviews/admin-reviews.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="reviews">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="star" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Reviews
+        </span>
+      </a>
+
+      <!-- 5. Notifications -->
       <a href="/StepCare/admin/notifications/notifications.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
          data-page="notifications">
@@ -53,7 +80,7 @@
         </span>
       </a>
 
-      <!-- 4. Schedule -->
+      <!-- 6. Schedule -->
       <a href="/StepCare/admin/schedule/admin-schedule.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
          data-page="schedule">
@@ -65,7 +92,7 @@
         </span>
       </a>
 
-      <!-- 5. Profile -->
+      <!-- 7. Profile -->
       <a href="/StepCare/admin/profile/admin-profile.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
          data-page="profile">
@@ -79,6 +106,7 @@
     </div>
   </div>
 
+  <!-- Bottom Utility Section -->
   <div class="py-4 space-y-1 shrink-0">
     <!-- Settings -->
     <a href="/StepCare/admin/settings/admin-settings.html" 
