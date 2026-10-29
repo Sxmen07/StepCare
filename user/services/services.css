@@ -10,7 +10,6 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    /* Apple-style smooth spring transition */
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .cat-chip:hover {
@@ -19,13 +18,13 @@
     transform: translateY(-1px);
 }
 .cat-chip:active {
-    transform: scale(0.92); /* Bouncy squish effect */
+    transform: scale(0.92);
 }
 .cat-chip.is-active {
     background: #3C52C3;
     color: white;
     border-color: #3C52C3;
-    box-shadow: 0 4px 12px rgba(60, 82, 195, 0.25); /* Subtle glow */
+    box-shadow: 0 4px 12px rgba(60, 82, 195, 0.25);
 }
 
 /* Smooth filtering animation preparation */
@@ -36,6 +35,21 @@
 /* Hide filtered cards */
 .svc-card.hidden {
     display: none;
+}
+
+/* Cards are clickable as a whole.
+   Slow, soft hover: lift (translate), shadow and ring all share one long ease.
+   Specificity (article.svc-card) beats the Tailwind utilities + .reveal-on-scroll. */
+article.svc-card {
+    cursor: pointer;
+    transition-property: opacity, transform, translate, box-shadow;
+    transition-duration: 0.9s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, box-shadow;
+}
+article.svc-card img {
+    transition: scale 1.4s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Line clamp helpers */
@@ -52,25 +66,27 @@
     overflow: hidden;
 }
 
-/* Modal animation */
-#detailModal {
-    animation: fadeIn 0.2s ease-out;
+/* ============================================================
+   FLIP SHARED-ELEMENT CLONE
+   Position / size / radius are driven by the Web Animations API in
+   services.js, so no CSS transition here.
+   ============================================================ */
+.svc-flip-clone {
+    position: fixed;
+    z-index: 150;
+    object-fit: cover;
+    pointer-events: none;
+    box-shadow: 0 24px 80px -12px rgba(15, 23, 42, 0.45);
+    will-change: top, left, width, height, border-radius, opacity;
+    transform: translateZ(0);
 }
+
+/* Modal card is clipped during open/close */
 #modalCard {
-    animation: slideUp 0.3s ease-out;
+    will-change: clip-path, opacity;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-}
-
-/* Scrollbar styling */
+/* Modal scrollbars */
 #modalWrapper .overflow-y-auto::-webkit-scrollbar { width: 8px; }
 #modalWrapper .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 #modalWrapper .overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -93,14 +109,8 @@
    SUCCESS MODAL ANIMATION
    ============================================================ */
 @keyframes successPop {
-    0% {
-        opacity: 0;
-        transform: scale(0.9) translateY(30px);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+    0%   { opacity: 0; transform: scale(0.9) translateY(30px); }
+    100% { opacity: 1; transform: scale(1)   translateY(0);    }
 }
 
 .animate-success-modal {
@@ -109,7 +119,7 @@
 
 @keyframes backdropFade {
     from { opacity: 0; }
-    to { opacity: 1; }
+    to   { opacity: 1; }
 }
 
 .animate-backdrop {

@@ -2,31 +2,31 @@
 (function () {
   'use strict';
 
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   /* ============================================================
      FILTERS (WITH SMOOTH ANIMATION)
      ============================================================ */
-  const searchInput = document.getElementById('searchInput');
-  const chips       = document.querySelectorAll('.cat-chip');
-  const cards       = document.querySelectorAll('.svc-card');
-  const emptyState  = document.getElementById('emptyState');
-  const resultCount = document.getElementById('resultCount');
-  const servicesGrid = document.getElementById('servicesGrid'); // Added
+  const searchInput  = document.getElementById('searchInput');
+  const chips        = document.querySelectorAll('.cat-chip');
+  const cards        = document.querySelectorAll('.svc-card');
+  const emptyState   = document.getElementById('emptyState');
+  const resultCount  = document.getElementById('resultCount');
+  const servicesGrid = document.getElementById('servicesGrid');
 
   let activeCat  = 'all';
   let activeTerm = '';
-  let filterTimeout = null; // Added to handle rapid clicking
+  let filterTimeout = null;
 
   function applyFilter() {
     if (!servicesGrid) return;
     clearTimeout(filterTimeout);
 
-    // 1. Fade out and slightly scale down the grid
     servicesGrid.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     servicesGrid.style.opacity = '0';
     servicesGrid.style.transform = 'scale(0.98) translateY(10px)';
-    servicesGrid.style.pointerEvents = 'none'; // Prevent clicking during animation
+    servicesGrid.style.pointerEvents = 'none';
 
-    // 2. Wait for fade-out, then update the DOM and fade back in
     filterTimeout = setTimeout(() => {
       let visible = 0;
       cards.forEach(card => {
@@ -37,16 +37,15 @@
         if (ok) { card.classList.remove('hidden'); visible++; }
         else    { card.classList.add('hidden'); }
       });
-      
+
       emptyState.classList.toggle('hidden', visible > 0);
       resultCount.textContent = visible === 0 ? '' :
         `Showing ${visible} service${visible === 1 ? '' : 's'}`;
 
-      // 3. Fade the grid back in
       servicesGrid.style.opacity = '1';
       servicesGrid.style.transform = 'scale(1) translateY(0)';
       servicesGrid.style.pointerEvents = 'auto';
-    }, 200); // Matches the CSS transition duration above
+    }, 200);
   }
 
   let searchTimer = null;
@@ -55,7 +54,7 @@
     searchTimer = setTimeout(() => {
       activeTerm = searchInput.value.trim().toLowerCase();
       applyFilter();
-    }, 300); // Increased slightly to let typing finish before animating
+    }, 300);
   });
 
   chips.forEach(chip => {
@@ -78,18 +77,19 @@
     rootMargin: '0px 0px -50px 0px'
   };
 
-  const revealObserver = new IntersectionObserver(function(entries, observer) {
+  const revealObserver = new IntersectionObserver(function (entries, observer) {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target); 
+        const el = entry.target;
+        el.classList.add('is-visible');
+        observer.unobserve(el);
+        // once revealed, hand the element back to its normal (hover) transitions
+        setTimeout(() => el.classList.remove('reveal-on-scroll', 'is-visible'), 900);
       }
     });
   }, revealOptions);
 
-  revealElements.forEach(el => {
-    revealObserver.observe(el);
-  });
+  revealElements.forEach(el => revealObserver.observe(el));
 
   /* ============================================================
      HELPERS
@@ -103,11 +103,10 @@
   function getService(id) {
     return (window.servicesData || []).find(s => String(s.serviceID) === String(id));
   }
-  
+
   function getRandomReviews(serviceID) {
     const reviews = window.reviewsData[serviceID] || [];
-    
-    // Fallback dummy reviews with dates if DB is empty
+
     if (reviews.length === 0) {
         return [
             { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M.", createdAt: "2026-10-15 10:00:00" },
@@ -115,23 +114,28 @@
             { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L.", createdAt: "2026-10-10 09:15:00" }
         ];
     }
-    
+
     const shuffled = [...reviews].sort(() => 0.5 - Math.random());
     const count = Math.min(Math.floor(Math.random() * 6) + 5, shuffled.length);
     return shuffled.slice(0, count);
   }
 
+  function getRect(el) {
+    return el ? el.getBoundingClientRect() : null;
+  }
+
   /* ============================================================
-     MODAL
+     MODAL + FLIP (EXPAND-TO-FULLSCREEN) TRANSITION
      ============================================================ */
   const modalWrapper  = document.getElementById('modalWrapper');
+  const modalCard     = document.getElementById('modalCard');
   const modalSlider   = document.getElementById('modalSlider');
 
   const closeModalBtn = document.getElementById('closeModal');
   const detailBookNow = document.getElementById('detailBookNow');
   const backToDetail  = document.getElementById('backToDetail');
 
-  const sharedImg      = document.getElementById('sharedImg');
+  const sharedImgEl    = document.getElementById('sharedImg');
   const sharedTitle    = document.getElementById('sharedTitle');
   const sharedCategory = document.getElementById('sharedCategory');
   const sharedRating   = document.getElementById('sharedRating');
@@ -140,24 +144,36 @@
   const sharedPrice    = document.getElementById('sharedPrice');
   const sharedUnit     = document.getElementById('sharedUnit');
 
-  const detailDesc = document.getElementById('detailDescription');
-  const detailFeat = document.getElementById('detailFeatures');
+  const detailDesc        = document.getElementById('detailDescription');
+  const detailFeat        = document.getElementById('detailFeatures');
   const detailReviewsList = document.getElementById('detailReviewsList');
 
   const bookingContainer = document.getElementById('bookingFormContainer');
 
   let activeServiceID = null;
+  let activeSourceImg = null;
   let isOpen = false;
+  let flipAnimating = false;
 
-  function slideToDetail() {
-    modalSlider.style.transform = 'translateX(0)';
-  }
-  function slideToBooking() {
-    modalSlider.style.transform = 'translateX(-50%)';
+  function slideToDetail()  { modalSlider.style.transform = 'translateX(0)'; }
+  function slideToBooking() { modalSlider.style.transform = 'translateX(-50%)'; }
+
+  function createImageClone(imgEl, rect, radius) {
+    const clone = document.createElement('img');
+    clone.src  = imgEl.currentSrc || imgEl.src;
+    clone.alt  = '';
+    clone.className = 'svc-flip-clone';
+    clone.style.top          = rect.top    + 'px';
+    clone.style.left         = rect.left   + 'px';
+    clone.style.width        = rect.width  + 'px';
+    clone.style.height       = rect.height + 'px';
+    clone.style.borderRadius = radius;
+    document.body.appendChild(clone);
+    return clone;
   }
 
   function populateShared(svc) {
-    sharedImg.src = svc.serviceImageURL || '../../images/services/placeholder.jpg';
+    sharedImgEl.src            = svc.serviceImageURL || '../../images/services/placeholder.jpg';
     sharedTitle.textContent    = svc.serviceName;
     sharedCategory.textContent = svc.category || 'General';
     sharedRating.textContent   = Number(svc.average_rating).toFixed(2);
@@ -171,7 +187,6 @@
   function populateDetail(svc) {
     detailDesc.textContent = svc.description || '';
 
-    // Features
     detailFeat.innerHTML = '';
     const features = svc.features ? svc.features.split('|||') : [];
     if (features.length === 0) {
@@ -188,15 +203,13 @@
       });
     }
 
-    // Reviews
     detailReviewsList.innerHTML = '';
     const reviews = getRandomReviews(svc.serviceID);
-    
+
     reviews.forEach(r => {
-        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const stars   = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         const initial = r.firstName ? r.firstName.charAt(0) : 'U';
-        
-        // Format Date
+
         let formattedDate = '';
         if (r.createdAt) {
             const dateObj = new Date(r.createdAt.replace(' ', 'T'));
@@ -204,9 +217,8 @@
                 day: 'numeric', month: 'short', year: 'numeric'
             });
         }
-        
+
         const div = document.createElement('div');
-        // Added flex and flex-col to make the card a flex container
         div.className = 'rounded-xl bg-slate-50 p-4 border border-slate-100 flex flex-col';
         div.innerHTML = `
             <div class="flex items-start justify-between mb-3">
@@ -216,15 +228,11 @@
                     </div>
                     <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
                 </div>
-                <!-- Made stars bigger -->
                 <div class="text-amber-500 text-sm tracking-widest">
                     ${stars}
                 </div>
             </div>
-            
             <p class="text-sm text-slate-600 leading-relaxed">"${esc(r.comment)}"</p>
-            
-            <!-- Date added to the bottom right -->
             <div class="mt-auto pt-4 flex justify-end">
                 <div class="text-[11px] font-medium text-slate-400">${formattedDate}</div>
             </div>
@@ -233,7 +241,7 @@
     });
   }
 
-    function buildBookingForm(svc) {
+  function buildBookingForm(svc) {
     if (!window.isLoggedIn) {
       return `
         <div class="rounded-xl bg-amber-50 border border-amber-200 p-5 text-amber-800">
@@ -247,22 +255,17 @@
         </div>`;
     }
 
-    // --- NEW LOGIC: Calculate if we should start from today or tomorrow ---
     let effectiveMinDate = window.todayISO;
     const slots = Object.keys(window.timeSlots || {});
-    
+
     if (slots.length > 0) {
-      // Find the latest slot of the day (e.g., '16:00:00')
-      const lastSlot = slots[slots.length - 1]; 
-      
-      // If current server time is past the last slot, disable today entirely
+      const lastSlot = slots[slots.length - 1];
       if (window.serverTimeNow >= lastSlot) {
         const tomorrow = new Date(window.todayISO);
         tomorrow.setDate(tomorrow.getDate() + 1);
         effectiveMinDate = tomorrow.toISOString().split('T')[0];
       }
     }
-    // ---------------------------------------------------------------------
 
     return `
       <form action="saveBooking.php" method="POST" class="flex flex-col gap-5" id="bookingForm">
@@ -390,17 +393,16 @@
     const timeSlots    = window.timeSlots    || {};
 
     function slotButton(time, label, remaining, isPast) {
-      // Disable if it's full OR if it's in the past
       const disabled = remaining <= 0 || isPast;
-      
-      let subText = `${remaining} left`;
+
+      let subText  = `${remaining} left`;
       let subColor = 'text-slate-500';
 
       if (isPast) {
-        subText = 'Passed';
+        subText  = 'Passed';
         subColor = 'text-red-500 font-semibold';
       } else if (remaining <= 0) {
-        subText = 'Full';
+        subText  = 'Full';
         subColor = 'text-red-500 font-semibold';
       }
 
@@ -431,7 +433,7 @@
         hintEl.textContent = 'Please select a date first to see available slots.';
         return;
       }
-      
+
       morningSlots.innerHTML = '';
       afternoonSlots.innerHTML = '';
       morningGroup.classList.remove('hidden');
@@ -439,18 +441,13 @@
       hintEl.classList.add('hidden');
 
       const dayMap = availability[d] || {};
-      // Check if the user selected today's date
       const isToday = (d === window.todayISO);
       const currentTime = window.serverTimeNow || "00:00:00";
 
       Object.entries(timeSlots).forEach(([time, meta]) => {
         const remaining = dayMap[time] ?? 0;
-        
-        // A slot is in the past if it's today AND the slot time is less than the current server time
         const isPast = isToday && (time < currentTime);
-
         const el = slotButton(time, meta.label, remaining, isPast);
-        
         if (meta.period === 'Morning') morningSlots.appendChild(el);
         else                           afternoonSlots.appendChild(el);
       });
@@ -470,44 +467,260 @@
     });
   }
 
-  function openModal(serviceId, mode) {
+  /* ============================================================
+     OPEN / CLOSE — Web Animations API (smooth, interruptible-safe)
+     One timeline drives: cover image, card clip (size + corner
+     radius), backdrop colour, then content layers in with a stagger.
+     ============================================================ */
+  const EASE_OUT   = 'cubic-bezier(0.32, 0.72, 0, 1)';   // soft, long tail
+  const EASE_INOUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
+  const OPEN_MS    = 650;
+  const CLOSE_MS   = 480;
+  const BACKDROP   = 'rgba(15, 23, 42, 0.7)';
+  const BACKDROP_0 = 'rgba(15, 23, 42, 0)';
+  const CARD_RADIUS  = 16;  // .rounded-2xl on the grid card
+  const MODAL_RADIUS = 24;  // .rounded-3xl on the modal
+
+  let activeSourceCard = null;
+  let runningAnims = [];
+
+  function anim(el, keyframes, opts) {
+    const a = el.animate(keyframes, opts);
+    runningAnims.push(a);
+    return a;
+  }
+
+  function clearAnims() {
+    runningAnims.forEach(a => { try { a.cancel(); } catch (_) {} });
+    runningAnims = [];
+  }
+
+  // inset() that makes `outer` look exactly like `inner`
+  function insetTo(outer, inner, radius) {
+    const t = Math.max(0, inner.top    - outer.top);
+    const r = Math.max(0, outer.right  - inner.right);
+    const b = Math.max(0, outer.bottom - inner.bottom);
+    const l = Math.max(0, inner.left   - outer.left);
+    return `inset(${t}px ${r}px ${b}px ${l}px round ${radius}px)`;
+  }
+
+  function heroParts() {
+    const aside = sharedImgEl.parentElement;
+    return {
+      gradient: aside.querySelector(':scope > div.absolute'),
+      text:     aside.querySelector(':scope > div.relative')
+    };
+  }
+
+  function layerIn(startAt, total) {
+    const { gradient, text } = heroParts();
+    const rise = (el, delay, dur, dist) => anim(el, [
+      { opacity: 0, transform: `translateY(${dist}px)` },
+      { opacity: 1, transform: 'translateY(0)' }
+    ], { duration: dur, delay, easing: EASE_OUT, fill: 'backwards' });
+
+    // hero overlay + text
+    anim(gradient, [{ opacity: 0 }, { opacity: 1 }],
+         { duration: total * 0.4, delay: startAt, easing: 'ease-out', fill: 'backwards' });
+    Array.from(text.children).forEach((child, i) =>
+      rise(child, startAt + 60 + i * 70, total * 0.55, 18));
+
+    // right column container, then rows inside it
+    const right = modalSlider.parentElement;
+    anim(right, [{ opacity: 0 }, { opacity: 1 }],
+         { duration: total * 0.4, delay: startAt, easing: 'ease-out', fill: 'backwards' });
+
+    const rows = [
+      detailDesc,
+      ...Array.from(detailFeat.children),
+      ...Array.from(detailReviewsList.children).slice(0, 6)
+    ];
+    rows.forEach((el, i) => rise(el, startAt + 120 + Math.min(i, 9) * 45, total * 0.55, 16));
+
+    anim(closeModalBtn, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1)' }],
+         { duration: total * 0.5, delay: startAt + 100, easing: EASE_OUT, fill: 'backwards' });
+  }
+
+  /* ---------- OPEN ---------- */
+  function openModal(serviceId, mode, sourceImg) {
+    if (flipAnimating || isOpen) return;
     const svc = getService(serviceId);
     if (!svc) return;
 
-    activeServiceID = svc.serviceID;
+    flipAnimating    = true;
+    activeServiceID  = svc.serviceID;
+    activeSourceImg  = sourceImg || null;
+    activeSourceCard = sourceImg ? sourceImg.closest('.svc-card') : null;
+
+    // Build all content up-front (before any measuring / animating)
     populateShared(svc);
     populateDetail(svc);
     bookingContainer.innerHTML = buildBookingForm(svc);
     wireSlotLogic();
 
-    modalSlider.style.transition = 'none';
-    if (mode === 'book') slideToBooking();
-    else                 slideToDetail();
+    // Lock scroll first so every measurement already includes the scrollbar change
+    document.body.style.overflow = 'hidden';
 
     modalWrapper.classList.remove('hidden');
     modalWrapper.classList.add('flex');
-    document.body.style.overflow = 'hidden';
+
+    modalSlider.style.transition = 'none';
+    if (mode === 'book') slideToBooking(); else slideToDetail();
+    void modalWrapper.offsetHeight;
+    modalSlider.style.transition = 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)';
+
+    // Measure everything in its FINAL state
+    const cardRect = getRect(modalCard);
+    const toImg    = getRect(sharedImgEl);
+    const fromImg  = getRect(activeSourceImg);
+    const fromCard = getRect(activeSourceCard);
+
     isOpen = true;
+    clearAnims();
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        modalSlider.style.transition = 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)';
-      });
-    });
+    const canFlip = !reduceMotion && fromImg && fromCard && toImg &&
+                    fromCard.width > 0 && toImg.width > 0;
+
+    if (!canFlip) {
+      const a = anim(modalWrapper, [{ opacity: 0 }, { opacity: 1 }],
+                     { duration: 200, easing: 'ease', fill: 'backwards' });
+      a.onfinish = () => { clearAnims(); flipAnimating = false; };
+      return;
+    }
+
+    // 1. Backdrop colour (animating colour, not opacity, keeps the card opaque)
+    anim(modalWrapper, [{ backgroundColor: BACKDROP_0 }, { backgroundColor: BACKDROP }],
+         { duration: OPEN_MS * 0.8, easing: 'ease-out', fill: 'backwards' });
+
+    // 2. Card grows from the grid card's exact rect; radius 16 -> 24
+    const clip = anim(modalCard, [
+      { clipPath: insetTo(cardRect, fromCard, CARD_RADIUS) },
+      { clipPath: `inset(0px 0px 0px 0px round ${MODAL_RADIUS}px)` }
+    ], { duration: OPEN_MS, easing: EASE_OUT, fill: 'backwards' });
+
+    // crossfade modal surface over the real card at the very start
+    anim(modalCard, [{ opacity: 0 }, { opacity: 1 }],
+         { duration: OPEN_MS * 0.25, easing: 'ease-out', fill: 'backwards' });
+
+    // 3. Cover image flies from card photo to hero panel
+    const clone = createImageClone(activeSourceImg, fromImg, `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0`);
+    const flight = clone.animate([
+      { top: fromImg.top + 'px', left: fromImg.left + 'px',
+        width: fromImg.width + 'px', height: fromImg.height + 'px',
+        borderRadius: `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0` },
+      { top: toImg.top + 'px', left: toImg.left + 'px',
+        width: toImg.width + 'px', height: toImg.height + 'px',
+        borderRadius: `${MODAL_RADIUS}px 0 0 ${MODAL_RADIUS}px` }
+    ], { duration: OPEN_MS, easing: EASE_OUT, fill: 'forwards' });
+    runningAnims.push(flight);
+
+    // Real hero image fades in underneath as the clone lands, clone fades out on top
+    anim(sharedImgEl, [{ opacity: 0 }, { opacity: 1 }],
+         { duration: OPEN_MS * 0.3, delay: OPEN_MS * 0.7, easing: 'ease-out', fill: 'backwards' });
+    const cloneFade = clone.animate([{ opacity: 1 }, { opacity: 0 }],
+         { duration: OPEN_MS * 0.3, delay: OPEN_MS * 0.7, easing: 'ease-out', fill: 'forwards' });
+    runningAnims.push(cloneFade);
+
+    // 4. Content layers in after the shape is mostly formed
+    layerIn(OPEN_MS * 0.35, OPEN_MS);
+
+    clip.onfinish = () => {
+      clone.remove();
+      clearAnims();
+      flipAnimating = false;
+    };
   }
 
+  /* ---------- CLOSE ---------- */
   function closeModal() {
-    modalWrapper.classList.add('hidden');
-    modalWrapper.classList.remove('flex');
-    document.body.style.overflow = '';
-    isOpen = false;
+    if (!isOpen || flipAnimating) return;
+    flipAnimating = true;
+    clearAnims();
+
+    const cardRect = getRect(modalCard);
+    const fromImg  = getRect(sharedImgEl);
+    const toImg    = activeSourceImg  ? getRect(activeSourceImg)  : null;
+    const toCard   = activeSourceCard ? getRect(activeSourceCard) : null;
+
+    const canFlip = !reduceMotion && toImg && toCard && fromImg &&
+                    toCard.width > 0 && fromImg.width > 0;
+
+    const finish = () => {
+      clearAnims();
+      modalWrapper.classList.add('hidden');
+      modalWrapper.classList.remove('flex');
+      document.body.style.overflow = '';
+      isOpen = false;
+      activeSourceImg  = null;
+      activeSourceCard = null;
+      flipAnimating = false;
+    };
+
+    if (!canFlip) {
+      const a = anim(modalWrapper, [{ opacity: 1 }, { opacity: 0 }],
+                     { duration: 200, easing: 'ease', fill: 'forwards' });
+      a.onfinish = finish;
+      return;
+    }
+
+    const { gradient, text } = heroParts();
+    const right = modalSlider.parentElement;
+
+    // content leaves first, quickly
+    [gradient, text, right, closeModalBtn].forEach(el =>
+      anim(el, [{ opacity: 1 }, { opacity: 0 }],
+           { duration: CLOSE_MS * 0.35, easing: 'ease-in', fill: 'forwards' }));
+
+    // backdrop fades
+    anim(modalWrapper, [{ backgroundColor: BACKDROP }, { backgroundColor: BACKDROP_0 }],
+         { duration: CLOSE_MS, easing: 'ease-in-out', fill: 'forwards' });
+
+    // card shrinks back to the grid card (radius 24 -> 16)
+    const clip = anim(modalCard, [
+      { clipPath: `inset(0px 0px 0px 0px round ${MODAL_RADIUS}px)` },
+      { clipPath: insetTo(cardRect, toCard, CARD_RADIUS) }
+    ], { duration: CLOSE_MS, easing: EASE_INOUT, fill: 'forwards' });
+
+    // modal surface dissolves into the real card near the end
+    anim(modalCard, [{ opacity: 1 }, { opacity: 0 }],
+         { duration: CLOSE_MS * 0.35, delay: CLOSE_MS * 0.65, easing: 'ease-in', fill: 'forwards' });
+
+    // cover image flies home
+    sharedImgEl.style.opacity = '0';
+    const clone = createImageClone(sharedImgEl, fromImg, `${MODAL_RADIUS}px 0 0 ${MODAL_RADIUS}px`);
+    runningAnims.push(clone.animate([
+      { top: fromImg.top + 'px', left: fromImg.left + 'px',
+        width: fromImg.width + 'px', height: fromImg.height + 'px',
+        borderRadius: `${MODAL_RADIUS}px 0 0 ${MODAL_RADIUS}px` },
+      { top: toImg.top + 'px', left: toImg.left + 'px',
+        width: toImg.width + 'px', height: toImg.height + 'px',
+        borderRadius: `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0` }
+    ], { duration: CLOSE_MS, easing: EASE_INOUT, fill: 'forwards' }));
+
+    clip.onfinish = () => {
+      clone.remove();
+      sharedImgEl.style.opacity = '';
+      finish();
+    };
   }
 
-  document.querySelectorAll('.js-open-detail').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.dataset.serviceId, 'view'));
-  });
-  document.querySelectorAll('.js-open-booking').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.dataset.serviceId, 'book'));
+  /* ============================================================
+     CLICK BINDINGS
+     ============================================================ */
+  document.querySelectorAll('.svc-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      let mode = 'view';
+
+      if (btn) {
+        e.stopPropagation();
+        mode = btn.classList.contains('js-open-booking') ? 'book' : 'view';
+      }
+
+      const id = card.dataset.serviceId;
+      const img = card.querySelector('img');
+      openModal(id, mode, img);
+    });
   });
 
   detailBookNow.addEventListener('click', () => {
@@ -520,12 +733,11 @@
   closeModalBtn.addEventListener('click', closeModal);
 
   modalWrapper.addEventListener('click', e => {
-    const card = document.getElementById('modalCard');
-    if (!card.contains(e.target)) closeModal();
+    if (!modalCard.contains(e.target)) closeModal();
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && isOpen) closeModal();
+    if (e.key === 'Escape' && isOpen && !flipAnimating) closeModal();
   });
 
   /* ============================================================
