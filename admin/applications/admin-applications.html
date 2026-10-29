@@ -22,55 +22,53 @@
     <!-- Topbar Mount Point -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
-    <!-- Scrollable Main Content -->
-    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
-      <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Scrollable Full-Width Main Content (Matched to Notifications UI) -->
+    <main class="flex-1 overflow-y-auto px-8 md:px-12 py-6 custom-scrollbar bg-white">
+      <div class="w-full space-y-6">
         
-        <!-- Search and Filter Ribbon -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Filter and Search Ribbon (Edge-to-Edge aligned) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <!-- Search Bar -->
-          <div class="relative flex-1 max-w-lg">
+          <div class="relative flex-1 max-w-md">
             <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
             <input type="text" 
                    id="app-search-input" 
                    placeholder="Search applicant nurse name or ID..." 
-                   class="w-full pl-11 pr-4 py-3 bg-neutral-50/70 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
+                   class="w-full pl-11 pr-4 py-2.5 bg-neutral-50/80 border border-neutral-200/80 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
           </div>
 
           <!-- Status Filter Tabs -->
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Status:</span>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-status="All">All</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="pending">Pending</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="approved">Approved</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="rejected">Rejected</button>
+            <button type="button" class="status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-status="All">All</button>
+            <button type="button" class="status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="pending">Pending</button>
+            <button type="button" class="status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="approved">Approved</button>
+            <button type="button" class="status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="rejected">Rejected</button>
           </div>
         </div>
 
-        <!-- Table Container (Strictly Centered Alignment) -->
-        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-center border-collapse table-fixed">
-              <thead>
-                <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/40">
-                  <th class="py-4 px-4 w-[14%] text-center align-middle">Nurse ID</th>
-                  <th class="py-4 px-4 w-[18%] text-center align-middle">Nurse Name</th>
-                  <th class="py-4 px-4 w-[16%] text-center align-middle">Requested Date</th>
-                  <th class="py-4 px-4 w-[14%] text-center align-middle">Time Frame</th>
-                  <th class="py-4 px-4 w-[20%] text-center align-middle">Reason</th>
-                  <th class="py-4 px-4 w-[10%] text-center align-middle">Status</th>
-                  <th class="py-4 px-4 w-[16%] text-center align-middle">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="applications-table-body" class="divide-y divide-neutral-100 text-neutral-700">
-                <!-- Dynamically rendered rows -->
-              </tbody>
-            </table>
-          </div>
+        <!-- Full-Width Edge-to-Edge Table (No box container, direct page integration) -->
+        <div class="w-full overflow-x-auto">
+          <table class="w-full text-center border-collapse table-fixed">
+            <thead>
+              <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200/80 bg-white">
+                <th class="py-4 px-4 w-[12%] text-center align-middle">Nurse ID</th>
+                <th class="py-4 px-4 w-[18%] text-center align-middle">Applicant</th>
+                <th class="py-4 px-4 w-[16%] text-center align-middle">Requested Date</th>
+                <th class="py-4 px-4 w-[14%] text-center align-middle">Time Frame</th>
+                <th class="py-4 px-4 w-[24%] text-center align-middle">Reason / Note</th>
+                <th class="py-4 px-4 w-[10%] text-center align-middle">Status</th>
+                <th class="py-4 px-4 w-[16%] text-center align-middle">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="applications-table-body" class="divide-y divide-neutral-100 text-neutral-700 bg-white">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
 
           <!-- Empty State Container -->
-          <div id="applications-empty-state" class="hidden py-16 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
+          <div id="applications-empty-state" class="hidden py-24 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
               <i data-lucide="file-check-2" class="w-7 h-7"></i>
             </div>
             <h4 class="text-sm font-bold text-neutral-800">No applications found</h4>
@@ -220,13 +218,13 @@
               <div class="flex items-center justify-center gap-2">
                 <button type="button" 
                         onclick="window.promptAction(${item.requestId}, 'approved')" 
-                        class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs">
+                        class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs">
                   <i data-lucide="check" class="w-3.5 h-3.5"></i>
                   <span>Approve</span>
                 </button>
                 <button type="button" 
                         onclick="window.promptAction(${item.requestId}, 'rejected')" 
-                        class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                        class="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition cursor-pointer flex items-center gap-1">
                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
                   <span>Reject</span>
                 </button>
@@ -241,12 +239,12 @@
           }
 
           return `
-            <tr class="hover:bg-neutral-50/70 transition">
+            <tr class="hover:bg-neutral-50/80 transition">
               <td class="py-4 px-4 text-xs font-mono font-bold text-neutral-500 text-center align-middle">${item.nurseId}</td>
               <td class="py-4 px-4 text-xs font-bold text-neutral-900 text-center align-middle">${item.nurseName}</td>
               <td class="py-4 px-4 text-xs font-semibold text-neutral-700 text-center align-middle">${item.requestDate}</td>
               <td class="py-4 px-4 text-xs text-neutral-500 font-mono text-center align-middle">${item.startTime} - ${item.endTime}</td>
-              <td class="py-4 px-4 text-xs text-neutral-600 text-center align-middle max-w-xs truncate" title="${item.reason}">${item.reason}</td>
+              <td class="py-4 px-4 text-xs text-neutral-600 text-center align-middle max-w-sm truncate" title="${item.reason}">${item.reason}</td>
               <td class="py-4 px-4 text-center align-middle">${statusBadge}</td>
               <td class="py-4 px-4 text-center align-middle">${actionCell}</td>
             </tr>
@@ -304,9 +302,9 @@
         document.querySelectorAll('.status-filter-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('.status-filter-btn').forEach(b => {
-              b.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
+              b.className = 'status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
             });
-            btn.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
+            btn.className = 'status-filter-btn px-4 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
             currentFilterStatus = btn.getAttribute('data-status');
             loadApplications();
           });
