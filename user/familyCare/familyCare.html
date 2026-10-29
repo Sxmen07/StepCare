@@ -25,241 +25,347 @@
     </div>
   <?php endif; ?>
 
-  <!-- ============ PAGE HEADER ============ -->
-  <section class="bg-white border-b border-slate-200">
-    <div class="mx-auto max-w-[1500px] px-6 py-8 flex items-start justify-between gap-6 flex-wrap">
-      <div>
-        <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3] mb-3">Family Care</h1>
-        <p class="max-w-2xl text-slate-600 leading-relaxed">
-          Stay connected with your loved ones. Share an access code, or enter one you've received
-          to view their care activity.
-        </p>
-      </div>
-
-      <div class="flex gap-3">
-        <button type="button" id="btnEnterCode"
-                class="rounded-xl border border-slate-300 bg-white px-5 py-3
-                       text-sm font-semibold text-slate-700
-                       hover:bg-slate-50 hover:border-slate-400 transition">
-          Enter code
-        </button>
-        <button type="button" id="btnCreateCode"
-                class="rounded-xl bg-[#3C52C3] px-5 py-3 text-sm font-bold text-white
-                       shadow-sm hover:bg-[#2f41a0] active:scale-95 transition">
-          + Create code
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ MAIN 2-COLUMN LAYOUT ============ -->
-  <section class="mx-auto max-w-[1500px] px-6 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
-
-      <!-- ========================================================= -->
-      <!-- LEFT: FAMILY MEMBERS                                        -->
-      <!-- ========================================================= -->
-      <aside class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 self-start lg:sticky lg:top-24">
-
-        <div class="flex items-center justify-between mb-4">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            Family Members
-          </p>
-          <span id="memberCount"
-                class="inline-flex items-center justify-center
-                       min-w-[22px] h-[22px] px-1.5 rounded-full
-                       bg-slate-100 text-slate-600 text-[11px] font-bold">
-            0
-          </span>
-        </div>
-
-        <div id="memberList" class="space-y-2"></div>
-
-        <div id="noMembers" class="hidden text-center py-6">
-          <p class="text-sm font-semibold text-slate-700 mb-1">No family members yet</p>
-          <p class="text-xs text-slate-500 mb-4">
-            Create a code and share it, or enter one you've received.
+  <?php if ($isLoggedIn): ?>
+    <!-- ============================================================ -->
+    <!-- LOGGED IN VIEW: FAMILY CARE DASHBOARD                        -->
+    <!-- ============================================================ -->
+    
+    <!-- ============ PAGE HEADER ============ -->
+    <section class="bg-white border-b border-slate-200">
+      <div class="mx-auto max-w-[1500px] px-6 py-8 flex items-start justify-between gap-6 flex-wrap">
+        <div>
+          <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3] mb-3">Family Care</h1>
+          <p class="max-w-2xl text-slate-600 leading-relaxed">
+            Stay connected with your loved ones. Share an access code, or enter one you've received
+            to view their care activity.
           </p>
         </div>
 
-      </aside>
-
-      <!-- ========================================================= -->
-      <!-- RIGHT: ACTIVITY FEED                                        -->
-      <!-- ========================================================= -->
-      <div>
-
-        <!-- Activity header -->
-        <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 mb-5 flex items-center gap-4 flex-wrap">
-          <img id="activeMemberPhoto"
-               src=""
-               alt=""
-               class="w-12 h-12 rounded-full object-cover border-2 border-[#3C52C3]">
-
-          <div class="flex-1 min-w-0">
-            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-0.5">
-              Viewing activity for
-            </p>
-            <h2 id="activeMemberName" class="text-xl font-bold text-slate-900 leading-tight"></h2>
-          </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 mb-5">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-
-            <div class="flex flex-col gap-1.5">
-              <label for="filterFrom" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                From
-              </label>
-              <input id="filterFrom" type="date"
-                     class="rounded-lg border border-slate-300 px-3 py-2 text-sm
-                            focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label for="filterTo" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                To
-              </label>
-              <input id="filterTo" type="date"
-                     class="rounded-lg border border-slate-300 px-3 py-2 text-sm
-                            focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label for="filterCategory" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                Service category
-              </label>
-              <select id="filterCategory"
-                      class="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white
-                             focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none">
-                <option value="all">All categories</option>
-              </select>
-            </div>
-
-            <button type="button" id="filterReset"
-                    class="rounded-lg border border-slate-300 bg-white py-2 px-4
-                           text-sm font-semibold text-slate-700
-                           hover:bg-slate-50 hover:border-slate-400 transition">
-              Reset
-            </button>
-
-          </div>
-        </div>
-
-        <p id="resultCount" class="text-sm text-slate-500 mb-4"></p>
-
-        <!-- Appointment list -->
-        <div id="activityList" class="flex flex-col gap-4"></div>
-
-        <div id="noActivity" class="hidden text-center py-16 bg-white rounded-2xl ring-1 ring-slate-200">
-          <p class="text-lg font-bold text-slate-700 mb-1">No activity yet</p>
-          <p class="text-slate-500 text-sm">Nothing matches the current filter.</p>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <!-- CREATE CODE MODAL                                              -->
-  <!-- ============================================================ -->
-  <div id="createModal"
-       class="fixed inset-0 z-[150] hidden items-center justify-center
-              bg-slate-900/70 backdrop-blur-md p-4">
-
-    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 class="text-lg font-bold text-slate-800">Share an access code</h3>
-        <button type="button" data-close-modal="createModal"
-                class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center transition">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-               stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="p-6">
-        <p class="text-sm text-slate-600 mb-5">
-          Send this code to a family member. It's valid for <strong>24 hours</strong> and
-          can be used once.
-        </p>
-
-        <div id="codeDisplay" class="hidden">
-          <div class="rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-6 text-center mb-4">
-            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-2">
-              Your access code
-            </p>
-            <p id="codeValue"
-               class="text-4xl font-extrabold text-[#3C52C3] tracking-[0.3em] leading-none">
-            </p>
-            <p id="codeExpires" class="text-xs text-slate-500 mt-3"></p>
-          </div>
-
-          <button type="button" id="btnCopyCode"
-                  class="w-full rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white
-                         hover:bg-[#2f41a0] active:scale-[0.98] transition mb-3">
-            Copy code
+        <div class="flex gap-3">
+          <button type="button" id="btnEnterCode"
+                  class="rounded-xl border border-slate-300 bg-white px-5 py-3
+                         text-sm font-semibold text-slate-700
+                         hover:bg-slate-50 hover:border-slate-400 transition">
+            Enter code
+          </button>
+          <button type="button" id="btnCreateCode"
+                  class="rounded-xl bg-[#3C52C3] px-5 py-3 text-sm font-bold text-white
+                         shadow-sm hover:bg-[#2f41a0] active:scale-95 transition">
+            + Create code
           </button>
         </div>
+      </div>
+    </section>
 
-        <div id="codeLoading" class="text-center py-8">
-          <p class="text-sm text-slate-500">Generating code…</p>
+    <!-- ============ MAIN 2-COLUMN LAYOUT ============ -->
+    <section class="mx-auto max-w-[1500px] px-6 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+        <!-- LEFT: FAMILY MEMBERS -->
+        <aside class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 self-start lg:sticky lg:top-24">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Family Members</p>
+            <span id="memberCount" class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">0</span>
+          </div>
+          <div id="memberList" class="space-y-2"></div>
+          <div id="noMembers" class="hidden text-center py-6">
+            <p class="text-sm font-semibold text-slate-700 mb-1">No family members yet</p>
+            <p class="text-xs text-slate-500 mb-4">Create a code and share it, or enter one you've received.</p>
+          </div>
+        </aside>
+
+        <!-- RIGHT: ACTIVITY FEED -->
+        <div>
+          <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 mb-5 flex items-center gap-4 flex-wrap">
+            <img id="activeMemberPhoto" src="" alt="" class="w-12 h-12 rounded-full object-cover border-2 border-[#3C52C3]">
+            <div class="flex-1 min-w-0">
+              <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-0.5">Viewing activity for</p>
+              <h2 id="activeMemberName" class="text-xl font-bold text-slate-900 leading-tight"></h2>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-5 mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div class="flex flex-col gap-1.5">
+                <label for="filterFrom" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">From</label>
+                <input id="filterFrom" type="date" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="filterTo" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">To</label>
+                <input id="filterTo" type="date" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="filterCategory" class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Service category</label>
+                <select id="filterCategory" class="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none">
+                  <option value="all">All categories</option>
+                </select>
+              </div>
+              <button type="button" id="filterReset" class="rounded-lg border border-slate-300 bg-white py-2 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition">Reset</button>
+            </div>
+          </div>
+
+          <p id="resultCount" class="text-sm text-slate-500 mb-4"></p>
+          <div id="activityList" class="flex flex-col gap-4"></div>
+
+          <div id="noActivity" class="hidden text-center py-16 bg-white rounded-2xl ring-1 ring-slate-200">
+            <p class="text-lg font-bold text-slate-700 mb-1">No activity yet</p>
+            <p class="text-slate-500 text-sm">Nothing matches the current filter.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODALS -->
+    <div id="createModal" class="fixed inset-0 z-[150] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+      <!-- ... Your existing Create Modal HTML ... -->
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="text-lg font-bold text-slate-800">Share an access code</h3>
+          <button type="button" data-close-modal="createModal" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-slate-600 mb-5">Send this code to a family member. It's valid for <strong>24 hours</strong> and can be used once.</p>
+          <div id="codeDisplay" class="hidden">
+            <div class="rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-6 text-center mb-4">
+              <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-2">Your access code</p>
+              <p id="codeValue" class="text-4xl font-extrabold text-[#3C52C3] tracking-[0.3em] leading-none"></p>
+              <p id="codeExpires" class="text-xs text-slate-500 mt-3"></p>
+            </div>
+            <button type="button" id="btnCopyCode" class="w-full rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white hover:bg-[#2f41a0] active:scale-[0.98] transition mb-3">Copy code</button>
+          </div>
+          <div id="codeLoading" class="text-center py-8"><p class="text-sm text-slate-500">Generating code…</p></div>
+          <div id="codeError" class="hidden rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 mb-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enterModal" class="fixed inset-0 z-[150] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+      <!-- ... Your existing Enter Modal HTML ... -->
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="text-lg font-bold text-slate-800">Enter an access code</h3>
+          <button type="button" data-close-modal="enterModal" class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="enterForm" class="p-6">
+          <p class="text-sm text-slate-600 mb-5">Paste the 6-character code you received from your family member.</p>
+          <input id="enterCodeInput" type="text" maxlength="6" placeholder="ABC123" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-2xl font-bold uppercase tracking-[0.3em] placeholder-slate-300 focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
+          <div id="enterError" class="hidden mt-4 rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700"></div>
+          <button type="submit" id="btnSubmitCode" class="w-full mt-5 rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white hover:bg-[#2f41a0] active:scale-[0.98] transition">Connect</button>
+        </form>
+      </div>
+    </div>
+
+      <?php else: ?>
+    <!-- ============================================================ -->
+    <!-- GUEST VIEW: PUBLIC LANDING PAGE                              -->
+    <!-- ============================================================ -->
+    
+    <!-- 1. HERO SECTION -->
+    <div class="relative overflow-hidden bg-white">
+      <!-- Decorative background elements -->
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-70"></div>
+      <div class="absolute top-1/2 -left-24 w-72 h-72 bg-green-50 rounded-full blur-3xl opacity-70"></div>
+
+      <div class="mx-auto max-w-[1500px] px-6 py-20 lg:py-32 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          
+          <!-- Left Text -->
+          <div class="max-w-2xl">
+            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-blue-50 text-[#3C52C3] text-xs font-bold tracking-wider uppercase mb-6 ring-1 ring-blue-100">
+              <span class="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
+              StepCare Family Care
+            </span>
+            <h1 class="text-5xl md:text-6xl font-extrabold text-slate-900 leading-[1.1] mb-6">
+              Stay connected to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#3C52C3] to-[#007FFF]">ones who matter most.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 leading-relaxed mb-10">
+              Coordinate care effortlessly. Link your StepCare account with your loved ones to monitor their health appointments, share real-time updates, and ensure they're receiving the absolute best care.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 items-start">
+              <!-- Bouncing Login Button -->
+              <a href="../../loginNsignup/login/login.html" class="bounce-btn w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-[#3C52C3] px-8 py-4 text-base font-bold text-white shadow-xl shadow-blue-500/30 hover:bg-[#007FFF] transition">
+                Log in to get started
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+              </a>
+              <a href="../../loginNsignup/login/signup.html" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-white border-2 border-slate-200 px-8 py-4 text-base font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition">
+                Create an account
+              </a>
+            </div>
+          </div>
+
+          <!-- Right Illustration (Placeholder for an image) -->
+          <div class="relative hidden lg:block">
+            <div class="absolute inset-0 bg-gradient-to-tr from-[#3C52C3]/20 to-[#10B981]/20 rounded-3xl transform rotate-3 scale-105"></div>
+            <img src="../../images/familyCare.jpg" alt="Family Care" class="relative z-10 w-full rounded-3xl shadow-2xl object-cover h-[500px] border-4 border-white">
+            <!-- Floating badge -->
+            <div class="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl z-20 flex items-center gap-3 border border-slate-100">
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-[#10B981]"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-800">100% Secure</p>
+                <p class="text-xs text-slate-500">Encrypted connections</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. HOW TO GET FAMILY CARE SECTION -->
+    <div class="bg-slate-50 border-t border-b border-slate-200 py-24">
+      <div class="mx-auto max-w-[1500px] px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16">
+          <h2 class="text-[#3C52C3] text-3xl md:text-4xl font-extrabold mb-4">How to get Family Care</h2>
+          <p class="text-slate-600 text-lg">Connecting with your family is simple, secure, and takes less than a minute.</p>
         </div>
 
-        <div id="codeError" class="hidden rounded-xl bg-red-50 border border-red-200 p-3
-                    text-sm text-red-700 mb-3"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          
+          <!-- Connecting Line (Desktop) -->
+          <div class="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-0.5 bg-slate-200 -z-10"></div>
+
+          <!-- Step 1 -->
+          <div class="bg-white rounded-3xl p-8 ring-1 ring-slate-200 text-center hover:shadow-xl hover:-translate-y-1 transition duration-300 relative z-10">
+            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#3C52C3] ring-4 ring-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">1. Generate Code</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">The primary account holder logs in and generates a secure 6-character access code from the dashboard.</p>
+          </div>
+          
+          <!-- Step 2 -->
+          <div class="bg-white rounded-3xl p-8 ring-1 ring-slate-200 text-center hover:shadow-xl hover:-translate-y-1 transition duration-300 relative z-10">
+            <div class="w-16 h-16 mx-auto bg-green-50 rounded-2xl flex items-center justify-center mb-6 text-[#10B981] ring-4 ring-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">2. Share Securely</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Send the unique code to a trusted family member via text, email, or in person. It expires in 24 hours.</p>
+          </div>
+          
+          <!-- Step 3 -->
+          <div class="bg-white rounded-3xl p-8 ring-1 ring-slate-200 text-center hover:shadow-xl hover:-translate-y-1 transition duration-300 relative z-10">
+            <div class="w-16 h-16 mx-auto bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 ring-4 ring-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">3. Connect & View</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Once entered, the accounts link up. Family members can now safely view upcoming appointments and care history.</p>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ============================================================ -->
-  <!-- ENTER CODE MODAL                                              -->
-  <!-- ============================================================ -->
-  <div id="enterModal"
-       class="fixed inset-0 z-[150] hidden items-center justify-center
-              bg-slate-900/70 backdrop-blur-md p-4">
+    <!-- 3. WHAT IS STEPCARE & WHY YOU NEED IT -->
+    <div class="bg-white py-24">
+      <div class="mx-auto max-w-[1500px] px-6">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+          
+          <!-- Left: Content -->
+          <div>
+            <h2 class="text-3xl md:text-4xl font-extrabold mb-6">
+  What is <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>?
+</h2>
+            <p class="text-lg text-slate-600 leading-relaxed mb-6">
+              StepCare is a premium home healthcare platform that bridges the gap between hospitals and your home. We dispatch certified Registered Nurses and Nurse Practitioners directly to your residence within 120 minutes.
+            </p>
+            <p class="text-lg text-slate-600 leading-relaxed mb-8">
+              Every visit integrates continuous vital telemetry and primary doctor reporting. We bring hospital-grade care to the comfort of your living room.
+            </p>
+            
+            <h3 class="text-2xl font-bold text-slate-900 mb-4">Why do you need <span class="text-[#3C52C3]">Family Care</span>?</h3>
+            <ul class="space-y-4">
+              <li class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                  <svg class="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                  <p class="text-slate-800 font-semibold">Peace of Mind</p>
+                  <p class="text-slate-600 text-sm mt-1">Monitor your elderly parents' or recovering relatives' medical visits without constantly calling them.</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                  <svg class="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                  <p class="text-slate-800 font-semibold">Coordinated Care</p>
+                  <p class="text-slate-600 text-sm mt-1">Multiple family members can stay in the loop. No more miscommunication about who booked what appointment.</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                  <svg class="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                  <p class="text-slate-800 font-semibold">Emergency Readiness</p>
+                  <p class="text-slate-600 text-sm mt-1">If a nurse flags an issue, the entire family circle is instantly aware and can take immediate action.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
 
-    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+          <!-- Right: Actual Service Highlights -->
+          <div class="bg-slate-50 rounded-3xl p-8 ring-1 ring-slate-200 relative overflow-hidden">
+            <!-- Decorative gradient -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-100 rounded-full blur-2xl"></div>
+            
+            <h3 class="text-xl font-bold text-slate-800 mb-6 relative z-10">Comprehensive Care Services</h3>
+            
+            <div class="space-y-3 relative z-10">
+              <!-- Service 1 -->
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-blue-50 text-[#3C52C3] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 text-sm">Elderly Mobility & Vitals</p>
+                  <p class="text-xs text-slate-500">Routine wellness & fall prevention</p>
+                </div>
+              </div>
+              <!-- Service 2 -->
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-green-50 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 text-sm">Post-Operative Wound Care</p>
+                  <p class="text-xs text-slate-500">Dressing renewal & infection surveillance</p>
+                </div>
+              </div>
+              <!-- Service 3 -->
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 text-sm">Stroke Recovery & Rehab</p>
+                  <p class="text-xs text-slate-500">Targeted post-acute intervention</p>
+                </div>
+              </div>
+              <!-- Service 4 -->
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-800 text-sm">Maternal & Newborn</p>
+                  <p class="text-xs text-slate-500">Lactation consulting & neonatal checks</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 class="text-lg font-bold text-slate-800">Enter an access code</h3>
-        <button type="button" data-close-modal="enterModal"
-                class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center transition">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-               stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        </div>
       </div>
-
-      <form id="enterForm" class="p-6">
-        <p class="text-sm text-slate-600 mb-5">
-          Paste the 6-character code you received from your family member.
-        </p>
-
-        <input id="enterCodeInput" type="text" maxlength="6"
-               placeholder="ABC123"
-               class="w-full rounded-xl border border-slate-300 px-4 py-3
-                      text-center text-2xl font-bold uppercase tracking-[0.3em]
-                      placeholder-slate-300
-                      focus:border-[#3C52C3] focus:ring-2 focus:ring-[#007FFF]/40 outline-none" />
-
-        <div id="enterError"
-             class="hidden mt-4 rounded-xl bg-red-50 border border-red-200 p-3
-                    text-sm text-red-700"></div>
-
-        <button type="submit" id="btnSubmitCode"
-                class="w-full mt-5 rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white
-                       hover:bg-[#2f41a0] active:scale-[0.98] transition">
-          Connect
-        </button>
-      </form>
     </div>
-  </div>
+  <?php endif; ?>
 
   <script>
     window.selfData         = <?= $selfJson ?>;

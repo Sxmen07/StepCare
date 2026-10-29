@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StepCare - Notifications</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+    .notif-row {
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .notif-row:hover {
+      background-color: #f8fafc;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+
+  <!-- Modular Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
+
+  <!-- Main View Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- Modular Topbar Container -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Sticky Sub-Bar: Filter & Action -->
+    <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <!-- Filter By Role -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Role:</span>
+          <select id="filter-role" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="nurse">Nurse</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+
+        <!-- Sort By Date -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Sort:</span>
+          <select id="sort-date" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Send Action Button -->
+      <button id="open-compose-btn" type="button" class="px-5 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>Send Notification</span>
+      </button>
+    </section>
+
+    <!-- Table Header (Aligns with Rows) -->
+    <div class="grid grid-cols-12 px-8 py-3 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+      <div class="col-span-2 text-left pl-4">Recipients</div>
+      <div class="col-span-2">Sender</div>
+      <div class="col-span-5">Title & Snippet</div>
+      <div class="col-span-3 grid grid-cols-2 text-center">
+        <div>Date</div>
+        <div>Time</div>
+      </div>
+    </div>
+
+    <!-- Full-Width Stream -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="notifications-list-container" class="divide-y divide-neutral-100 w-full">
+        <!-- Rendered Rows -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Multi-Role Dispatch Modal -->
+  <div id="compose-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center hidden">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-neutral-200">
+      <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
+        <div>
+          <h3 class="text-lg font-bold text-neutral-900">Send New Notification</h3>
+          <p class="text-xs text-neutral-400">Select multiple recipient roles to broadcast your update</p>
+        </div>
+        <button type="button" id="close-modal-x" class="text-neutral-400 hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="compose-form" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2.5">Target Audience</label>
+          <div class="grid grid-cols-3 gap-3">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-neutral-200 hover:border-[#3C52C3] transition cursor-pointer bg-neutral-50/50">
+              <input type="checkbox" name="target_role" value="admin" checked class="w-4 h-4 text-[#3C52C3] rounded focus:ring-0 cursor-pointer" />
+              <span class="text-xs font-semibold text-neutral-800">Administrators</span>
+            </label>
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-neutral-200 hover:border-[#3C52C3] transition cursor-pointer bg-neutral-50/50">
+              <input type="checkbox" name="target_role" value="nurse" class="w-4 h-4 text-[#3C52C3] rounded focus:ring-0 cursor-pointer" />
+              <span class="text-xs font-semibold text-neutral-800">Nurses</span>
+            </label>
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-neutral-200 hover:border-[#3C52C3] transition cursor-pointer bg-neutral-50/50">
+              <input type="checkbox" name="target_role" value="user" class="w-4 h-4 text-[#3C52C3] rounded focus:ring-0 cursor-pointer" />
+              <span class="text-xs font-semibold text-neutral-800">Patients & Users</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">Notification Title</label>
+          <input type="text" id="compose-title" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" placeholder="E.g., Quarterly Health Guidelines Updated" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">Message Body</label>
+          <textarea id="compose-message" rows="5" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" placeholder="Type notification details here..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-neutral-100">
+          <button type="button" id="close-compose-btn" class="px-6 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="btn-submit-notif" class="px-8 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">
+            Send
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Load Self-Contained Sidebar
+      fetch('/StepCare/components/sidebar-admin.html')
+        .then(res => res.text())
+        .then(html => injectComponent('sidebar-container', html));
+
+      // 2. Load Self-Contained Topbar
+      fetch('/StepCare/components/topbar.html')
+        .then(res => res.text())
+        .then(html => {
+          injectComponent('topbar-container', html);
+          const title = document.getElementById('topbar-page-title');
+          if (title) title.textContent = "Notifications";
+        });
+
+      function injectComponent(containerId, html) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = html;
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+      }
+
+      // 3. Load Notifications Stream
+      loadNotifications();
+
+      document.getElementById('filter-role').addEventListener('change', loadNotifications);
+      document.getElementById('sort-date').addEventListener('change', loadNotifications);
+
+      function loadNotifications() {
+        const filterRole = document.getElementById('filter-role').value;
+        const sortBy     = document.getElementById('sort-date').value;
+        const container  = document.getElementById('notifications-list-container');
+
+        fetch(`/StepCare/auth/notification-actions.php?action=fetch_all&role=admin&user_id=1&filter_role=${filterRole}&sort_by=${sortBy}`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success || !data.notifications || data.notifications.length === 0) {
+              container.innerHTML = `
+                <div class="py-24 text-center">
+                  <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="inbox" class="w-6 h-6"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-neutral-600">No notifications yet</p>
+                  <p class="text-xs text-neutral-400 mt-1">There are no messages matching your criteria.</p>
+                </div>
+              `;
+              if (window.lucide) lucide.createIcons();
+              return;
+            }
+
+            container.innerHTML = data.notifications.map(n => {
+              const isUnread = (parseInt(n.isRead) === 0);
+              const d = new Date(n.createdAt);
+              const dateStr = d.toLocaleDateString();
+              const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+              const recipients = n.recipients_list && n.recipients_list.length > 0 ? n.recipients_list : [n.recipientType || 'admin'];
+              const recipientBadges = recipients.map(role => {
+                const styles = {
+                  admin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  nurse: 'bg-sky-50 text-sky-700 border-sky-200',
+                  user:  'bg-purple-50 text-purple-700 border-purple-200'
+                };
+                return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize ${styles[role] || 'bg-neutral-100 text-neutral-600'}">${role}</span>`;
+              }).join('');
+
+              return `
+                <div onclick="window.location.href='/StepCare/admin/notifications/notifications-detailed.html?id=${n.notificationID}'"
+                     class="notif-row grid grid-cols-12 items-center px-8 py-4 border-b border-neutral-100 cursor-pointer ${isUnread ? 'bg-white font-bold' : 'bg-neutral-50/20 font-normal'}">
+                  
+                  <!-- Col 1: Recipients Badges (Left Aligned to Fill Margin) -->
+                  <div class="col-span-2 flex items-center justify-start pl-1 gap-1.5 flex-wrap">
+                    <span class="w-2 h-2 rounded-full ${isUnread ? 'bg-[#3C52C3] ring-2 ring-indigo-100' : 'bg-transparent'} shrink-0"></span>
+                    ${recipientBadges}
+                  </div>
+
+                  <!-- Col 2: Sender Name -->
+                  <div class="col-span-2 text-xs text-neutral-900 truncate pr-4">
+                    ${n.senderName || 'System Alert'}
+                  </div>
+
+                  <!-- Col 3: Title & Message Snippet -->
+                  <div class="col-span-5 flex items-center gap-2 min-w-0 pr-6">
+                    <span class="text-xs text-neutral-900 truncate">${n.title}</span>
+                    <span class="text-neutral-400 text-xs font-normal truncate">- ${n.message}</span>
+                  </div>
+
+                  <!-- Col 4: Date & Time (Centered) -->
+                  <div class="col-span-3 grid grid-cols-2 text-center text-[11px] text-neutral-400 font-normal">
+                    <div class="truncate">${dateStr}</div>
+                    <div class="truncate">${timeStr}</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+          })
+          .catch(err => {
+            console.error("List load failed:", err);
+            container.innerHTML = `<div class="py-12 text-center text-xs text-red-500">Failed to load notifications.</div>`;
+          });
+      }
+
+      // Modal Controls
+      const modal = document.getElementById('compose-modal');
+      const openBtn = document.getElementById('open-compose-btn');
+      const closeBtn = document.getElementById('close-compose-btn');
+      const closeX = document.getElementById('close-modal-x');
+
+      openBtn.onclick = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+      const hideModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+      closeBtn.onclick = hideModal;
+      closeX.onclick = hideModal;
+
+      // Submit Multi-Target Broadcast
+      document.getElementById('compose-form').onsubmit = (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btn-submit-notif');
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending...";
+
+        const checkedRoles = Array.from(document.querySelectorAll('input[name="target_role"]:checked')).map(cb => cb.value);
+        if (checkedRoles.length === 0) {
+          alert("Please check at least one recipient audience role.");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Send";
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append('action', 'send');
+        fd.append('role', 'admin');
+        fd.append('user_id', 1);
+        checkedRoles.forEach(r => fd.append('recipientTypes[]', r));
+        fd.append('title', document.getElementById('compose-title').value);
+        fd.append('message', document.getElementById('compose-message').value);
+
+        fetch('/StepCare/auth/notification-actions.php', { method: 'POST', body: fd })
+          .then(r => r.json())
+          .then(res => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Send";
+            if (res.success) {
+              hideModal();
+              document.getElementById('compose-form').reset();
+              loadNotifications();
+              fetch('/StepCare/auth/notification-actions.php?action=fetch_summary&role=admin&user_id=1');
+            } else {
+              alert("Failed to send: " + res.message);
+            }
+          })
+          .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Send";
+            alert("Server Error: " + err);
+          });
+      };
+    });
+  </script>
+</body>
+</html>

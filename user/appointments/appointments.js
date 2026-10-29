@@ -3,31 +3,34 @@
   'use strict';
 
   /* ============================================================
-     FILTER
+     SHORTCUT HELPERS
      ============================================================ */
-  const chips      = document.querySelectorAll('.appt-chip');
-  const cards      = document.querySelectorAll('.appt-card');
-  const noMatch    = document.getElementById('noMatch');
-  const countEl    = document.getElementById('apptCount');
+  const $  = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+  /* ============================================================
+     1. FILTER
+     ============================================================ */
+  const chips   = $$('.appt-chip');
+  const cards   = $$('.appt-card');
+  const noMatch = $('#noMatch');
+  const countEl = $('#apptCount');
 
   let activeStatus = 'all';
 
   function matches(status, filter) {
     if (filter === 'all') return true;
-    if (filter === 'confirmed')
-      return status === 'confirmed' || status === 'in_progress';
-    if (filter === 'cancelled')
-      return status === 'cancelled' || status === 'declined';
+    if (filter === 'confirmed') return status === 'confirmed' || status === 'in_progress';
+    if (filter === 'cancelled') return status === 'cancelled' || status === 'declined';
     return status === filter;
   }
 
   function applyFilter() {
     let visible = 0;
-
     cards.forEach(card => {
       const ok = matches(card.dataset.status, activeStatus);
-      if (ok) { card.classList.remove('hidden'); visible++; }
-      else    { card.classList.add('hidden'); }
+      card.classList.toggle('hidden', !ok);
+      if (ok) visible++;
     });
 
     if (countEl) {
@@ -35,19 +38,30 @@
         ? ''
         : `Showing ${visible} appointment${visible === 1 ? '' : 's'}`;
     }
-
-    // Only show the "no match" state when there ARE cards but none match
     if (noMatch) {
-      const shouldShow = visible === 0 && cards.length > 0;
-      noMatch.classList.toggle('hidden', !shouldShow);
+      noMatch.classList.toggle('hidden', !(visible === 0 && cards.length > 0));
     }
   }
+
+  /* Restore filter from sessionStorage (when returning from viewDetails) */
+  try {
+    const saved = sessionStorage.getItem('apptActiveFilter');
+    if (saved && saved !== 'all') {
+      const chip = chips.find(c => c.dataset.status === saved);
+      if (chip) {
+        chips.forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        activeStatus = saved;
+      }
+    }
+  } catch (e) { /* ignore */ }
 
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
       chips.forEach(c => c.classList.remove('is-active'));
       chip.classList.add('is-active');
       activeStatus = chip.dataset.status;
+      try { sessionStorage.setItem('apptActiveFilter', activeStatus); } catch (e) {}
       applyFilter();
     });
   });
@@ -55,125 +69,297 @@
   applyFilter();
 
   /* ============================================================
-     MODAL
+     2. FADE-IN ON RETURN FROM viewDetails
      ============================================================ */
-  const modal         = document.getElementById('apptModal');
-  const modalCard     = document.getElementById('apptModalCard');
-  const closeModalBtn = document.getElementById('closeApptModal');
-
-  // Pull JSON safely from an inert <script type="application/json"> block
-  let appointments = [];
   try {
-    const raw = document.getElementById('apptData');
-    if (raw) appointments = JSON.parse(raw.textContent || '[]');
-  } catch (e) {
-    console.error('Could not parse appointment data', e);
+    if (sessionStorage.getItem('apptCardsFadeIn') === '1') {
+      sessionStorage.removeItem('apptCardsFadeIn');
+
+      const visible = cards.filter(c => !c.classList.contains('hidden'));
+      visible.forEach((card, i) => {
+        card.style.opacity    = '0';
+        card.style.transform  = 'translateX(-40px)';
+        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        setTimeout(() => {
+          card.style.opacity   = '1';
+          card.style.transform = 'translateX(0)';
+          setTimeout(() => {
+            card.style.opacity    = '';
+            card.style.transform  = '';
+            card.style.transition = '';
+          }, 500);
+        }, i * 55);
+      });
+    }
+  } catch (e) { /* ignore */ }
+
+  /* ============================================================
+     3. NAVIGATE → viewDetails WITH STAIRCASE FADE-OUT
+     ============================================================ */
+  function navigateToDetails(id) {
+    if (!id) return;
+
+    const visible = cards.filter(c => !c.classList.contains('hidden'));
+    visible.forEach((card, i) => {
+      setTimeout(() => card.classList.add('fade-left'), i * 55);
+    });
+
+    const totalMs = visible.length * 55 + 380;
+    setTimeout(() => {
+      window.location.href = `viewDetails/viewDetails.php?id=${encodeURIComponent(id)}`;
+    }, totalMs);
   }
 
-  function esc(str) {
-    return String(str ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  $$('.js-view-appt').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateToDetails(btn.dataset.viewId);
+    });
+  });
+
+  /* Clicking the card body also opens details (except buttons/links) */
+  cards.forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, input, select, textarea')) return;
+      navigateToDetails(card.dataset.id);
+    });
+  });
+
+  /* ============================================================
+     4. POLICY MODAL
+     ============================================================ */
+  const policyModal    = $('#policyModal');
+  const openPolicyBtn  = $('#openPolicyBtn');
+  const closePolicyBtn = $('#closePolicyBtn');
+
+  function openPolicy()  { policyModal.classList.remove('hidden');  policyModal.classList.add('flex'); }
+  function closePolicy() { policyModal.classList.add('hidden');     policyModal.classList.remove('flex'); }
+
+  if (openPolicyBtn)  openPolicyBtn.addEventListener('click', openPolicy);
+  if (closePolicyBtn) closePolicyBtn.addEventListener('click', closePolicy);
+  if (policyModal)    policyModal.addEventListener('click', (e) => { if (e.target === policyModal) closePolicy(); });
+
+  /* ============================================================
+     5. CANCEL FLOW
+     ============================================================ */
+  const cancelModal    = $('#cancelConfirmModal');
+  const btnConfirm     = $('#btnConfirmCancel');
+  const btnKeep        = $('#btnKeepAppt');
+
+  let pendingCancelId  = null;
+  let cancelCountdown  = null;
+
+  function openCancelModal(apptId) {
+    pendingCancelId = apptId;
+
+    /* Reset button to disabled + countdown */
+    btnConfirm.disabled     = true;
+    btnConfirm.textContent  = 'Wait 10s...';
+    btnConfirm.className    = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
+
+    cancelModal.classList.remove('hidden');
+    cancelModal.classList.add('flex');
+
+    /* 10-second safety countdown */
+    let seconds = 10;
+    clearInterval(cancelCountdown);
+    cancelCountdown = setInterval(() => {
+      seconds--;
+      if (seconds > 0) {
+        btnConfirm.textContent = `Wait ${seconds}s...`;
+      } else {
+        clearInterval(cancelCountdown);
+        btnConfirm.disabled    = false;
+        btnConfirm.textContent = 'Yes, Cancel Appointment';
+        btnConfirm.className   = 'w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white hover:bg-red-700 active:scale-95 transition';
+      }
+    }, 1000);
   }
 
-  function fmtDate(dt) {
-    const d = new Date(dt.replace(' ', 'T'));
-    return d.toLocaleDateString('en-GB', {
-      weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+  function closeCancelModal() {
+    clearInterval(cancelCountdown);
+    cancelModal.classList.add('hidden');
+    cancelModal.classList.remove('flex');
+    pendingCancelId = null;
+  }
+
+  $$('.js-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openCancelModal(btn.dataset.cancelId);
+    });
+  });
+
+  if (btnKeep) btnKeep.addEventListener('click', closeCancelModal);
+
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', async () => {
+      if (!pendingCancelId) return;
+
+      btnConfirm.disabled    = true;
+      btnConfirm.textContent = 'Cancelling…';
+
+      try {
+        const form = new FormData();
+        form.append('appointmentID', pendingCancelId);
+
+        const res  = await fetch('cancelBooking.php', { method: 'POST', body: form });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message || 'Could not cancel. Please try again.');
+          btnConfirm.disabled    = false;
+          btnConfirm.textContent = 'Yes, Cancel Appointment';
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+        btnConfirm.disabled    = false;
+        btnConfirm.textContent = 'Yes, Cancel Appointment';
+      }
     });
   }
 
-  function fmtTime(dt) {
-    const d = new Date(dt.replace(' ', 'T'));
-    return d.toLocaleTimeString('en-US', {
-      hour: 'numeric', minute: '2-digit', hour12: true
+  /* ============================================================
+     6. RATE & REVIEW FLOW
+     ============================================================ */
+  const reviewModal    = $('#reviewModal');
+  const reviewTitle    = $('#reviewServiceTitle');
+  const reviewSubmit   = $('#reviewSubmitBtn');
+  const reviewLater    = $('#reviewLaterBtn');
+  const reviewClose    = $('#closeReviewModal');
+  const reviewComment  = $('#reviewComment');
+  const reviewChar     = $('#reviewCharCount');
+  const reviewStars    = $$('.review-star');
+  const reviewLabel    = $('#reviewRatingLabel');
+
+  let activeReviewId = null;
+  let activeRating   = 0;
+
+  const RATING_LABELS = {
+    1: 'Poor 😞',
+    2: 'Fair 😕',
+    3: 'Good 🙂',
+    4: 'Great 😃',
+    5: 'Excellent 🤩',
+  };
+
+  function updateStars(n) {
+    reviewStars.forEach(btn => {
+      const val = Number(btn.dataset.value);
+      btn.style.color = val <= n ? '#f59e0b' : '#cbd5e1';
     });
   }
 
-  function statusBadge(status, large) {
-    let label = status, color = 'slate';
-    switch (status) {
-      case 'pending':     label = 'Pending Nurse'; color = 'amber';   break;
-      case 'confirmed':   label = 'Confirmed';     color = 'blue';    break;
-      case 'in_progress': label = 'In Progress';   color = 'indigo';  break;
-      case 'completed':   label = 'Completed';     color = 'emerald'; break;
-      case 'cancelled':   label = 'Cancelled';     color = 'red';     break;
-      case 'declined':    label = 'Declined';      color = 'red';     break;
-    }
-    const size = large ? 'px-3 py-1.5 text-xs' : 'px-2.5 py-1 text-[11px]';
-    const colorMap = {
-      amber:   'bg-amber-100 text-amber-800 ring-amber-200',
-      blue:    'bg-blue-100 text-blue-800 ring-blue-200',
-      indigo:  'bg-indigo-100 text-indigo-800 ring-indigo-200',
-      emerald: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-      red:     'bg-red-100 text-red-700 ring-red-200',
-      slate:   'bg-slate-100 text-slate-700 ring-slate-200',
-    };
-    return `<span class="inline-flex items-center rounded-full font-bold uppercase
-                          tracking-wider ring-1 ${colorMap[color]} ${size}">
-              ${esc(label)}
-            </span>`;
+  function updateSubmitState() {
+    const ready = activeRating > 0 && activeReviewId;
+    reviewSubmit.disabled    = !ready;
+    reviewSubmit.className   = ready
+      ? 'w-full rounded-xl bg-[#3C52C3] py-3.5 text-sm font-bold text-white hover:bg-[#2d3e9c] active:scale-95 transition'
+      : 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 cursor-not-allowed transition';
   }
 
-  function openModal(id) {
-    const appt = appointments.find(a => String(a.appointmentID) === String(id));
-    if (!appt) {
-      console.warn('Appointment not found', id);
-      return;
-    }
+  function openReviewModal(apptId, serviceName) {
+    activeReviewId = apptId;
+    activeRating   = 0;
 
-    document.getElementById('amReference').textContent =
-      `Reference #SC${String(appt.appointmentID).padStart(6,'0')}`;
-    document.getElementById('amTitle').textContent     = appt.serviceName || 'Service';
-    document.getElementById('amStatusBadge').innerHTML = statusBadge(appt.appointmentStatus, true);
-    document.getElementById('amPatient').textContent   = appt.patientName || '—';
-    document.getElementById('amDateTime').textContent  =
-      `${fmtDate(appt.startDateTime)} at ${fmtTime(appt.startDateTime)}`;
-    document.getElementById('amAddress').textContent   = appt.locationAddress || '—';
-    document.getElementById('amPrice').textContent     =
-      `RM${Number(appt.price).toFixed(2)} / ${appt.price_unit || 'visit'}`;
+    reviewTitle.textContent   = serviceName || 'Your service';
+    reviewComment.value       = '';
+    reviewChar.textContent    = '0';
+    reviewLabel.textContent   = 'Select a rating';
+    reviewLabel.className     = 'text-center text-sm text-slate-400 mb-6 h-5';
 
-    const nurseRow = document.getElementById('amNurseRow');
-    const nurseEl  = document.getElementById('amNurse');
-    if (appt.nurseFirstName) {
-      nurseEl.textContent = `${appt.nurseFirstName} ${appt.nurseLastName || ''}`.trim();
-      nurseRow.classList.remove('hidden');
-    } else {
-      nurseRow.classList.add('hidden');
-    }
+    updateStars(0);
+    updateSubmitState();
 
-    const notesBlock = document.getElementById('amNotesBlock');
-    if (appt.specialInstructions) {
-      document.getElementById('amNotes').textContent = appt.specialInstructions;
-      notesBlock.classList.remove('hidden');
-    } else {
-      notesBlock.classList.add('hidden');
-    }
-
-    document.getElementById('amPendingNote')
-      .classList.toggle('hidden', appt.appointmentStatus !== 'pending');
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
+    reviewModal.classList.remove('hidden');
+    reviewModal.classList.add('flex');
   }
 
-  function closeModal() {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    document.body.style.overflow = '';
+  function closeReviewModal() {
+    reviewModal.classList.add('hidden');
+    reviewModal.classList.remove('flex');
+    activeReviewId = null;
+    activeRating   = 0;
   }
 
-  document.querySelectorAll('.js-view-appt').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.dataset.viewId));
+  $$('.js-review-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const card      = btn.closest('.appt-card');
+      const titleEl   = card ? card.querySelector('h3') : null;
+      const serviceNm = titleEl ? titleEl.textContent.trim() : '';
+      openReviewModal(btn.dataset.reviewId, serviceNm);
+    });
   });
 
-  closeModalBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', e => {
-    if (!modalCard.contains(e.target)) closeModal();
+  reviewStars.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeRating = Number(btn.dataset.value);
+      updateStars(activeRating);
+      reviewLabel.textContent = RATING_LABELS[activeRating] || '';
+      reviewLabel.className   = 'text-center text-sm font-semibold text-amber-600 mb-6 h-5';
+      updateSubmitState();
+    });
   });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+
+  if (reviewComment) {
+    reviewComment.addEventListener('input', () => {
+      reviewChar.textContent = reviewComment.value.length;
+    });
+  }
+
+  if (reviewClose) reviewClose.addEventListener('click', closeReviewModal);
+  if (reviewLater) reviewLater.addEventListener('click', closeReviewModal);
+
+  if (reviewModal) {
+    reviewModal.addEventListener('click', (e) => {
+      if (e.target === reviewModal) closeReviewModal();
+    });
+  }
+
+  if (reviewSubmit) {
+    reviewSubmit.addEventListener('click', async () => {
+      if (!activeReviewId || activeRating < 1) return;
+
+      reviewSubmit.disabled    = true;
+      reviewSubmit.textContent = 'Submitting…';
+
+      try {
+        const form = new FormData();
+        form.append('appointmentID', activeReviewId);
+        form.append('rating',        activeRating);
+        form.append('comment',       reviewComment.value.trim());
+
+        const res  = await fetch('submitReview.php', { method: 'POST', body: form });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message || 'Could not submit review.');
+          reviewSubmit.textContent = 'Submit Review';
+          updateSubmitState();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+        reviewSubmit.textContent = 'Submit Review';
+        updateSubmitState();
+      }
+    });
+  }
+
+  /* ============================================================
+     7. ESCAPE KEY → close any open modal
+     ============================================================ */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (policyModal  && !policyModal.classList.contains('hidden'))  closePolicy();
+    if (cancelModal  && !cancelModal.classList.contains('hidden'))  closeCancelModal();
+    if (reviewModal  && !reviewModal.classList.contains('hidden'))  closeReviewModal();
   });
 
 })();
