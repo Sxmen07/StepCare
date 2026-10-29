@@ -81,7 +81,6 @@
               $svc['description'] . ' ' . implode(' ', $features)
           );
         ?>
-        <!-- Added data-service-id to the article, and slower hover transition -->
         <article class="svc-card reveal-on-scroll group bg-white rounded-2xl ring-1 ring-slate-200
                         overflow-hidden flex flex-col
                         transition-all duration-500 ease-out
@@ -214,10 +213,10 @@
 
       <!-- RIGHT COLUMN — Sliding content -->
       <div class="md:w-1/2 flex-1 overflow-hidden relative border-t md:border-t-0 md:border-l border-slate-100">
-        <div id="modalSlider" class="flex h-full w-[200%] transition-transform duration-500 ease-in-out">
+        <div id="modalSlider" class="flex h-full w-[300%] transition-transform duration-500 ease-in-out">
 
           <!-- PANEL 1 — DETAIL & REVIEWS -->
-          <section class="w-1/2 h-full flex flex-col relative pt-16 md:pt-20">
+          <section class="w-1/3 h-full flex flex-col relative pt-16 md:pt-20">
             <div class="px-8 md:px-10 flex-shrink-0">
               <p id="detailDescription" class="text-slate-600 leading-relaxed mb-6"></p>
               <h3 class="text-lg font-bold text-slate-800 mb-3">What's included</h3>
@@ -244,7 +243,7 @@
           </section>
 
           <!-- PANEL 2 — BOOKING -->
-          <section class="w-1/2 h-full overflow-y-auto">
+          <section class="w-1/3 h-full overflow-y-auto">
             <div class="pt-16 md:pt-20 px-8 md:px-10 pb-8">
               <button type="button" id="backToDetail"
                       class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-[#3C52C3] mb-6 transition group">
@@ -258,6 +257,63 @@
               <p class="text-sm text-slate-500 mb-8">Choose a date and time slot that works for you.</p>
 
               <div id="bookingFormContainer"></div>
+            </div>
+          </section>
+
+          <!-- PANEL 3 — PAYMENT -->
+          <section class="w-1/3 h-full overflow-y-auto">
+            <div class="pt-16 md:pt-20 px-8 md:px-10 pb-8">
+              <button type="button" id="backToBooking"
+                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-[#3C52C3] mb-6 transition group">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 transition-transform group-hover:-translate-x-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                </svg>
+                Back to form
+              </button>
+
+              <h2 class="text-2xl font-extrabold text-slate-800 mb-1">Complete Payment</h2>
+              <p class="text-sm text-slate-500 mb-8">Please upload your payment receipt to finalize.</p>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-5 mb-6">
+                <p class="text-xs text-slate-500 mb-1">Total Amount</p>
+                <p class="text-2xl font-bold text-[#3C52C3]" id="payAmount">RM 0.00</p>
+                <p class="text-sm text-slate-600 mt-2">Transfer to: <strong class="font-mono">Maybank 5140 1234 5678</strong></p>
+              </div>
+
+              <form id="paymentForm" class="flex flex-col gap-5">
+                <input type="hidden" name="appointmentID" id="paymentAppointmentID" value="" />
+                
+                <div>
+                  <p class="text-sm font-semibold text-slate-700 mb-2">Upload Payment Proof <span class="text-red-500">*</span></p>
+                  
+                  <div id="payDropZone" class="relative border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center hover:bg-slate-100 hover:border-[#3C52C3] transition cursor-pointer group overflow-hidden">
+                    <input type="file" name="paymentProof" id="payFileInput" accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" required />
+                    
+                    <div id="payDropContent" class="flex flex-col items-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400 group-hover:text-[#3C52C3] transition mb-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                      </svg>
+                      <p class="text-sm font-semibold text-slate-700">Click or drag to upload</p>
+                    </div>
+
+                    <div id="payPreviewContainer" class="hidden absolute inset-0 bg-slate-100 flex items-center justify-center p-2 z-20">
+                      <img id="payImagePreview" class="max-w-full max-h-full object-contain rounded-xl" />
+                      <button type="button" id="payRemoveFile" class="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1 shadow-md hover:bg-red-50 z-30">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-6">
+                  <button type="submit" id="paySubmitBtn" disabled
+                          class="w-full rounded-xl bg-[#10B981] py-3.5 text-sm font-bold text-white
+                                 hover:bg-[#059669] active:scale-[0.98] transition
+                                 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Confirm Payment
+                  </button>
+                </div>
+              </form>
             </div>
           </section>
 
@@ -299,7 +355,7 @@
         </div>
         <div class="rounded-xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800 text-left mb-6">
           <p class="font-semibold mb-1">What happens next?</p>
-          <p>A licensed nurse will accept your booking shortly. You'll receive another email once they're assigned.</p>
+          <p>We are verifying your payment proof. Once approved, a licensed nurse will accept your booking shortly. You'll receive another email once they're assigned.</p>
         </div>
         <div class="flex flex-col sm:flex-row gap-3">
           <button type="button" id="successClose" class="flex-1 rounded-xl border border-slate-300 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Keep browsing</button>

@@ -83,7 +83,6 @@
         const el = entry.target;
         el.classList.add('is-visible');
         observer.unobserve(el);
-        // once revealed, hand the element back to its normal (hover) transitions
         setTimeout(() => el.classList.remove('reveal-on-scroll', 'is-visible'), 900);
       }
     });
@@ -106,7 +105,6 @@
 
   function getRandomReviews(serviceID) {
     const reviews = window.reviewsData[serviceID] || [];
-
     if (reviews.length === 0) {
         return [
             { rating: 5, comment: "Excellent service! The nurse was very professional and caring.", firstName: "Sarah", lastName: "M.", createdAt: "2026-10-15 10:00:00" },
@@ -114,7 +112,6 @@
             { rating: 5, comment: "I felt completely at ease with the care provided.", firstName: "Mei", lastName: "L.", createdAt: "2026-10-10 09:15:00" }
         ];
     }
-
     const shuffled = [...reviews].sort(() => 0.5 - Math.random());
     const count = Math.min(Math.floor(Math.random() * 6) + 5, shuffled.length);
     return shuffled.slice(0, count);
@@ -125,7 +122,7 @@
   }
 
   /* ============================================================
-     MODAL + FLIP (EXPAND-TO-FULLSCREEN) TRANSITION
+     MODAL + FLIP TRANSITION
      ============================================================ */
   const modalWrapper  = document.getElementById('modalWrapper');
   const modalCard     = document.getElementById('modalCard');
@@ -134,6 +131,7 @@
   const closeModalBtn = document.getElementById('closeModal');
   const detailBookNow = document.getElementById('detailBookNow');
   const backToDetail  = document.getElementById('backToDetail');
+  const backToBooking = document.getElementById('backToBooking');
 
   const sharedImgEl    = document.getElementById('sharedImg');
   const sharedTitle    = document.getElementById('sharedTitle');
@@ -150,13 +148,24 @@
 
   const bookingContainer = document.getElementById('bookingFormContainer');
 
+  // Payment DOM
+  const paymentForm = document.getElementById('paymentForm');
+  const payFileInput = document.getElementById('payFileInput');
+  const payPreviewContainer = document.getElementById('payPreviewContainer');
+  const payImagePreview = document.getElementById('payImagePreview');
+  const payRemoveFile = document.getElementById('payRemoveFile');
+  const paySubmitBtn = document.getElementById('paySubmitBtn');
+  const payDropZone = document.getElementById('payDropZone');
+
   let activeServiceID = null;
   let activeSourceImg = null;
   let isOpen = false;
   let flipAnimating = false;
 
+  // 3 Panels translation
   function slideToDetail()  { modalSlider.style.transform = 'translateX(0)'; }
-  function slideToBooking() { modalSlider.style.transform = 'translateX(-50%)'; }
+  function slideToBooking() { modalSlider.style.transform = 'translateX(-33.3333%)'; }
+  function slideToPayment() { modalSlider.style.transform = 'translateX(-66.6666%)'; }
 
   function createImageClone(imgEl, rect, radius) {
     const clone = document.createElement('img');
@@ -205,11 +214,9 @@
 
     detailReviewsList.innerHTML = '';
     const reviews = getRandomReviews(svc.serviceID);
-
     reviews.forEach(r => {
         const stars   = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         const initial = r.firstName ? r.firstName.charAt(0) : 'U';
-
         let formattedDate = '';
         if (r.createdAt) {
             const dateObj = new Date(r.createdAt.replace(' ', 'T'));
@@ -365,14 +372,14 @@
           <button type="submit" id="bkSubmit"
                   class="flex-1 rounded-xl bg-[#007FFF] py-3.5 text-sm font-bold text-white
                          hover:bg-[#0066cc] active:scale-[0.98] transition
-                         disabled:opacity-60 disabled:cursor-not-allowed">
-            Confirm booking
+                         disabled:opacity-60 disabled:cursor-not-allowed
+                         inline-flex items-center justify-center gap-2">
+            Continue to Payment
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+            </svg>
           </button>
         </div>
-
-        <p class="text-xs text-slate-400 text-center -mt-2">
-          You'll receive a confirmation email shortly after booking.
-        </p>
       </form>`;
   }
 
@@ -455,31 +462,155 @@
 
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    form.addEventListener('submit', function (e) {
+    // ASYNC SUBMIT
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
       const picked = form.querySelector('input[name="startTime"]:checked');
       if (!picked) {
-        e.preventDefault();
         alert('Please select a time slot.');
         return;
       }
+      
+      const originalText = submitBtn.innerHTML;
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Booking…';
+      submitBtn.textContent = 'Processing…';
+
+      try {
+        const formData = new FormData(form);
+        const res = await fetch('saveBooking.php', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // 设置支付面板信息
+          document.getElementById('paymentAppointmentID').value = data.appointmentID;
+          document.getElementById('payAmount').textContent = `RM ${data.price}`;
+          window._currentBooking = data; // 保存以供支付成功后重定向
+          
+          // 滑到支付面板
+          slideToPayment();
+
+          // 恢复按钮状态
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        } else {
+          alert(data.message || 'Booking failed.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      } catch (err) {
+        alert('Network error occurred.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
     });
   }
 
   /* ============================================================
-     OPEN / CLOSE — Web Animations API (smooth, interruptible-safe)
-     One timeline drives: cover image, card clip (size + corner
-     radius), backdrop colour, then content layers in with a stagger.
+     PAYMENT LOGIC
      ============================================================ */
-  const EASE_OUT   = 'cubic-bezier(0.32, 0.72, 0, 1)';   // soft, long tail
+  if (payFileInput) {
+    payFileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File is too large. Max 5MB.');
+          payFileInput.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          payImagePreview.src = e.target.result;
+          payPreviewContainer.classList.remove('hidden');
+          paySubmitBtn.disabled = false;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    payRemoveFile.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      payFileInput.value = '';
+      payPreviewContainer.classList.add('hidden');
+      payImagePreview.src = '';
+      paySubmitBtn.disabled = true;
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      payDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        payDropZone.classList.add('border-[#3C52C3]', 'bg-blue-50');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      payDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        payDropZone.classList.remove('border-[#3C52C3]', 'bg-blue-50');
+      }, false);
+    });
+  }
+
+  if (backToBooking) {
+    backToBooking.addEventListener('click', () => {
+      slideToBooking();
+    });
+  }
+
+  if (paymentForm) {
+    paymentForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const originalText = paySubmitBtn.textContent;
+      paySubmitBtn.disabled = true;
+      paySubmitBtn.textContent = 'Verifying…';
+
+      try {
+        const formData = new FormData(paymentForm);
+        const res = await fetch('processPayment.php', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const b = window._currentBooking || {};
+          const urlParams = new URLSearchParams({
+            booked: 1,
+            ref: '#SC' + String(document.getElementById('paymentAppointmentID').value).padStart(6, '0'),
+            date: b.prettyDate || '',
+            time: b.prettyTime || '',
+            service: b.serviceName || ''
+          });
+          window.location.href = 'services.php?' + urlParams.toString();
+        } else {
+          alert(data.message || 'Payment upload failed.');
+          paySubmitBtn.disabled = false;
+          paySubmitBtn.textContent = originalText;
+        }
+      } catch (err) {
+        alert('Network error occurred.');
+        paySubmitBtn.disabled = false;
+        paySubmitBtn.textContent = originalText;
+      }
+    });
+  }
+
+  /* ============================================================
+     OPEN / CLOSE
+     ============================================================ */
+  const EASE_OUT   = 'cubic-bezier(0.32, 0.72, 0, 1)';
   const EASE_INOUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
   const OPEN_MS    = 650;
   const CLOSE_MS   = 480;
   const BACKDROP   = 'rgba(15, 23, 42, 0.7)';
   const BACKDROP_0 = 'rgba(15, 23, 42, 0)';
-  const CARD_RADIUS  = 16;  // .rounded-2xl on the grid card
-  const MODAL_RADIUS = 24;  // .rounded-3xl on the modal
+  const CARD_RADIUS  = 16;
+  const MODAL_RADIUS = 24;
 
   let activeSourceCard = null;
   let runningAnims = [];
@@ -495,7 +626,6 @@
     runningAnims = [];
   }
 
-  // inset() that makes `outer` look exactly like `inner`
   function insetTo(outer, inner, radius) {
     const t = Math.max(0, inner.top    - outer.top);
     const r = Math.max(0, outer.right  - inner.right);
@@ -519,13 +649,11 @@
       { opacity: 1, transform: 'translateY(0)' }
     ], { duration: dur, delay, easing: EASE_OUT, fill: 'backwards' });
 
-    // hero overlay + text
     anim(gradient, [{ opacity: 0 }, { opacity: 1 }],
          { duration: total * 0.4, delay: startAt, easing: 'ease-out', fill: 'backwards' });
     Array.from(text.children).forEach((child, i) =>
       rise(child, startAt + 60 + i * 70, total * 0.55, 18));
 
-    // right column container, then rows inside it
     const right = modalSlider.parentElement;
     anim(right, [{ opacity: 0 }, { opacity: 1 }],
          { duration: total * 0.4, delay: startAt, easing: 'ease-out', fill: 'backwards' });
@@ -541,7 +669,6 @@
          { duration: total * 0.5, delay: startAt + 100, easing: EASE_OUT, fill: 'backwards' });
   }
 
-  /* ---------- OPEN ---------- */
   function openModal(serviceId, mode, sourceImg) {
     if (flipAnimating || isOpen) return;
     const svc = getService(serviceId);
@@ -552,13 +679,11 @@
     activeSourceImg  = sourceImg || null;
     activeSourceCard = sourceImg ? sourceImg.closest('.svc-card') : null;
 
-    // Build all content up-front (before any measuring / animating)
     populateShared(svc);
     populateDetail(svc);
     bookingContainer.innerHTML = buildBookingForm(svc);
     wireSlotLogic();
 
-    // Lock scroll first so every measurement already includes the scrollbar change
     document.body.style.overflow = 'hidden';
 
     modalWrapper.classList.remove('hidden');
@@ -569,7 +694,6 @@
     void modalWrapper.offsetHeight;
     modalSlider.style.transition = 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)';
 
-    // Measure everything in its FINAL state
     const cardRect = getRect(modalCard);
     const toImg    = getRect(sharedImgEl);
     const fromImg  = getRect(activeSourceImg);
@@ -588,21 +712,17 @@
       return;
     }
 
-    // 1. Backdrop colour (animating colour, not opacity, keeps the card opaque)
     anim(modalWrapper, [{ backgroundColor: BACKDROP_0 }, { backgroundColor: BACKDROP }],
          { duration: OPEN_MS * 0.8, easing: 'ease-out', fill: 'backwards' });
 
-    // 2. Card grows from the grid card's exact rect; radius 16 -> 24
     const clip = anim(modalCard, [
       { clipPath: insetTo(cardRect, fromCard, CARD_RADIUS) },
       { clipPath: `inset(0px 0px 0px 0px round ${MODAL_RADIUS}px)` }
     ], { duration: OPEN_MS, easing: EASE_OUT, fill: 'backwards' });
 
-    // crossfade modal surface over the real card at the very start
     anim(modalCard, [{ opacity: 0 }, { opacity: 1 }],
          { duration: OPEN_MS * 0.25, easing: 'ease-out', fill: 'backwards' });
 
-    // 3. Cover image flies from card photo to hero panel
     const clone = createImageClone(activeSourceImg, fromImg, `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0`);
     const flight = clone.animate([
       { top: fromImg.top + 'px', left: fromImg.left + 'px',
@@ -614,14 +734,12 @@
     ], { duration: OPEN_MS, easing: EASE_OUT, fill: 'forwards' });
     runningAnims.push(flight);
 
-    // Real hero image fades in underneath as the clone lands, clone fades out on top
     anim(sharedImgEl, [{ opacity: 0 }, { opacity: 1 }],
          { duration: OPEN_MS * 0.3, delay: OPEN_MS * 0.7, easing: 'ease-out', fill: 'backwards' });
     const cloneFade = clone.animate([{ opacity: 1 }, { opacity: 0 }],
          { duration: OPEN_MS * 0.3, delay: OPEN_MS * 0.7, easing: 'ease-out', fill: 'forwards' });
     runningAnims.push(cloneFade);
 
-    // 4. Content layers in after the shape is mostly formed
     layerIn(OPEN_MS * 0.35, OPEN_MS);
 
     clip.onfinish = () => {
@@ -631,7 +749,6 @@
     };
   }
 
-  /* ---------- CLOSE ---------- */
   function closeModal() {
     if (!isOpen || flipAnimating) return;
     flipAnimating = true;
@@ -666,26 +783,21 @@
     const { gradient, text } = heroParts();
     const right = modalSlider.parentElement;
 
-    // content leaves first, quickly
     [gradient, text, right, closeModalBtn].forEach(el =>
       anim(el, [{ opacity: 1 }, { opacity: 0 }],
            { duration: CLOSE_MS * 0.35, easing: 'ease-in', fill: 'forwards' }));
 
-    // backdrop fades
     anim(modalWrapper, [{ backgroundColor: BACKDROP }, { backgroundColor: BACKDROP_0 }],
          { duration: CLOSE_MS, easing: 'ease-in-out', fill: 'forwards' });
 
-    // card shrinks back to the grid card (radius 24 -> 16)
     const clip = anim(modalCard, [
       { clipPath: `inset(0px 0px 0px 0px round ${MODAL_RADIUS}px)` },
       { clipPath: insetTo(cardRect, toCard, CARD_RADIUS) }
     ], { duration: CLOSE_MS, easing: EASE_INOUT, fill: 'forwards' });
 
-    // modal surface dissolves into the real card near the end
     anim(modalCard, [{ opacity: 1 }, { opacity: 0 }],
          { duration: CLOSE_MS * 0.35, delay: CLOSE_MS * 0.65, easing: 'ease-in', fill: 'forwards' });
 
-    // cover image flies home
     sharedImgEl.style.opacity = '0';
     const clone = createImageClone(sharedImgEl, fromImg, `${MODAL_RADIUS}px 0 0 ${MODAL_RADIUS}px`);
     runningAnims.push(clone.animate([
