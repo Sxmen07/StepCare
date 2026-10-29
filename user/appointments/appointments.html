@@ -30,12 +30,13 @@
     <div class="mx-auto max-w-[1500px] px-6 pt-10 pb-8">
 
       <div class="flex items-center gap-3 mb-3">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3]">
-          My Appointments
-        </h1>
-        <button type="button" id="openPolicyBtn" class="group relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#3C52C3] transition cursor-pointer" title="Cancellation Policy">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3]">My Appointments</h1>
+        <button type="button" id="openPolicyBtn"
+                class="group relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#3C52C3] transition cursor-pointer"
+                title="Cancellation Policy">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500 group-hover:text-white transition">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
           </svg>
         </button>
       </div>
@@ -44,7 +45,6 @@
         Track your bookings in real time. Pending appointments will be assigned to a nurse shortly.
       </p>
 
-      <!-- Filter chips with inline counts -->
       <div class="mt-8 flex flex-wrap gap-3" id="statusBar">
         <button type="button" data-status="all" class="appt-chip is-active">
           All <span class="chip-count"><?= $counts['all'] ?></span>
@@ -73,8 +73,7 @@
       <?php if (empty($appointments)): ?>
 
         <div class="text-center py-24">
-          <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100
-                      flex items-center justify-center mb-4">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                  stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -84,8 +83,7 @@
           <p class="text-xl font-bold text-slate-700 mb-1">No appointments yet</p>
           <p class="text-slate-500 mb-6">Book a service and it will appear here.</p>
           <a href="../services/services.php"
-             class="inline-block rounded-lg bg-[#3C52C3] px-6 py-3 text-white font-semibold
-                    hover:bg-[#007FFF] transition">
+             class="inline-block rounded-lg bg-[#3C52C3] px-6 py-3 text-white font-semibold hover:bg-[#007FFF] transition">
             Browse services
           </a>
         </div>
@@ -117,124 +115,108 @@
          data-start="<?= htmlspecialchars($appt['startDateTime']) ?>"
          data-id="<?= (int)$appt['appointmentID'] ?>">
 
-  <!-- Image -->
-  <div class="md:w-56 flex-shrink-0 bg-slate-100 aspect-[16/10] md:aspect-auto overflow-hidden">
-    <img src="<?= htmlspecialchars($img) ?>" alt=""
-         class="w-full h-full object-cover"
-         onerror="this.src='../../images/services/placeholder.jpg'">
-  </div>
-
-  <!-- Content -->
-  <div class="flex-1 p-6 md:p-7 flex flex-col">
-
-    <!-- Top row: category + reference + status badge -->
-    <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
-      <div class="min-w-0 flex-1">
-        <p class="text-[11px] font-bold uppercase tracking-[0.14em]
-                  text-slate-400 mb-1.5">
-          <?= htmlspecialchars($appt['category'] ?: 'General') ?>
-          <span class="text-slate-300 mx-1.5">·</span>
-          <span class="text-slate-500"><?= htmlspecialchars($ref) ?></span>
-        </p>
-        <h3 class="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
-          <?= htmlspecialchars($appt['serviceName'] ?: 'Service') ?>
-        </h3>
-      </div>
-
-      <span class="js-status-badge inline-flex items-center rounded-full px-3 py-1.5
-                   text-[11px] font-bold uppercase tracking-[0.1em] ring-1
-                   flex-shrink-0 <?= $colorMap[$statusColor] ?>">
-        <?= htmlspecialchars($statusLabel) ?>
-      </span>
-    </div>
-
-    <!-- Meta grid: date / time / recipient -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 pb-5 mb-5">
-
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-[0.14em]
-                  text-slate-400 mb-1.5">Date</p>
-        <p class="text-sm font-semibold text-slate-800">
-          <?= htmlspecialchars($date) ?>
-        </p>
-      </div>
-
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-[0.14em]
-                  text-slate-400 mb-1.5">Time</p>
-        <p class="text-sm font-semibold text-slate-800">
-          <?= htmlspecialchars($time) ?>
-        </p>
-      </div>
-
-      <div class="col-span-2 sm:col-span-1">
-        <p class="text-[10px] font-bold uppercase tracking-[0.14em]
-                  text-slate-400 mb-1.5">Recipient</p>
-        <p class="text-sm font-semibold text-slate-800 line-clamp-1">
-          <?= htmlspecialchars($appt['patientName'] ?: '—') ?>
-        </p>
-      </div>
-
-    </div>
-
-    <!-- Address -->
-    <div class="mb-5 pb-5 border-b border-slate-100">
-      <p class="text-[10px] font-bold uppercase tracking-[0.14em]
-                text-slate-400 mb-1.5">Service address</p>
-      <p class="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2">
-        <?= htmlspecialchars($appt['locationAddress']) ?>
-      </p>
-    </div>
-
-    <div class="mt-auto flex items-end justify-between gap-4 flex-wrap">
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Service fee</p>
-        <p class="text-2xl font-extrabold text-[#3C52C3] leading-none">
-          RM<?= number_format((float)$appt['price'], 2) ?>
-          <span class="text-sm font-medium text-slate-500">/<?= htmlspecialchars($appt['price_unit'] ?: 'visit') ?></span>
-        </p>
-      </div>
-
-      <div class="flex items-center gap-3">
-
-        <?php if (in_array($appt['appointmentStatus'], ['pending', 'confirmed'])): ?>
-          <button type="button" class="js-cancel-btn rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition">
-            Cancel
-          </button>
-        <?php endif; ?>
-
-        <?php if ($appt['appointmentStatus'] === 'completed'): ?>
-          <?php if (isset($reviewedAppts[(int)$appt['appointmentID']])): ?>
-            <?php $existingRating = $reviewedAppts[(int)$appt['appointmentID']]; ?>
-            <div class="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-              <span class="text-sm font-semibold text-emerald-700">✓ Reviewed</span>
-              <span class="text-amber-500 text-sm leading-none"><?= str_repeat('★', $existingRating) ?></span>
+            <!-- Image -->
+            <div class="md:w-56 flex-shrink-0 bg-slate-100 aspect-[16/10] md:aspect-auto overflow-hidden">
+              <img src="<?= htmlspecialchars($img) ?>" alt=""
+                   class="w-full h-full object-cover"
+                   onerror="this.src='../../images/services/placeholder.jpg'">
             </div>
-          <?php else: ?>
-            <button type="button"
-                    class="js-review-btn rounded-lg bg-[#3C52C3] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2d3e9c] active:scale-95 transition shadow-sm flex items-center gap-1.5"
-                    data-review-id="<?= (int)$appt['appointmentID'] ?>">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/>
-              </svg>
-              Rate &amp; Review
-            </button>
-          <?php endif; ?>
-        <?php endif; ?>
 
-        <button type="button" data-view-id="<?= (int)$appt['appointmentID'] ?>"
-                class="js-view-appt rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 active:scale-95 transition">
-          View details
-        </button>
-      </div>
-    </div>
+            <!-- Content -->
+            <div class="flex-1 p-6 md:p-7 flex flex-col">
 
-  </div>
-</article>
+              <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
+                <div class="min-w-0 flex-1">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+                    <?= htmlspecialchars($appt['category'] ?: 'General') ?>
+                    <span class="text-slate-300 mx-1.5">·</span>
+                    <span class="text-slate-500"><?= htmlspecialchars($ref) ?></span>
+                  </p>
+                  <h3 class="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
+                    <?= htmlspecialchars($appt['serviceName'] ?: 'Service') ?>
+                  </h3>
+                </div>
+
+                <span class="inline-flex items-center rounded-full px-3 py-1.5
+                             text-[11px] font-bold uppercase tracking-[0.1em] ring-1
+                             flex-shrink-0 <?= $colorMap[$statusColor] ?>">
+                  <?= htmlspecialchars($statusLabel) ?>
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 pb-5 mb-5">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">Date</p>
+                  <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($date) ?></p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">Time</p>
+                  <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($time) ?></p>
+                </div>
+                <div class="col-span-2 sm:col-span-1">
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">Recipient</p>
+                  <p class="text-sm font-semibold text-slate-800 line-clamp-1">
+                    <?= htmlspecialchars($appt['patientName'] ?: '—') ?>
+                  </p>
+                </div>
+              </div>
+
+              <div class="mb-5 pb-5 border-b border-slate-100">
+                <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">Service address</p>
+                <p class="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2">
+                  <?= htmlspecialchars($appt['locationAddress']) ?>
+                </p>
+              </div>
+
+              <div class="mt-auto flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Service fee</p>
+                  <p class="text-2xl font-extrabold text-[#3C52C3] leading-none">
+                    RM<?= number_format((float)$appt['price'], 2) ?>
+                    <span class="text-sm font-medium text-slate-500">/<?= htmlspecialchars($appt['price_unit'] ?: 'visit') ?></span>
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <?php if (in_array($appt['appointmentStatus'], ['pending', 'confirmed'])): ?>
+                    <button type="button"
+                            data-cancel-id="<?= (int)$appt['appointmentID'] ?>"
+                            class="js-cancel-btn rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition">
+                      Cancel
+                    </button>
+                  <?php endif; ?>
+
+                  <?php if ($appt['appointmentStatus'] === 'completed'): ?>
+                    <?php if (isset($reviewedAppts[(int)$appt['appointmentID']])): ?>
+                      <?php $existingRating = $reviewedAppts[(int)$appt['appointmentID']]; ?>
+                      <div class="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <span class="text-sm font-semibold text-emerald-700">✓ Reviewed</span>
+                        <span class="text-amber-500 text-sm leading-none"><?= str_repeat('★', $existingRating) ?></span>
+                      </div>
+                    <?php else: ?>
+                      <button type="button"
+                              class="js-review-btn rounded-lg bg-[#3C52C3] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2d3e9c] active:scale-95 transition shadow-sm flex items-center gap-1.5"
+                              data-review-id="<?= (int)$appt['appointmentID'] ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                          <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/>
+                        </svg>
+                        Rate &amp; Review
+                      </button>
+                    <?php endif; ?>
+                  <?php endif; ?>
+
+                  <button type="button" data-view-id="<?= (int)$appt['appointmentID'] ?>"
+                          class="js-view-appt rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 active:scale-95 transition">
+                    View details
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </article>
 
         <?php endforeach; ?>
 
-        <!-- Message when a filter yields no results -->
         <div id="noMatch" class="hidden text-center py-16">
           <p class="text-lg font-bold text-slate-700 mb-1">Nothing in this category</p>
           <p class="text-slate-500 text-sm">Try a different filter above.</p>
@@ -244,79 +226,17 @@
     </div>
   </section>
 
-  <!-- ============================================================ -->
-  <!-- DETAIL MODAL                                                  -->
-  <!-- ============================================================ -->
-  <div id="apptModal"
-       class="fixed inset-0 z-[100] hidden items-center justify-center
-              bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto">
-
-    <div id="apptModalCard"
-         class="bg-white rounded-3xl w-full max-w-2xl my-8 shadow-2xl overflow-hidden relative">
-
-      <button id="closeApptModal" type="button"
-              class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full
-                     bg-white/95 hover:bg-white text-slate-800
-                     flex items-center justify-center shadow-md transition
-                     ring-1 ring-slate-200">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-             stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <div class="p-8 md:p-10">
-        <p id="amReference" class="text-xs font-bold uppercase tracking-wider text-[#3C52C3] mb-2"></p>
-        <h2 id="amTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 leading-tight mb-3"></h2>
-
-        <div id="amStatusBadge" class="mb-6"></div>
-
-        <div class="space-y-4 text-sm">
-          <div class="flex justify-between gap-4">
-            <span class="text-slate-500">Patient / Recipient</span>
-            <span id="amPatient" class="font-semibold text-slate-800 text-right"></span>
-          </div>
-          <div class="flex justify-between gap-4">
-            <span class="text-slate-500">Date &amp; time</span>
-            <span id="amDateTime" class="font-semibold text-slate-800 text-right"></span>
-          </div>
-          <div class="flex justify-between gap-4">
-            <span class="text-slate-500">Address</span>
-            <span id="amAddress" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
-          </div>
-          <div class="flex justify-between gap-4">
-            <span class="text-slate-500">Service fee</span>
-            <span id="amPrice" class="font-semibold text-[#3C52C3] text-right"></span>
-          </div>
-          <div id="amNurseRow" class="flex justify-between gap-4 hidden">
-            <span class="text-slate-500">Assigned nurse</span>
-            <span id="amNurse" class="font-semibold text-slate-800 text-right"></span>
-          </div>
-        </div>
-
-        <div id="amNotesBlock" class="mt-6 pt-6 border-t border-slate-100 hidden">
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-            Your special instructions
-          </p>
-          <p id="amNotes" class="text-slate-600 leading-relaxed"></p>
-        </div>
-
-        <div id="amPendingNote"
-             class="mt-6 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 hidden">
-          <p class="font-semibold mb-1">Awaiting nurse assignment</p>
-          <p>A licensed nurse will accept your booking shortly. You'll receive an email once assigned.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- POLICY MODAL -->
+  <!-- ================= POLICY MODAL ================= -->
   <div id="policyModal" class="fixed inset-0 z-[150] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
     <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-success-modal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
         <h3 class="text-lg font-bold text-slate-800">Cancellation Policy</h3>
-        <button type="button" id="closePolicyBtn" class="w-9 h-9 rounded-lg hover:bg-slate-200 flex items-center justify-center transition">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        <button type="button" id="closePolicyBtn"
+                class="w-9 h-9 rounded-lg hover:bg-slate-200 flex items-center justify-center transition">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
       </div>
       <div class="p-6 text-sm text-slate-600 leading-relaxed space-y-4">
@@ -333,27 +253,26 @@
     </div>
   </div>
 
-  <!-- CANCEL CONFIRMATION MODAL -->
+  <!-- ================= CANCEL CONFIRM MODAL ================= -->
   <div id="cancelConfirmModal" class="fixed inset-0 z-[160] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden text-center animate-success-modal">
       <div class="p-6">
         <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-600">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         </div>
-
         <h3 class="text-xl font-bold text-slate-800 mb-2">Cancel Appointment?</h3>
         <p class="text-sm text-slate-500 mb-8 leading-relaxed">
           This action cannot be undone. Are you sure you want to cancel this appointment?
         </p>
-
         <div class="flex flex-col gap-3">
           <button type="button" id="btnConfirmCancel" disabled
                   class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed">
             Wait 10s...
           </button>
-
           <button type="button" id="btnKeepAppt"
                   class="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
             Keep Appointment
@@ -363,16 +282,10 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- RATE & REVIEW MODAL                                          -->
-  <!-- ============================================================ -->
+  <!-- ================= RATE & REVIEW MODAL ================= -->
   <div id="reviewModal"
-       class="fixed inset-0 z-[170] hidden items-center justify-center
-              bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto">
-
+       class="fixed inset-0 z-[170] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-8 animate-success-modal">
-
-      <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
         <div>
           <h3 class="text-lg font-bold text-slate-800">Rate &amp; Review</h3>
@@ -386,12 +299,10 @@
           </svg>
         </button>
       </div>
-
       <div class="p-6 md:p-8">
         <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-[#3C52C3] mb-1">Service</p>
         <h4 id="reviewServiceTitle" class="text-xl font-bold text-slate-800 mb-6 leading-tight"></h4>
 
-        <!-- Stars -->
         <p class="text-sm font-semibold text-slate-700 mb-3 text-center">How was your experience?</p>
         <div class="flex items-center justify-center gap-2 mb-2">
           <?php for ($i = 1; $i <= 5; $i++): ?>
@@ -406,7 +317,6 @@
         </div>
         <p id="reviewRatingLabel" class="text-center text-sm text-slate-400 mb-6 h-5">Select a rating</p>
 
-        <!-- Comment -->
         <label for="reviewComment" class="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
           Your review <span class="text-slate-400 font-medium normal-case tracking-normal">(optional)</span>
         </label>
@@ -416,7 +326,6 @@
                          focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none resize-none transition"></textarea>
         <p class="text-right text-xs text-slate-400 mt-1"><span id="reviewCharCount">0</span>/1000</p>
 
-        <!-- Actions -->
         <div class="flex flex-col gap-3 mt-4">
           <button type="button" id="reviewSubmitBtn" disabled
                   class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 cursor-not-allowed transition">
@@ -431,10 +340,6 @@
     </div>
   </div>
 
-  <!-- Hidden data for the modal (each card's full payload) -->
-  <script id="apptData" type="application/json">
-    <?= json_encode($appointments, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
-  </script>
   <script src="appointments.js"></script>
 </body>
 </html>

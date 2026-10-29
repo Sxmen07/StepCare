@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="../../headerNfooter/header/header.css" />
+  <link rel="stylesheet" href="viewDetails.css" />
+  <title>Appointment <?= htmlspecialchars($ref) ?> — StepCare</title>
+</head>
+
+<body class="min-h-dvh bg-slate-50 antialiased overflow-x-hidden">
+
+  <div id="pageWrapper" class="slide-in-from-right min-h-dvh flex flex-col">
+
+    <?php include __DIR__ . '/../../headerNfooter/header/header.php'; ?>
+
+    <!-- ============ BACK BAR ============ -->
+    <div class="bg-white border-b border-slate-200">
+      <div class="mx-auto max-w-[1500px] px-6 py-4 flex items-center gap-4">
+        <button id="backBtn" type="button"
+                class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white
+                       px-4 py-2 text-sm font-semibold text-slate-700
+                       hover:bg-slate-900 hover:text-white hover:border-slate-900
+                       active:scale-95 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+          </svg>
+          Back to appointments
+        </button>
+        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 hidden sm:block">
+          <?= htmlspecialchars($ref) ?>
+        </p>
+      </div>
+    </div>
+
+    <!-- ============ MAIN ============ -->
+    <main class="mx-auto w-full max-w-[1500px] px-6 py-8 flex-1">
+
+      <!-- ---------- USER INFORMATION ---------- -->
+      <section class="rounded-2xl bg-white border-2 border-[#3C52C3] shadow-sm p-6 md:p-8 mb-6">
+        <div class="flex items-center gap-3 mb-5 flex-wrap">
+          <h2 class="text-lg font-extrabold text-[#3C52C3] uppercase tracking-wider">
+            User Information
+          </h2>
+          <?php [, $badgeClass] = tlColor($appt['appointmentStatus']); ?>
+          <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ring-1 <?= $badgeClass ?>">
+            <?= htmlspecialchars(statusLabel($appt['appointmentStatus'])) ?>
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+              Booked by
+            </p>
+            <p class="text-base font-bold text-slate-800">
+              <?= htmlspecialchars(trim(($appt['userFirstName'] ?? '') . ' ' . ($appt['userLastName'] ?? ''))) ?>
+            </p>
+            <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($appt['userEmail'] ?? '—') ?></p>
+            <p class="text-sm text-slate-600"><?= htmlspecialchars($appt['userPhone'] ?? '—') ?></p>
+          </div>
+
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+              Patient / Recipient
+            </p>
+            <p class="text-base font-bold text-slate-800">
+              <?= htmlspecialchars($appt['patientName'] ?: '—') ?>
+            </p>
+            <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+              <?= htmlspecialchars($appt['locationAddress']) ?>
+            </p>
+          </div>
+
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+              Service
+            </p>
+            <p class="text-base font-bold text-slate-800">
+              <?= htmlspecialchars($appt['serviceName'] ?: 'Service') ?>
+            </p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
+              <?= htmlspecialchars($appt['category'] ?: 'General') ?>
+            </p>
+            <p class="text-sm text-slate-600 mt-2">
+              <span class="font-semibold text-slate-800"><?= date('D, d M Y', $dt) ?></span>
+              &nbsp;·&nbsp;
+              <span class="font-semibold text-slate-800"><?= date('g:i A', $dt) ?></span>
+            </p>
+            <p class="text-lg font-extrabold text-[#3C52C3] mt-2">
+              RM<?= number_format((float)$appt['price'], 2) ?>
+              <span class="text-xs font-medium text-slate-500">/<?= htmlspecialchars($appt['price_unit'] ?: 'visit') ?></span>
+            </p>
+          </div>
+
+        </div>
+
+        <?php if (!empty($appt['specialInstructions'])): ?>
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+              Special instructions
+            </p>
+            <p class="text-sm text-slate-700 leading-relaxed">
+              <?= nl2br(htmlspecialchars($appt['specialInstructions'])) ?>
+            </p>
+          </div>
+        <?php endif; ?>
+      </section>
+
+      <!-- ---------- ACTIVITY + NURSE ---------- -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        <!-- ACTIVITY -->
+        <div class="lg:col-span-2 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#3C52C3]/10">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                   stroke-width="2" stroke="currentColor" class="w-5 h-5 text-[#3C52C3]">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </span>
+            <h2 class="text-lg font-extrabold text-slate-800">Activity</h2>
+            <span class="ml-auto text-xs font-semibold text-slate-400">
+              <?= count($timeline) ?> update<?= count($timeline) === 1 ? '' : 's' ?>
+            </span>
+          </div>
+
+          <div class="relative pl-8">
+            <div class="absolute left-2 top-2 bottom-2 w-px bg-slate-200" aria-hidden="true"></div>
+
+            <?php
+              $lastIdx = count($timeline) - 1;
+              foreach ($timeline as $i => $t):
+                [$dotColor] = tlColor($t['status']);
+                $isLast = ($i === $lastIdx);
+                $tDate  = date('d M Y', strtotime($t['createdAt']));
+                $tTime  = date('g:i A', strtotime($t['createdAt']));
+            ?>
+              <div class="relative <?= $isLast ? '' : 'pb-8' ?>">
+                <span class="absolute -left-[26px] top-1.5 w-3.5 h-3.5 rounded-full
+                             <?= $isLast
+                                  ? "bg-{$dotColor} ring-4 ring-{$dotColor}/20"
+                                  : 'bg-white border-2 border-slate-300' ?>"></span>
+
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-slate-800 leading-snug">
+                      <?= htmlspecialchars($t['title']) ?>
+                    </p>
+                    <?php if (!empty($t['message'])): ?>
+                      <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+                        <?= nl2br(htmlspecialchars($t['message'])) ?>
+                      </p>
+                    <?php endif; ?>
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-1.5">
+                      <?= htmlspecialchars(ucfirst($t['createdBy'] ?? 'system')) ?>
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 text-left sm:text-right sm:pl-6">
+                    <p class="text-xs font-bold text-slate-700"><?= $tDate ?></p>
+                    <p class="text-xs text-slate-400"><?= $tTime ?></p>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <!-- NURSE -->
+        <div class="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                   stroke-width="2" stroke="currentColor" class="w-5 h-5 text-emerald-700">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0"/>
+              </svg>
+            </span>
+            <h2 class="text-lg font-extrabold text-slate-800">Nurse Information</h2>
+          </div>
+
+          <?php if (!empty($appt['nurseID'])): ?>
+            <div class="flex flex-col items-center text-center">
+              <img src="<?= htmlspecialchars($nurseImg) ?>" alt="Nurse"
+                   class="w-28 h-28 rounded-full object-cover shadow-md border-4 border-white bg-slate-100"
+                   onerror="this.src='https://ui-avatars.com/api/?name=Nurse&background=3C52C3&color=fff&size=200'">
+
+              <h3 class="mt-4 text-lg font-extrabold text-slate-800">
+                <?= htmlspecialchars(trim(($appt['nurseFirstName'] ?? '') . ' ' . ($appt['nurseLastName'] ?? ''))) ?>
+              </h3>
+
+              <p class="mt-1 text-sm font-semibold text-[#3C52C3]">
+                <?= htmlspecialchars($appt['nurseSpecialization'] ?: 'General Nurse') ?>
+              </p>
+
+              <?php if (!empty($appt['nurseRating'])): ?>
+                <p class="mt-2 text-xs font-semibold text-amber-500">
+                  ★ <?= number_format((float)$appt['nurseRating'], 1) ?> rating
+                </p>
+              <?php endif; ?>
+
+              <div class="w-full mt-6 pt-5 border-t border-slate-100 space-y-3 text-left">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Contact</p>
+                  <a href="tel:<?= htmlspecialchars($appt['nursePhone'] ?? '') ?>"
+                     class="text-sm font-semibold text-slate-800 hover:text-[#3C52C3] transition break-all">
+                    <?= htmlspecialchars($appt['nursePhone'] ?: '—') ?>
+                  </a>
+                </div>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Specialization</p>
+                  <p class="text-sm font-semibold text-slate-800">
+                    <?= htmlspecialchars($appt['nurseSpecialization'] ?: '—') ?>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          <?php else: ?>
+            <div class="text-center py-10">
+              <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0"/>
+                </svg>
+              </div>
+              <p class="text-sm font-bold text-slate-700">Awaiting assignment</p>
+              <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                A licensed nurse will accept your booking shortly.<br>
+                You'll receive an email once assigned.
+              </p>
+            </div>
+          <?php endif; ?>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="viewDetails.js"></script>
+</body>
+</html>
