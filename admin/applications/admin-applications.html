@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applications — StepCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-white text-neutral-800 font-sans antialiased flex h-screen overflow-hidden">
+
+  <!-- Sidebar Mount Point -->
+  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
+
+  <!-- Main View Container -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    
+    <!-- Topbar Mount Point -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Scrollable Main Content -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
+      <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Search and Filter Ribbon -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Search Bar -->
+          <div class="relative flex-1 max-w-lg">
+            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+            <input type="text" 
+                   id="app-search-input" 
+                   placeholder="Search applicant nurse name or ID..." 
+                   class="w-full pl-11 pr-4 py-3 bg-neutral-50/70 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
+          </div>
+
+          <!-- Status Filter Tabs -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Status:</span>
+            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-status="All">All</button>
+            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="pending">Pending</button>
+            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="approved">Approved</button>
+            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="rejected">Rejected</button>
+          </div>
+        </div>
+
+        <!-- Table Container (Strictly Centered Alignment) -->
+        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-center border-collapse table-fixed">
+              <thead>
+                <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/40">
+                  <th class="py-4 px-4 w-[14%] text-center align-middle">Nurse ID</th>
+                  <th class="py-4 px-4 w-[18%] text-center align-middle">Nurse Name</th>
+                  <th class="py-4 px-4 w-[16%] text-center align-middle">Requested Date</th>
+                  <th class="py-4 px-4 w-[14%] text-center align-middle">Time Frame</th>
+                  <th class="py-4 px-4 w-[20%] text-center align-middle">Reason</th>
+                  <th class="py-4 px-4 w-[10%] text-center align-middle">Status</th>
+                  <th class="py-4 px-4 w-[16%] text-center align-middle">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="applications-table-body" class="divide-y divide-neutral-100 text-neutral-700">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State Container -->
+          <div id="applications-empty-state" class="hidden py-16 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
+              <i data-lucide="file-check-2" class="w-7 h-7"></i>
+            </div>
+            <h4 class="text-sm font-bold text-neutral-800">No applications found</h4>
+            <p class="text-xs text-neutral-400 mt-1">There are currently no leave requests matching this filter criteria.</p>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Review Confirmation Modal -->
+  <div id="action-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-neutral-200 text-center">
+      <div id="modal-icon-container" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <!-- Lucide icon dynamically placed -->
+      </div>
+      <h3 id="modal-title" class="text-lg font-bold text-neutral-900 mb-1">Confirm Review Action</h3>
+      <p id="modal-desc" class="text-xs text-neutral-400 mb-6 leading-relaxed">
+        Are you sure you want to proceed with this application review?
+      </p>
+
+      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2 text-left mb-6 text-xs">
+        <div class="flex justify-between"><span class="text-neutral-400">Applicant:</span><span id="modal-nurse-name" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Target Date:</span><span id="modal-target-date" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Time Range:</span><span id="modal-time-range" class="font-bold text-neutral-800"></span></div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-2xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" id="modal-confirm-btn" class="flex-1 py-3 rounded-2xl text-white font-bold text-xs transition cursor-pointer shadow-sm">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page Logic Controller -->
+  <script>
+    // English comments only
+    (function () {
+      'use strict';
+
+      let applicationsList = [];
+      let currentFilterStatus = 'All';
+      let pendingAction = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Mount sidebar
+        fetch('/StepCare/components/sidebar-admin.html')
+          .then(res => res.text())
+          .then(html => {
+            const sb = document.getElementById('sidebar-container');
+            if (sb) {
+              sb.innerHTML = html;
+              sb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 2. Mount topbar with title 'Applications'
+        fetch('/StepCare/components/topbar.html')
+          .then(res => res.text())
+          .then(html => {
+            const tb = document.getElementById('topbar-container');
+            if (tb) {
+              tb.innerHTML = html;
+              tb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              const title = document.getElementById('topbar-page-title');
+              if (title) title.textContent = 'Applications';
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 3. Load initial applications
+        loadApplications();
+
+        // 4. Bind event listeners
+        initEventHandlers();
+      });
+
+      // Fetch applications from server
+      async function loadApplications() {
+        try {
+          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${currentFilterStatus}`);
+          const result = await res.json();
+          if (result.status === 'success') {
+            applicationsList = result.data || [];
+            renderTable();
+          } else {
+            console.error('Fetch error:', result.message);
+            renderTable();
+          }
+        } catch (err) {
+          console.error('Network request failed:', err);
+          renderTable();
+        }
+      }
+
+      // Render applications table
+      function renderTable() {
+        const tbody = document.getElementById('applications-table-body');
+        const emptyState = document.getElementById('applications-empty-state');
+        const searchInput = document.getElementById('app-search-input');
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+        const filtered = applicationsList.filter(item => {
+          const matchesStatus = (currentFilterStatus === 'All') || (item.status === currentFilterStatus.toLowerCase());
+          const matchesSearch = item.nurseName.toLowerCase().includes(searchTerm) || 
+                                item.nurseId.toLowerCase().includes(searchTerm) ||
+                                item.reason.toLowerCase().includes(searchTerm);
+          return matchesStatus && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = filtered.map(item => {
+          // Status Badge
+          let statusBadge = '';
+          if (item.status === 'pending') {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>';
+          } else if (item.status === 'approved') {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>';
+          } else {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Rejected</span>';
+          }
+
+          // Action Buttons: Active for Pending, Reviewed text for closed records
+          let actionCell = '';
+          if (item.status === 'pending') {
+            actionCell = `
+              <div class="flex items-center justify-center gap-2">
+                <button type="button" 
+                        onclick="window.promptAction(${item.requestId}, 'approved')" 
+                        class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                  <span>Approve</span>
+                </button>
+                <button type="button" 
+                        onclick="window.promptAction(${item.requestId}, 'rejected')" 
+                        class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  <span>Reject</span>
+                </button>
+              </div>
+            `;
+          } else {
+            actionCell = `
+              <span class="text-xs font-medium text-neutral-400">
+                ${item.reviewedBy ? 'By ' + item.reviewedBy : 'Resolved'}
+              </span>
+            `;
+          }
+
+          return `
+            <tr class="hover:bg-neutral-50/70 transition">
+              <td class="py-4 px-4 text-xs font-mono font-bold text-neutral-500 text-center align-middle">${item.nurseId}</td>
+              <td class="py-4 px-4 text-xs font-bold text-neutral-900 text-center align-middle">${item.nurseName}</td>
+              <td class="py-4 px-4 text-xs font-semibold text-neutral-700 text-center align-middle">${item.requestDate}</td>
+              <td class="py-4 px-4 text-xs text-neutral-500 font-mono text-center align-middle">${item.startTime} - ${item.endTime}</td>
+              <td class="py-4 px-4 text-xs text-neutral-600 text-center align-middle max-w-xs truncate" title="${item.reason}">${item.reason}</td>
+              <td class="py-4 px-4 text-center align-middle">${statusBadge}</td>
+              <td class="py-4 px-4 text-center align-middle">${actionCell}</td>
+            </tr>
+          `;
+        }).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Prompt Approval/Rejection Dialog
+      window.promptAction = function(requestId, targetStatus) {
+        const item = applicationsList.find(a => a.requestId === requestId);
+        if (!item) return;
+
+        pendingAction = { requestId, targetStatus };
+
+        const modal = document.getElementById('action-modal');
+        const iconContainer = document.getElementById('modal-icon-container');
+        const titleEl = document.getElementById('modal-title');
+        const descEl = document.getElementById('modal-desc');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+
+        document.getElementById('modal-nurse-name').textContent = item.nurseName;
+        document.getElementById('modal-target-date').textContent = item.requestDate;
+        document.getElementById('modal-time-range').textContent = `${item.startTime} - ${item.endTime}`;
+
+        if (targetStatus === 'approved') {
+          iconContainer.className = 'w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-emerald-50 text-emerald-600';
+          iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-7 h-7"></i>';
+          titleEl.textContent = 'Approve Off-Day Request';
+          descEl.textContent = 'Are you sure you want to approve this request? The nurse will be marked off duty on this date.';
+          confirmBtn.className = 'flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-sm';
+          confirmBtn.textContent = 'Yes, Approve';
+        } else {
+          iconContainer.className = 'w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 text-rose-600';
+          iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-7 h-7"></i>';
+          titleEl.textContent = 'Reject Off-Day Request';
+          descEl.textContent = 'Are you sure you want to decline this request? The nurse will be notified via portal.';
+          confirmBtn.className = 'flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer shadow-sm';
+          confirmBtn.textContent = 'Yes, Reject';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      };
+
+      // Configure Event Handlers
+      function initEventHandlers() {
+        // Search Input
+        const searchInput = document.getElementById('app-search-input');
+        if (searchInput) searchInput.addEventListener('input', renderTable);
+
+        // Status Filter Buttons
+        document.querySelectorAll('.status-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.status-filter-btn').forEach(b => {
+              b.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
+            });
+            btn.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
+            currentFilterStatus = btn.getAttribute('data-status');
+            loadApplications();
+          });
+        });
+
+        // Modal Controls
+        const modal = document.getElementById('action-modal');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+
+        const closeModal = () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          pendingAction = null;
+        };
+
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+
+        if (confirmBtn) {
+          confirmBtn.onclick = async () => {
+            if (!pendingAction) return;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            try {
+              const res = await fetch('./application_actions.php?action=update_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  requestId: pendingAction.requestId,
+                  status: pendingAction.targetStatus
+                })
+              });
+              const result = await res.json();
+
+              if (result.status === 'success') {
+                closeModal();
+                await loadApplications();
+              } else {
+                alert(result.message || 'Operation failed');
+              }
+            } catch (err) {
+              alert('Request failed: ' + err.message);
+            } finally {
+              confirmBtn.disabled = false;
+            }
+          };
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
