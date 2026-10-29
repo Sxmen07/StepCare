@@ -16,99 +16,131 @@
     <?php include __DIR__ . '/../../headerNfooter/header/header.php'; ?>
 
     <!-- ============ BACK BAR ============ -->
-    <div class="bg-white border-b border-slate-200">
-      <div class="mx-auto max-w-[1500px] px-6 py-4 flex items-center gap-4">
-        <button id="backBtn" type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white
-                       px-4 py-2 text-sm font-semibold text-slate-700
-                       hover:bg-slate-900 hover:text-white hover:border-slate-900
-                       active:scale-95 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-               stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-          </svg>
-          Back to appointments
-        </button>
-        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 hidden sm:block">
-          <?= htmlspecialchars($ref) ?>
-        </p>
-      </div>
-    </div>
+<div class="bg-transparent">
+  <div class="mx-auto max-w-[1500px] px-6 py-4 flex items-center gap-4">
+    <button id="backBtn" type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700
+                   hover:text-[#3C52C3] hover:scale-105 hover:-translate-y-0.5
+                   active:scale-95 active:translate-y-0
+                   transition duration-200 ease-out">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+           stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Back to appointments
+    </button>
+  </div>
+</div>
 
     <!-- ============ MAIN ============ -->
     <main class="mx-auto w-full max-w-[1500px] px-6 py-8 flex-1">
 
-      <!-- ---------- USER INFORMATION ---------- -->
-      <section class="rounded-2xl bg-white border-2 border-[#3C52C3] shadow-sm p-6 md:p-8 mb-6">
-        <div class="flex items-center gap-3 mb-5 flex-wrap">
-          <h2 class="text-lg font-extrabold text-[#3C52C3] uppercase tracking-wider">
-            User Information
-          </h2>
-          <?php [, $badgeClass] = tlColor($appt['appointmentStatus']); ?>
-          <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ring-1 <?= $badgeClass ?>">
-            <?= htmlspecialchars(statusLabel($appt['appointmentStatus'])) ?>
-          </span>
+      <!-- ---------- USER + SERVICE INFORMATION ---------- -->
+<section class="rounded-2xl bg-white border-2 border-[#3C52C3] shadow-sm p-6 md:p-8 mb-6">
+
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6 lg:gap-0">
+
+    <!-- ===== LEFT: USER INFO ===== -->
+    <div class="lg:pr-10 space-y-6">
+
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+          Booked by
+        </p>
+        <p class="text-base font-bold text-slate-800">
+          <?= htmlspecialchars(trim(($appt['userFirstName'] ?? '') . ' ' . ($appt['userLastName'] ?? ''))) ?>
+        </p>
+        <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($appt['userEmail'] ?? '—') ?></p>
+        <p class="text-sm text-slate-600"><?= htmlspecialchars($appt['userPhone'] ?? '—') ?></p>
+      </div>
+
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+          Patient / Recipient
+        </p>
+        <p class="text-base font-bold text-slate-800">
+          <?= htmlspecialchars($appt['patientName'] ?: '—') ?>
+        </p>
+        <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+          <?= htmlspecialchars($appt['locationAddress']) ?>
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ===== DIVIDER (horizontal on mobile, vertical on desktop) ===== -->
+    <div class="bg-slate-200 rounded-full w-full h-px lg:w-px lg:h-auto" aria-hidden="true"></div>
+
+    <!-- ===== RIGHT: SERVICE INFO ===== -->
+    <div class="lg:pl-10 space-y-6">
+
+      <!-- Service name + status -->
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+            Service
+          </p>
+          <p class="text-base font-bold text-slate-800">
+            <?= htmlspecialchars($appt['serviceName'] ?: 'Service') ?>
+          </p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
+            <?= htmlspecialchars($appt['category'] ?: 'General') ?>
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <?php [, $badgeClass] = tlColor($appt['appointmentStatus']); ?>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ring-1 shrink-0 <?= $badgeClass ?>">
+          <?= htmlspecialchars(statusLabel($appt['appointmentStatus'])) ?>
+        </span>
+      </div>
 
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
-              Booked by
-            </p>
-            <p class="text-base font-bold text-slate-800">
-              <?= htmlspecialchars(trim(($appt['userFirstName'] ?? '') . ' ' . ($appt['userLastName'] ?? ''))) ?>
-            </p>
-            <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($appt['userEmail'] ?? '—') ?></p>
-            <p class="text-sm text-slate-600"><?= htmlspecialchars($appt['userPhone'] ?? '—') ?></p>
-          </div>
-
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
-              Patient / Recipient
-            </p>
-            <p class="text-base font-bold text-slate-800">
-              <?= htmlspecialchars($appt['patientName'] ?: '—') ?>
-            </p>
-            <p class="text-sm text-slate-600 mt-1 leading-relaxed">
-              <?= htmlspecialchars($appt['locationAddress']) ?>
-            </p>
-          </div>
-
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
-              Service
-            </p>
-            <p class="text-base font-bold text-slate-800">
-              <?= htmlspecialchars($appt['serviceName'] ?: 'Service') ?>
-            </p>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
-              <?= htmlspecialchars($appt['category'] ?: 'General') ?>
-            </p>
-            <p class="text-sm text-slate-600 mt-2">
-              <span class="font-semibold text-slate-800"><?= date('D, d M Y', $dt) ?></span>
-              &nbsp;·&nbsp;
-              <span class="font-semibold text-slate-800"><?= date('g:i A', $dt) ?></span>
-            </p>
-            <p class="text-lg font-extrabold text-[#3C52C3] mt-2">
-              RM<?= number_format((float)$appt['price'], 2) ?>
-              <span class="text-xs font-medium text-slate-500">/<?= htmlspecialchars($appt['price_unit'] ?: 'visit') ?></span>
-            </p>
-          </div>
-
+      <!-- Schedule + Price -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">
+            Schedule
+          </p>
+          <p class="text-sm font-semibold text-slate-800"><?= date('D, d M Y', $dt) ?></p>
+          <p class="text-sm text-slate-600"><?= date('g:i A', $dt) ?></p>
         </div>
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">
+            Price
+          </p>
+          <p class="text-lg font-extrabold text-[#3C52C3]">
+            RM<?= number_format((float)$appt['price'], 2) ?>
+          </p>
+          <p class="text-xs text-slate-500">/<?= htmlspecialchars($appt['price_unit'] ?: 'visit') ?></p>
+        </div>
+      </div>
 
-        <?php if (!empty($appt['specialInstructions'])): ?>
-          <div class="mt-6 pt-5 border-t border-slate-100">
-            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
-              Special instructions
-            </p>
-            <p class="text-sm text-slate-700 leading-relaxed">
-              <?= nl2br(htmlspecialchars($appt['specialInstructions'])) ?>
-            </p>
-          </div>
-        <?php endif; ?>
-      </section>
+      <!-- Reference code -->
+      <div class="pt-5 border-t border-slate-100">
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+          Reference
+        </p>
+        <p class="inline-flex items-center rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-1.5 text-sm font-bold tracking-wider text-slate-700">
+          <?= htmlspecialchars($ref) ?>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Special instructions stay full-width below both panels -->
+  <?php if (!empty($appt['specialInstructions'])): ?>
+    <div class="mt-6 pt-5 border-t border-slate-100">
+      <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1.5">
+        Special instructions
+      </p>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        <?= nl2br(htmlspecialchars($appt['specialInstructions'])) ?>
+      </p>
+    </div>
+  <?php endif; ?>
+
+</section>
 
       <!-- ---------- ACTIVITY + NURSE ---------- -->
       <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
