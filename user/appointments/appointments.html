@@ -28,8 +28,7 @@
   <!-- ============ HEADER ============ -->
   <section class="bg-white">
     <div class="mx-auto max-w-[1500px] px-6 pt-10 pb-8">
-      
-      <!-- FIXED: Wrapped title and button correctly -->
+
       <div class="flex items-center gap-3 mb-3">
         <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3]">
           My Appointments
@@ -142,7 +141,6 @@
         </h3>
       </div>
 
-      <!-- FIXED: Added js-status-badge class for reliable JS targeting -->
       <span class="js-status-badge inline-flex items-center rounded-full px-3 py-1.5
                    text-[11px] font-bold uppercase tracking-[0.1em] ring-1
                    flex-shrink-0 <?= $colorMap[$statusColor] ?>">
@@ -150,7 +148,7 @@
       </span>
     </div>
 
-    <!-- Meta grid: date / time / recipient — NO bottom border -->
+    <!-- Meta grid: date / time / recipient -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 pb-5 mb-5">
 
       <div>
@@ -198,11 +196,30 @@
       </div>
 
       <div class="flex items-center gap-3">
-        <!-- Cancel Button (Only shows for pending/confirmed) -->
+
         <?php if (in_array($appt['appointmentStatus'], ['pending', 'confirmed'])): ?>
           <button type="button" class="js-cancel-btn rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition">
             Cancel
           </button>
+        <?php endif; ?>
+
+        <?php if ($appt['appointmentStatus'] === 'completed'): ?>
+          <?php if (isset($reviewedAppts[(int)$appt['appointmentID']])): ?>
+            <?php $existingRating = $reviewedAppts[(int)$appt['appointmentID']]; ?>
+            <div class="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <span class="text-sm font-semibold text-emerald-700">✓ Reviewed</span>
+              <span class="text-amber-500 text-sm leading-none"><?= str_repeat('★', $existingRating) ?></span>
+            </div>
+          <?php else: ?>
+            <button type="button"
+                    class="js-review-btn rounded-lg bg-[#3C52C3] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2d3e9c] active:scale-95 transition shadow-sm flex items-center gap-1.5"
+                    data-review-id="<?= (int)$appt['appointmentID'] ?>">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/>
+              </svg>
+              Rate &amp; Review
+            </button>
+          <?php endif; ?>
         <?php endif; ?>
 
         <button type="button" data-view-id="<?= (int)$appt['appointmentID'] ?>"
@@ -316,33 +333,98 @@
     </div>
   </div>
 
-    <!-- CANCEL CONFIRMATION MODAL -->
+  <!-- CANCEL CONFIRMATION MODAL -->
   <div id="cancelConfirmModal" class="fixed inset-0 z-[160] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden text-center animate-success-modal">
       <div class="p-6">
-        <!-- Warning Icon -->
         <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-600">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        
+
         <h3 class="text-xl font-bold text-slate-800 mb-2">Cancel Appointment?</h3>
         <p class="text-sm text-slate-500 mb-8 leading-relaxed">
           This action cannot be undone. Are you sure you want to cancel this appointment?
         </p>
 
         <div class="flex flex-col gap-3">
-          <!-- Confirm Button (Disabled initially with countdown) -->
           <button type="button" id="btnConfirmCancel" disabled
                   class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed">
             Wait 10s...
           </button>
-          
-          <!-- Keep Button (Safe action) -->
+
           <button type="button" id="btnKeepAppt"
                   class="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
             Keep Appointment
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- RATE & REVIEW MODAL                                          -->
+  <!-- ============================================================ -->
+  <div id="reviewModal"
+       class="fixed inset-0 z-[170] hidden items-center justify-center
+              bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto">
+
+    <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-8 animate-success-modal">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Rate &amp; Review</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Your feedback helps us improve care</p>
+        </div>
+        <button type="button" id="closeReviewModal"
+                class="w-9 h-9 rounded-lg hover:bg-slate-200 flex items-center justify-center transition">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 md:p-8">
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-[#3C52C3] mb-1">Service</p>
+        <h4 id="reviewServiceTitle" class="text-xl font-bold text-slate-800 mb-6 leading-tight"></h4>
+
+        <!-- Stars -->
+        <p class="text-sm font-semibold text-slate-700 mb-3 text-center">How was your experience?</p>
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <?php for ($i = 1; $i <= 5; $i++): ?>
+            <button type="button" class="review-star transition-transform hover:scale-110"
+                    data-value="<?= $i ?>" style="color:#cbd5e1;"
+                    aria-label="<?= $i ?> star<?= $i > 1 ? 's' : '' ?>">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10">
+                <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          <?php endfor; ?>
+        </div>
+        <p id="reviewRatingLabel" class="text-center text-sm text-slate-400 mb-6 h-5">Select a rating</p>
+
+        <!-- Comment -->
+        <label for="reviewComment" class="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
+          Your review <span class="text-slate-400 font-medium normal-case tracking-normal">(optional)</span>
+        </label>
+        <textarea id="reviewComment" rows="4" maxlength="1000"
+                  placeholder="Tell us about the service and the nurse…"
+                  class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-700
+                         focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none resize-none transition"></textarea>
+        <p class="text-right text-xs text-slate-400 mt-1"><span id="reviewCharCount">0</span>/1000</p>
+
+        <!-- Actions -->
+        <div class="flex flex-col gap-3 mt-4">
+          <button type="button" id="reviewSubmitBtn" disabled
+                  class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 cursor-not-allowed transition">
+            Submit Review
+          </button>
+          <button type="button" id="reviewLaterBtn"
+                  class="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+            Maybe later
           </button>
         </div>
       </div>

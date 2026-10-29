@@ -13,6 +13,7 @@ $stmt = $pdo->prepare("
     SELECT
         a.appointmentID,
         a.serviceID,
+        a.nurseID,
         a.patientName,
         a.startDateTime,
         a.endDateTime,
@@ -46,6 +47,18 @@ foreach ($appointments as $a) {
     elseif (in_array($st, ['confirmed','in_progress'], true))    $counts['confirmed']++;
     elseif ($st === 'completed')                                 $counts['completed']++;
     elseif (in_array($st, ['cancelled','declined'], true))       $counts['cancelled']++;
+}
+
+/* Which completed appointments has this user already reviewed? */
+$reviewedAppts = []; // appointmentID => rating
+$rStmt = $pdo->prepare("
+    SELECT appointmentID, rating
+    FROM serviceComments
+    WHERE userID = ? AND appointmentID IS NOT NULL
+");
+$rStmt->execute([$userID]);
+foreach ($rStmt->fetchAll() as $r) {
+    $reviewedAppts[(int)$r['appointmentID']] = (int)$r['rating'];
 }
 
 /* Small helper for status badges */
