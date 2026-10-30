@@ -3,49 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Leave Applications — StepCare Nurse Portal</title>
+  <title>Leave Applications — StepCare</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
-    .leave-row {
-      transition: background-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .leave-row:hover {
-      background-color: #f8fafc;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-    }
+    .leave-row:hover { background-color: #f8fafc; }
   </style>
 </head>
-<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden font-sans">
 
-  <!-- Modular Sidebar Container -->
+  <!-- Sidebar Mount Point -->
   <div id="sidebar-container" class="shrink-0 h-full"></div>
 
-  <!-- Main View Workspace -->
-  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-    <!-- Modular Topbar Container -->
+  <!-- Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    <!-- Topbar Mount Point -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
-    <!-- Sticky Sub-Bar: Filter & Apply Action -->
+    <!-- Filter & Action Bar -->
     <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
       <div class="flex items-center gap-4 flex-1">
-        <!-- Search Bar -->
         <div class="relative w-80">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-          <input type="text" 
-                 id="leave-search-input" 
-                 placeholder="Search by date or reason..." 
-                 class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
+          <input type="text" id="search-input" placeholder="Search by date or reason..." class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
         </div>
 
-        <!-- Filter By Status -->
         <div class="flex items-center gap-1.5 text-xs text-neutral-500">
           <i data-lucide="filter" class="w-3.5 h-3.5"></i>
           <span class="font-medium">Status:</span>
-          <select id="filter-status" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
-            <option value="All">All Requests</option>
+          <select id="status-filter" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="all">All Requests</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
@@ -53,14 +42,13 @@
         </div>
       </div>
 
-      <!-- Action Button: Apply Leave -->
-      <button id="open-apply-modal-btn" type="button" class="px-5 py-2 bg-[#3C52C3] hover:bg-[#3245a8] text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm shrink-0">
+      <button id="open-modal-btn" type="button" class="px-5 py-2 bg-[#3C52C3] hover:bg-[#3245a8] text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm shrink-0">
         <i data-lucide="plus" class="w-4 h-4"></i>
         <span>Request Off-Day</span>
       </button>
     </section>
 
-    <!-- Table Header Grid (Full-width 12 cols stream) -->
+    <!-- Table Header (12 cols) -->
     <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
       <div class="col-span-2 text-left pl-2">Target Date</div>
       <div class="col-span-2 text-left">Time Frame</div>
@@ -70,15 +58,13 @@
       <div class="col-span-3 text-center">Feedback / Action</div>
     </div>
 
-    <!-- Full-Width Stream Container -->
+    <!-- Data Stream -->
     <main class="flex-1 overflow-y-auto custom-scrollbar">
-      <div id="leaves-list-container" class="divide-y divide-neutral-100 w-full">
-        <!-- Dynamic Rows Rendered Here -->
-      </div>
+      <div id="leaves-container" class="divide-y divide-neutral-100 w-full"></div>
     </main>
   </div>
 
-  <!-- Apply Off-Day Modal -->
+  <!-- Modal -->
   <div id="apply-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
     <div class="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
       <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
@@ -86,95 +72,78 @@
           <h3 class="text-xl font-bold text-neutral-900">Request Off-Day</h3>
           <p class="text-xs text-neutral-400">Submit off-duty schedule for administrative approval</p>
         </div>
-        <button type="button" id="close-apply-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
+        <button type="button" id="close-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="apply-leave-form" class="space-y-4">
-        <!-- Target Date -->
+      <form id="apply-form" class="space-y-4">
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Target Off Date</label>
           <input type="date" id="apply-date" required class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]" />
         </div>
 
-        <!-- Full Day Checkbox Option -->
-        <div class="p-3 bg-neutral-50 rounded-xl border border-neutral-200/80 flex items-center justify-between">
+        <div class="p-3 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <input type="checkbox" id="apply-full-day" class="w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 cursor-pointer" />
-            <label for="apply-full-day" class="text-xs font-bold text-neutral-800 cursor-pointer select-none">
-              Full Day Leave
-            </label>
+            <input type="checkbox" id="full-day-checkbox" class="w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 cursor-pointer" />
+            <label for="full-day-checkbox" class="text-xs font-bold text-neutral-800 cursor-pointer select-none">Full Day Leave</label>
           </div>
-          <span class="text-[11px] text-neutral-400 font-medium">Off duty for the entire working day</span>
+          <span class="text-[11px] text-neutral-400 font-medium">Off duty for whole working day</span>
         </div>
 
-        <!-- Specific Time Range Selection (Hidden if Full Day is Checked) -->
-        <div id="time-range-wrapper" class="grid grid-cols-2 gap-3 transition-all duration-200">
+        <div id="hours-wrapper" class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Start Time</label>
-            <input type="time" id="apply-start-time" value="08:00" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]" />
+            <input type="time" id="start-time" value="08:00" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]" />
           </div>
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">End Time</label>
-            <input type="time" id="apply-end-time" value="18:00" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]" />
+            <input type="time" id="end-time" value="18:00" class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]" />
           </div>
         </div>
 
-        <!-- Reason / Note -->
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Reason for Request</label>
-          <textarea id="apply-reason" rows="3" required placeholder="Please describe your reason for requesting leave..." class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#3C52C3] transition resize-none"></textarea>
+          <textarea id="apply-reason" rows="3" required placeholder="Describe your reason..." class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#3C52C3] resize-none"></textarea>
         </div>
 
-        <!-- Multiple Upload Proof Documents -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
-            Proof Documents <span class="text-neutral-400 font-normal">(Optional, Multiple Files Supported)</span>
-          </label>
-          
-          <!-- Drop Area -->
-          <div id="upload-dropzone" class="relative border-2 border-dashed border-neutral-200 hover:border-[#3C52C3] rounded-2xl p-4 text-center transition bg-neutral-50/50 cursor-pointer">
-            <input type="file" id="apply-proof-file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Proof Documents (Multiple Files)</label>
+          <div class="relative border-2 border-dashed border-neutral-200 hover:border-[#3C52C3] rounded-2xl p-4 text-center bg-neutral-50/50 cursor-pointer">
+            <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
             <div class="space-y-1 pointer-events-none">
               <i data-lucide="upload-cloud" class="w-6 h-6 text-neutral-400 mx-auto"></i>
               <p class="text-xs font-semibold text-neutral-700">Click or drag files to upload</p>
-              <p class="text-[10px] text-neutral-400">PDF, JPG, PNG, DOCX (Can select multiple)</p>
+              <p class="text-[10px] text-neutral-400">PDF, JPG, PNG, DOCX</p>
             </div>
           </div>
-
-          <!-- Multiple Selected Files Container -->
-          <div id="selected-files-list" class="space-y-2 mt-2.5">
-            <!-- Dynamically populated files badges -->
-          </div>
+          <div id="file-list" class="space-y-2 mt-2.5"></div>
         </div>
 
-        <!-- Actions -->
         <div class="flex justify-end gap-3 pt-4 border-t border-neutral-100">
-          <button type="button" id="close-apply-modal-btn" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
-          <button type="submit" id="submit-apply-btn" class="px-6 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">Submit Request</button>
+          <button type="button" id="close-modal-btn" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="submit-btn" class="px-6 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">Submit Request</button>
         </div>
       </form>
     </div>
   </div>
 
   <script>
-    // English comments only
     (function () {
       'use strict';
 
-      let leavesList = [];
-      let selectedFilesArray = []; // Store selected File objects
+      let leavesData = [];
+      let selectedFiles = [];
 
       document.addEventListener('DOMContentLoaded', () => {
-        // 1. Mount nurse sidebar
+        // Mount sidebar
         fetch('/StepCare/components/sidebar-nurse.html')
           .then(res => res.text())
           .then(html => {
-            const sb = document.getElementById('sidebar-container');
-            if (sb) {
-              sb.innerHTML = html;
-              sb.querySelectorAll('script').forEach(s => {
+            const el = document.getElementById('sidebar-container');
+            if (el) {
+              el.innerHTML = html;
+              el.querySelectorAll('script').forEach(s => {
                 const ns = document.createElement('script');
                 ns.textContent = s.textContent;
                 document.body.appendChild(ns);
@@ -183,77 +152,66 @@
             }
           });
 
-        // 2. Mount topbar with title 'Leave Applications'
+        // Mount topbar
         fetch('/StepCare/components/topbar.html')
           .then(res => res.text())
           .then(html => {
-            const tb = document.getElementById('topbar-container');
-            if (tb) {
-              tb.innerHTML = html;
-              tb.querySelectorAll('script').forEach(s => {
-                const ns = document.createElement('script');
-                ns.textContent = s.textContent;
-                document.body.appendChild(ns);
-              });
+            const el = document.getElementById('topbar-container');
+            if (el) {
+              el.innerHTML = html;
               const title = document.getElementById('topbar-page-title');
               if (title) title.textContent = 'Leave Applications';
               if (window.lucide) lucide.createIcons();
             }
           });
 
-        // 3. Set min date for date input to today
         resetDateInput();
-
-        // 4. Load my leave applications
-        loadMyLeaves();
-
-        // 5. Bind events
-        initEvents();
+        loadLeaves();
+        initControls();
       });
 
       function resetDateInput() {
-        const dateInput = document.getElementById('apply-date');
-        if (dateInput) {
-          const today = new Date().toISOString().split('T')[0];
-          dateInput.min = today;
-          dateInput.value = today;
+        const inp = document.getElementById('apply-date');
+        if (inp) {
+          const t = new Date().toISOString().split('T')[0];
+          inp.min = t;
+          inp.value = t;
         }
       }
 
-      // Load leaves list using leave-actions.php
-      async function loadMyLeaves() {
+      async function loadLeaves() {
         try {
-          const filterStatus = document.getElementById('filter-status');
-          const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
-          const res = await fetch(`./leave-actions.php?action=fetch_my_leaves&status=${currentStatus}`);
-          const result = await res.json();
-          if (result.status === 'success') {
-            leavesList = result.data || [];
-            renderTable();
+          const filter = document.getElementById('status-filter').value;
+          const res = await fetch(`./leave-actions.php?action=fetch_my_leaves&status=${filter}`);
+          const json = await res.json();
+          if (json.status === 'success') {
+            leavesData = json.data || [];
+            render();
           } else {
-            console.error('Fetch error:', result.message);
-            renderTable();
+            console.error('API Error:', json.message);
+            leavesData = [];
+            render();
           }
-        } catch (err) {
-          console.error('Network error:', err);
-          renderTable();
+        } catch (e) {
+          console.error('Network Error:', e);
+          leavesData = [];
+          render();
         }
       }
 
-      // Render table rows
-      function renderTable() {
-        const container = document.getElementById('leaves-list-container');
-        const searchInput = document.getElementById('leave-search-input');
-        const filterStatus = document.getElementById('filter-status');
+      function render() {
+        const container = document.getElementById('leaves-container');
+        const search = String(document.getElementById('search-input')?.value || '').trim().toLowerCase();
+        const filter = String(document.getElementById('status-filter')?.value || 'all').toLowerCase();
 
-        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
+        const filtered = leavesData.filter(item => {
+          const itemStatus = String(item.status || '').toLowerCase();
+          const itemDate = String(item.requestDate || '').toLowerCase();
+          const itemReason = String(item.reason || '').toLowerCase();
 
-        const filtered = leavesList.filter(item => {
-          const matchesStatus = (currentStatus === 'all') || (item.status.toLowerCase() === currentStatus);
-          const matchesSearch = item.requestDate.toLowerCase().includes(searchTerm) || 
-                                item.reason.toLowerCase().includes(searchTerm);
-          return matchesStatus && matchesSearch;
+          const matchStatus = (filter === 'all') || (itemStatus === filter);
+          const matchSearch = itemDate.includes(search) || itemReason.includes(search);
+          return matchStatus && matchSearch;
         });
 
         if (filtered.length === 0) {
@@ -271,88 +229,49 @@
         }
 
         container.innerHTML = filtered.map(item => {
-          const st = item.status.toLowerCase();
-          let statusBadge = '';
+          const st = String(item.status || '').toLowerCase();
+          let badge = '';
           if (st === 'pending') {
-            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
+            badge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
           } else if (st === 'approved') {
-            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
+            badge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
           } else {
-            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200">Rejected</span>';
+            badge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200">Rejected</span>';
           }
 
-          // Proof Documents Links
-          let proofCell = `<span class="text-neutral-300 text-xs">—</span>`;
+          let proofs = '<span class="text-neutral-300 text-xs">—</span>';
           if (item.proofFiles && item.proofFiles.length > 0) {
-            proofCell = `
-              <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                ${item.proofFiles.map((f, i) => `
-                  <a href="${f}" target="_blank" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-semibold transition" title="View Document ${i+1}">
-                    <i data-lucide="paperclip" class="w-3 h-3 text-[#3C52C3]"></i>
-                    <span>Doc ${i+1}</span>
-                  </a>
-                `).join('')}
-              </div>
-            `;
+            proofs = `<div class="flex items-center justify-center gap-1.5 flex-wrap">${item.proofFiles.map((f, i) => `
+              <a href="${f}" target="_blank" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-semibold transition" title="View Document ${i+1}">
+                <i data-lucide="paperclip" class="w-3 h-3 text-[#3C52C3]"></i>
+                <span>Doc ${i+1}</span>
+              </a>
+            `).join('')}</div>`;
           }
 
-          // Actions / Feedback
-          let feedbackCell = '';
+          let feedback = '';
           if (st === 'pending') {
-            feedbackCell = `
-              <button type="button" 
-                      onclick="window.cancelApplication(${item.requestId})" 
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 hover:text-rose-600 text-xs font-semibold rounded-lg border border-neutral-200 hover:border-rose-200 shadow-2xs transition cursor-pointer">
+            feedback = `
+              <button type="button" onclick="window.cancelRequest(${item.requestId})" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 hover:text-rose-600 text-xs font-semibold rounded-lg border border-neutral-200 hover:border-rose-200 shadow-2xs transition cursor-pointer">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span>Withdraw</span>
               </button>
             `;
           } else if (st === 'rejected') {
-            const reasonText = item.rejectionReason || 'No feedback provided';
-            feedbackCell = `
-              <div class="text-left text-xs text-rose-600 font-medium truncate max-w-xs" title="${reasonText}">
-                <span class="font-bold">Reason:</span> ${reasonText}
-              </div>
-            `;
+            const reason = item.rejectionReason || 'No feedback';
+            feedback = `<div class="text-left text-xs text-rose-600 font-medium truncate max-w-xs" title="${reason}"><span class="font-bold">Reason:</span> ${reason}</div>`;
           } else {
-            feedbackCell = `
-              <span class="text-xs text-emerald-600 font-medium">Approved by ${item.reviewedBy || 'Admin'}</span>
-            `;
+            feedback = `<span class="text-xs text-emerald-600 font-medium">Approved by ${item.reviewedBy || 'Admin'}</span>`;
           }
 
           return `
             <div class="leave-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100">
-              
-              <!-- Col 1: Target Date -->
-              <div class="col-span-2 text-xs font-bold text-neutral-900 pl-2">
-                ${item.requestDate}
-              </div>
-
-              <!-- Col 2: Time Frame -->
-              <div class="col-span-2 text-xs font-semibold ${item.isFullDay ? 'text-[#3C52C3]' : 'font-mono text-neutral-500'}">
-                ${item.timeDisplay}
-              </div>
-
-              <!-- Col 3: Reason -->
-              <div class="col-span-3 text-xs text-neutral-700 truncate pr-4" title="${item.reason}">
-                ${item.reason}
-              </div>
-
-              <!-- Col 4: Proof Doc -->
-              <div class="col-span-1 text-center">
-                ${proofCell}
-              </div>
-
-              <!-- Col 5: Status -->
-              <div class="col-span-1 text-center">
-                ${statusBadge}
-              </div>
-
-              <!-- Col 6: Feedback / Withdraw -->
-              <div class="col-span-3 flex items-center justify-center">
-                ${feedbackCell}
-              </div>
-
+              <div class="col-span-2 text-xs font-bold text-neutral-900 pl-2">${item.requestDate}</div>
+              <div class="col-span-2 text-xs font-semibold ${item.timeDisplay === 'Full Day' ? 'text-[#3C52C3]' : 'font-mono text-neutral-500'}">${item.timeDisplay}</div>
+              <div class="col-span-3 text-xs text-neutral-700 truncate pr-4" title="${item.reason}">${item.reason}</div>
+              <div class="col-span-1 text-center">${proofs}</div>
+              <div class="col-span-1 text-center">${badge}</div>
+              <div class="col-span-3 flex items-center justify-center">${feedback}</div>
             </div>
           `;
         }).join('');
@@ -360,177 +279,112 @@
         if (window.lucide) lucide.createIcons();
       }
 
-      // Withdraw application
-      window.cancelApplication = async function(requestId) {
-        if (!confirm('Are you sure you want to withdraw this pending leave application?')) return;
-
-        try {
-          const res = await fetch('./leave-actions.php?action=cancel_leave', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestId })
-          });
-          const result = await res.json();
-          if (result.status === 'success') {
-            await loadMyLeaves();
-          } else {
-            alert(result.message || 'Withdrawal failed');
-          }
-        } catch (err) {
-          alert('Network error: ' + err.message);
-        }
+      window.cancelRequest = async function(id) {
+        if (!confirm('Are you sure you want to withdraw this application?')) return;
+        await fetch('./leave-actions.php?action=cancel_leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId: id })
+        });
+        await loadLeaves();
       };
 
-      // Render Selected Multiple Files in Modal
-      function renderSelectedFiles() {
-        const container = document.getElementById('selected-files-list');
-        if (!container) return;
-
-        if (selectedFilesArray.length === 0) {
-          container.innerHTML = '';
+      function renderFiles() {
+        const list = document.getElementById('file-list');
+        if (selectedFiles.length === 0) {
+          list.innerHTML = '';
           return;
         }
-
-        container.innerHTML = selectedFilesArray.map((file, idx) => `
+        list.innerHTML = selectedFiles.map((f, i) => `
           <div class="flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs">
             <div class="flex items-center gap-2 min-w-0 pr-2">
               <i data-lucide="file-text" class="w-4 h-4 text-[#3C52C3] shrink-0"></i>
-              <span class="font-medium text-neutral-800 truncate">${file.name}</span>
-              <span class="text-[10px] text-neutral-400">(${(file.size / 1024).toFixed(1)} KB)</span>
+              <span class="font-medium text-neutral-800 truncate">${f.name}</span>
             </div>
-            <button type="button" onclick="window.removeSelectedFile(${idx})" class="text-neutral-400 hover:text-rose-600 transition p-1 cursor-pointer">
+            <button type="button" onclick="window.removeFile(${i})" class="text-neutral-400 hover:text-rose-600 p-1 cursor-pointer">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
           </div>
         `).join('');
-
         if (window.lucide) lucide.createIcons();
       }
 
-      window.removeSelectedFile = function(index) {
-        selectedFilesArray.splice(index, 1);
-        renderSelectedFiles();
+      window.removeFile = function(index) {
+        selectedFiles.splice(index, 1);
+        renderFiles();
       };
 
-      // Reset Modal Form completely
-      function resetModalForm() {
-        const form = document.getElementById('apply-leave-form');
-        if (form) form.reset();
-        selectedFilesArray = [];
-        renderSelectedFiles();
-        document.getElementById('time-range-wrapper').classList.remove('hidden');
+      function resetModal() {
+        document.getElementById('apply-form').reset();
+        selectedFiles = [];
+        renderFiles();
+        document.getElementById('hours-wrapper').classList.remove('hidden');
         resetDateInput();
       }
 
-      // Events
-      function initEvents() {
-        const searchInput = document.getElementById('leave-search-input');
-        if (searchInput) searchInput.addEventListener('input', renderTable);
+      function initControls() {
+        document.getElementById('search-input').addEventListener('input', render);
+        document.getElementById('status-filter').addEventListener('change', loadLeaves);
 
-        const filterStatus = document.getElementById('filter-status');
-        if (filterStatus) filterStatus.addEventListener('change', loadMyLeaves);
-
-        // Full Day Checkbox toggle
-        const fullDayCheckbox = document.getElementById('apply-full-day');
-        const timeRangeWrapper = document.getElementById('time-range-wrapper');
-        const startTimeInput = document.getElementById('apply-start-time');
-        const endTimeInput = document.getElementById('apply-end-time');
-
-        fullDayCheckbox.addEventListener('change', (e) => {
-          if (e.target.checked) {
-            timeRangeWrapper.classList.add('hidden');
-            startTimeInput.required = false;
-            endTimeInput.required = false;
-          } else {
-            timeRangeWrapper.classList.remove('hidden');
-            startTimeInput.required = true;
-            endTimeInput.required = true;
-          }
+        // Full day toggle
+        document.getElementById('full-day-checkbox').addEventListener('change', (e) => {
+          document.getElementById('hours-wrapper').classList.toggle('hidden', e.target.checked);
         });
 
-        // Multiple file input handling
-        const fileInput = document.getElementById('apply-proof-file');
-        fileInput.addEventListener('change', (e) => {
+        // Files
+        const finput = document.getElementById('file-input');
+        finput.addEventListener('change', (e) => {
           if (e.target.files) {
             for (let i = 0; i < e.target.files.length; i++) {
-              selectedFilesArray.push(e.target.files[i]);
+              selectedFiles.push(e.target.files[i]);
             }
-            renderSelectedFiles();
-            fileInput.value = ''; // Reset input to allow re-selection
+            renderFiles();
+            finput.value = '';
           }
         });
 
-        // Modal controls with automatic reset
+        // Modal
         const modal = document.getElementById('apply-modal');
-        const openBtn = document.getElementById('open-apply-modal-btn');
-        const closeBtn = document.getElementById('close-apply-modal-btn');
-        const closeX = document.getElementById('close-apply-modal-x');
+        const show = () => { resetModal(); modal.classList.remove('hidden'); modal.classList.add('flex'); };
+        const hide = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); resetModal(); };
 
-        const showModal = () => { 
-          resetModalForm();
-          modal.classList.remove('hidden'); 
-          modal.classList.add('flex'); 
-        };
+        document.getElementById('open-modal-btn').onclick = show;
+        document.getElementById('close-modal-btn').onclick = hide;
+        document.getElementById('close-modal-x').onclick = hide;
 
-        const hideModal = () => { 
-          modal.classList.add('hidden'); 
-          modal.classList.remove('flex'); 
-          resetModalForm();
-        };
-
-        if (openBtn) openBtn.onclick = showModal;
-        if (closeBtn) closeBtn.onclick = hideModal;
-        if (closeX) closeX.onclick = hideModal;
-
-        // Submit form
-        const form = document.getElementById('apply-leave-form');
-        form.onsubmit = async (e) => {
+        // Submit
+        document.getElementById('apply-form').onsubmit = async (e) => {
           e.preventDefault();
-          const submitBtn = document.getElementById('submit-apply-btn');
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Submitting...';
+          const btn = document.getElementById('submit-btn');
+          btn.disabled = true;
+          btn.textContent = 'Submitting...';
 
-          const isFull = fullDayCheckbox.checked;
-          const formData = new FormData();
-          formData.append('requestDate', document.getElementById('apply-date').value);
-          formData.append('isFullDay', isFull ? 'true' : 'false');
-          formData.append('reason', document.getElementById('apply-reason').value.trim());
+          const fd = new FormData();
+          fd.append('requestDate', document.getElementById('apply-date').value);
+          fd.append('isFullDay', document.getElementById('full-day-checkbox').checked ? 'true' : 'false');
+          fd.append('startTime', document.getElementById('start-time').value);
+          fd.append('endTime', document.getElementById('end-time').value);
+          fd.append('reason', document.getElementById('apply-reason').value.trim());
 
-          if (!isFull) {
-            formData.append('startTime', startTimeInput.value);
-            formData.append('endTime', endTimeInput.value);
-          }
-
-          // Append multiple files
-          selectedFilesArray.forEach((file) => {
-            formData.append('proofDocuments[]', file);
-          });
+          selectedFiles.forEach(f => fd.append('proofDocuments[]', f));
 
           try {
             const res = await fetch('./leave-actions.php?action=submit_leave', {
               method: 'POST',
-              body: formData
+              body: fd
             });
-
-            const text = await res.text();
-            let result;
-            try {
-              result = JSON.parse(text);
-            } catch (err) {
-              throw new Error(text || 'Invalid response from server');
-            }
-
-            if (result.status === 'success') {
-              hideModal();
-              await loadMyLeaves();
+            const json = await res.json();
+            if (json.status === 'success') {
+              hide();
+              await loadLeaves();
             } else {
-              alert(result.message || 'Submission failed');
+              alert(json.message || 'Error submitting');
             }
           } catch (err) {
             alert('Request error: ' + err.message);
           } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Request';
+            btn.disabled = false;
+            btn.textContent = 'Submit Request';
           }
         };
       }
