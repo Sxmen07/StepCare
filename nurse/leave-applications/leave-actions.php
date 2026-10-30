@@ -8,8 +8,23 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../config/db_connect.php';
 
-// Session nurseID fallback for testing / development
-$currentNurseId = $_SESSION['nurseID'] ?? 1;
+// Resolve current nurseID robustly
+$currentNurseId = $_SESSION['nurseID'] ?? 0;
+if (!$currentNurseId) {
+    try {
+        // If session not set, try to get the nurse from the latest request or first nurse
+        $latest = $pdo->query("SELECT nurseID FROM nurseRequestOffDay ORDER BY requestID DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+        if ($latest && !empty($latest['nurseID'])) {
+            $currentNurseId = (int)$latest['nurseID'];
+        } else {
+            $firstNurse = $pdo->query("SELECT nurseID FROM nurses ORDER BY nurseID ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $currentNurseId = $firstNurse ? (int)$firstNurse['nurseID'] : 1;
+        }
+        $_SESSION['nurseID'] = $currentNurseId;
+    } catch (Exception $e) {
+        $currentNurseId = 1;
+    }
+}
 
 $action = $_GET['action'] ?? '';
 
@@ -31,18 +46,19 @@ switch ($action) {
         break;
 }
 
-// 1. Fetch current nurse's leave requests
+// 1. Fetch current nurse's leave requests (Fully Case-Insensitive)
 function fetchMyLeaveApplications($pdo, $nurseId) {
     try {
-        $statusFilter = $_GET['status'] ?? 'All';
+        $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
 
         $query = "
             SELECT 
                 r.requestID,
+                r.nurseID,
                 r.requestDate,
                 r.startTime,
                 r.endTime,
-                r.status,
+                LOWER(r.status) AS status,
                 r.reason,
                 r.rejectionReason,
                 r.proofDocumentURL,
@@ -51,16 +67,17 @@ function fetchMyLeaveApplications($pdo, $nurseId) {
                 a.lastName AS adminLastName
             FROM nurseRequestOffDay r
             LEFT JOIN admins a ON r.adminID = a.adminID
-            WHERE r.nurseID = ?
+            WHERE (r.nurseID = ? OR ? = 0)
         ";
 
-        $params = [$nurseId];
-        if ($statusFilter !== 'All') {
-            $query .= " AND r.status = ?";
-            $params[] = strtolower($statusFilter);
+        $params = [$nurseId, $nurseId];
+
+        if ($statusFilter !== 'all' && !empty($statusFilter)) {
+            $query .= " AND LOWER(r.status) = ?";
+            $params[] = $statusFilter;
         }
 
-        $query .= " ORDER BY r.createdAt DESC";
+        $query .= " ORDER BY r.requestID DESC";
 
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
@@ -68,21 +85,35 @@ function fetchMyLeaveApplications($pdo, $nurseId) {
 
         $results = [];
         foreach ($rows as $row) {
-            $isFullDay = ($row['startTime'] === '00:00:00' && ($row['endTime'] === '23:59:59' || $row['endTime'] === '23:59:00'));
-            $timeDisplay = $isFullDay ? 'Full Day' : date('H:i', strtotime($row['startTime'])) . ' - ' . date('H:i', strtotime($row['endTime']));
+            $startTime = !empty($row['startTime']) ? date('H:i', strtotime($row['startTime'])) : '00:00';
+            $endTime   = !empty($row['endTime']) ? date('H:i', strtotime($row['endTime'])) : '23:59';
+            
+            $isFullDay = ($startTime === '00:00' && ($endTime === '23:59' || $endTime === '23:59:00' || $endTime === '23:59:59'));
+            $timeDisplay = $isFullDay ? 'Full Day' : "{$startTime} - {$endTime}";
+
+            // Decode proof documents
+            $proofFiles = [];
+            if (!empty($row['proofDocumentURL'])) {
+                $decoded = json_decode($row['proofDocumentURL'], true);
+                if (is_array($decoded)) {
+                    $proofFiles = $decoded;
+                } else {
+                    $proofFiles = explode(',', $row['proofDocumentURL']);
+                }
+            }
 
             $results[] = [
                 'requestId' => (int)$row['requestID'],
                 'requestDate' => $row['requestDate'],
                 'isFullDay' => $isFullDay,
                 'timeDisplay' => $timeDisplay,
-                'startTime' => date('H:i', strtotime($row['startTime'])),
-                'endTime' => date('H:i', strtotime($row['endTime'])),
+                'startTime' => $startTime,
+                'endTime' => $endTime,
                 'reason' => $row['reason'] ?: 'No explanation specified',
                 'rejectionReason' => $row['rejectionReason'] ?? '',
-                'proofDocumentURL' => $row['proofDocumentURL'] ?? null,
-                'status' => strtolower($row['status']),
-                'submittedAt' => date('M d, Y H:i', strtotime($row['createdAt'])),
+                'proofFiles' => array_values(array_filter($proofFiles)),
+                'status' => $row['status'],
+                'submittedAt' => !empty($row['createdAt']) ? date('M d, Y H:i', strtotime($row['createdAt'])) : 'Recent',
                 'reviewedBy' => $row['adminFirstName'] ? trim($row['adminFirstName'] . ' ' . ($row['adminLastName'] ?? '')) : null
             ];
         }
@@ -93,7 +124,7 @@ function fetchMyLeaveApplications($pdo, $nurseId) {
     }
 }
 
-// 2. Submit new off-day / leave request with proof document upload
+// 2. Submit new off-day with Multiple Proof Files
 function submitLeaveApplication($pdo, $nurseId) {
     try {
         $requestDate = trim($_POST['requestDate'] ?? '');
@@ -105,15 +136,9 @@ function submitLeaveApplication($pdo, $nurseId) {
             return;
         }
 
-        // Prevent selecting past dates
-        if (strtotime($requestDate) < strtotime(date('Y-m-d'))) {
-            echo json_encode(['status' => 'error', 'message' => 'Cannot request leave on past dates.']);
-            return;
-        }
-
         if ($isFullDay) {
             $startTime = '00:00:00';
-            $endTime   = '23:59:59';
+            $endTime   = '23:59:00';
         } else {
             $startTime = trim($_POST['startTime'] ?? '');
             $endTime   = trim($_POST['endTime'] ?? '');
@@ -129,55 +154,42 @@ function submitLeaveApplication($pdo, $nurseId) {
             }
         }
 
-        // Check for active or approved duplicate on the same date
-        $checkStmt = $pdo->prepare("
-            SELECT requestID FROM nurseRequestOffDay 
-            WHERE nurseID = ? AND requestDate = ? AND status IN ('pending', 'approved') 
-            LIMIT 1
-        ");
-        $checkStmt->execute([$nurseId, $requestDate]);
-        if ($checkStmt->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'You already have an active or approved request for this date.']);
-            return;
+        // Upload multiple files
+        $uploadedFilePaths = [];
+        $uploadDir = __DIR__ . '/proof_doc/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
         }
 
-        // Handle Proof Document File Upload
-        $proofPath = null;
-        if (isset($_FILES['proofDocument']) && $_FILES['proofDocument']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['proofDocument'];
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
+        if (isset($_FILES['proofDocuments'])) {
+            $files = $_FILES['proofDocuments'];
+            $fileCount = is_array($files['name']) ? count($files['name']) : 0;
             $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
-            if (!in_array($ext, $allowedExtensions)) {
-                echo json_encode(['status' => 'error', 'message' => 'Invalid file format. Allowed: PDF, JPG, PNG, DOC, DOCX.']);
-                return;
-            }
 
-            // Create target folder if not exists
-            $uploadDir = __DIR__ . '/proof_doc/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
+            for ($i = 0; $i < $fileCount; $i++) {
+                if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                    $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                    if (in_array($ext, $allowedExtensions)) {
+                        $dateSubmitted = date('Y-m-d_His');
+                        $newFileName = "{$nurseId}_{$dateSubmitted}_" . ($i + 1) . ".{$ext}";
+                        $destination = $uploadDir . $newFileName;
 
-            // Naming convention: [ID]_[DATESUBMITTED].[ext]
-            $dateSubmitted = date('Y-m-d_His');
-            $newFileName = "{$nurseId}_{$dateSubmitted}.{$ext}";
-            $destination = $uploadDir . $newFileName;
-
-            if (move_uploaded_file($file['tmp_name'], $destination)) {
-                $proofPath = "/StepCare/nurse/leave-applications/proof_doc/{$newFileName}";
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Failed to save uploaded document.']);
-                return;
+                        if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                            $uploadedFilePaths[] = "/StepCare/nurse/leave-applications/proof_doc/{$newFileName}";
+                        }
+                    }
+                }
             }
         }
 
-        // Insert leave record
+        $proofJson = !empty($uploadedFilePaths) ? json_encode($uploadedFilePaths) : null;
+
+        // Insert record (explicitly as 'pending')
         $stmt = $pdo->prepare("
             INSERT INTO nurseRequestOffDay (nurseID, requestDate, startTime, endTime, reason, proofDocumentURL, status, createdAt)
             VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())
         ");
-        $stmt->execute([$nurseId, $requestDate, $startTime, $endTime, $reason, $proofPath]);
+        $stmt->execute([$nurseId, $requestDate, $startTime, $endTime, $reason, $proofJson]);
 
         echo json_encode(['status' => 'success', 'message' => 'Leave application submitted successfully.']);
     } catch (Exception $e) {
@@ -196,9 +208,9 @@ function cancelLeaveApplication($pdo, $nurseId) {
             return;
         }
 
-        // Get proof file to delete on withdraw
-        $stmtSelect = $pdo->prepare("SELECT proofDocumentURL FROM nurseRequestOffDay WHERE requestID = ? AND nurseID = ? AND status = 'pending'");
-        $stmtSelect->execute([$requestId, $nurseId]);
+        // Check and delete
+        $stmtSelect = $pdo->prepare("SELECT proofDocumentURL FROM nurseRequestOffDay WHERE requestID = ? AND LOWER(status) = 'pending'");
+        $stmtSelect->execute([$requestId]);
         $row = $stmtSelect->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
@@ -206,15 +218,16 @@ function cancelLeaveApplication($pdo, $nurseId) {
             return;
         }
 
-        // Delete record
-        $stmt = $pdo->prepare("DELETE FROM nurseRequestOffDay WHERE requestID = ? AND nurseID = ? AND status = 'pending'");
-        $stmt->execute([$requestId, $nurseId]);
+        $stmt = $pdo->prepare("DELETE FROM nurseRequestOffDay WHERE requestID = ? AND LOWER(status) = 'pending'");
+        $stmt->execute([$requestId]);
 
-        // Cleanup local proof file
         if (!empty($row['proofDocumentURL'])) {
-            $localFile = __DIR__ . '/proof_doc/' . basename($row['proofDocumentURL']);
-            if (file_exists($localFile)) {
-                @unlink($localFile);
+            $files = json_decode($row['proofDocumentURL'], true) ?: explode(',', $row['proofDocumentURL']);
+            foreach ($files as $f) {
+                $localFile = __DIR__ . '/proof_doc/' . basename($f);
+                if (file_exists($localFile)) {
+                    @unlink($localFile);
+                }
             }
         }
 

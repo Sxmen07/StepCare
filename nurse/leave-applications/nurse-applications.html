@@ -121,31 +121,31 @@
           </div>
         </div>
 
-        <!-- Reason / Note (No Presets) -->
+        <!-- Reason / Note -->
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Reason for Request</label>
           <textarea id="apply-reason" rows="3" required placeholder="Please describe your reason for requesting leave..." class="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#3C52C3] transition resize-none"></textarea>
         </div>
 
-        <!-- Upload Proof Document -->
+        <!-- Multiple Upload Proof Documents -->
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
-            Proof Document <span class="text-neutral-400 font-normal">(Optional: MC, Medical Letter, Form)</span>
+            Proof Documents <span class="text-neutral-400 font-normal">(Optional, Multiple Files Supported)</span>
           </label>
-          <div class="relative border-2 border-dashed border-neutral-200 hover:border-[#3C52C3] rounded-2xl p-4 text-center transition bg-neutral-50/50">
-            <input type="file" id="apply-proof-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-            <div id="file-upload-placeholder" class="space-y-1">
+          
+          <!-- Drop Area -->
+          <div id="upload-dropzone" class="relative border-2 border-dashed border-neutral-200 hover:border-[#3C52C3] rounded-2xl p-4 text-center transition bg-neutral-50/50 cursor-pointer">
+            <input type="file" id="apply-proof-file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div class="space-y-1 pointer-events-none">
               <i data-lucide="upload-cloud" class="w-6 h-6 text-neutral-400 mx-auto"></i>
-              <p class="text-xs font-semibold text-neutral-700">Click or drag file to upload proof</p>
-              <p class="text-[10px] text-neutral-400">Supported: PDF, JPG, PNG, DOCX (Max 10MB)</p>
+              <p class="text-xs font-semibold text-neutral-700">Click or drag files to upload</p>
+              <p class="text-[10px] text-neutral-400">PDF, JPG, PNG, DOCX (Can select multiple)</p>
             </div>
-            <div id="file-upload-info" class="hidden items-center justify-center gap-2 text-xs font-bold text-[#3C52C3]">
-              <i data-lucide="file-check" class="w-4 h-4"></i>
-              <span id="selected-file-name" class="truncate max-w-[280px]"></span>
-              <button type="button" id="remove-file-btn" class="text-rose-500 hover:text-rose-700 ml-2 cursor-pointer" title="Remove File">
-                <i data-lucide="x" class="w-4 h-4"></i>
-              </button>
-            </div>
+          </div>
+
+          <!-- Multiple Selected Files Container -->
+          <div id="selected-files-list" class="space-y-2 mt-2.5">
+            <!-- Dynamically populated files badges -->
           </div>
         </div>
 
@@ -164,6 +164,7 @@
       'use strict';
 
       let leavesList = [];
+      let selectedFilesArray = []; // Store selected File objects
 
       document.addEventListener('DOMContentLoaded', () => {
         // 1. Mount nurse sidebar
@@ -201,12 +202,7 @@
           });
 
         // 3. Set min date for date input to today
-        const dateInput = document.getElementById('apply-date');
-        if (dateInput) {
-          const today = new Date().toISOString().split('T')[0];
-          dateInput.min = today;
-          dateInput.value = today;
-        }
+        resetDateInput();
 
         // 4. Load my leave applications
         loadMyLeaves();
@@ -215,12 +211,21 @@
         initEvents();
       });
 
-      // Load leaves list
+      function resetDateInput() {
+        const dateInput = document.getElementById('apply-date');
+        if (dateInput) {
+          const today = new Date().toISOString().split('T')[0];
+          dateInput.min = today;
+          dateInput.value = today;
+        }
+      }
+
+      // Load leaves list using leave-actions.php
       async function loadMyLeaves() {
         try {
           const filterStatus = document.getElementById('filter-status');
-          const currentStatus = filterStatus ? filterStatus.value : 'All';
-          const res = await fetch(`./leave_actions.php?action=fetch_my_leaves&status=${currentStatus}`);
+          const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
+          const res = await fetch(`./leave-actions.php?action=fetch_my_leaves&status=${currentStatus}`);
           const result = await res.json();
           if (result.status === 'success') {
             leavesList = result.data || [];
@@ -245,7 +250,7 @@
         const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
 
         const filtered = leavesList.filter(item => {
-          const matchesStatus = (currentStatus === 'all') || (item.status === currentStatus);
+          const matchesStatus = (currentStatus === 'all') || (item.status.toLowerCase() === currentStatus);
           const matchesSearch = item.requestDate.toLowerCase().includes(searchTerm) || 
                                 item.reason.toLowerCase().includes(searchTerm);
           return matchesStatus && matchesSearch;
@@ -266,27 +271,34 @@
         }
 
         container.innerHTML = filtered.map(item => {
-          // Status Badges
+          const st = item.status.toLowerCase();
           let statusBadge = '';
-          if (item.status === 'pending') {
+          if (st === 'pending') {
             statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
-          } else if (item.status === 'approved') {
+          } else if (st === 'approved') {
             statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
           } else {
             statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200">Rejected</span>';
           }
 
-          // Proof Document Cell
-          const proofCell = item.proofDocumentURL
-            ? `<a href="${item.proofDocumentURL}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold transition" title="View Proof Document">
-                 <i data-lucide="paperclip" class="w-3.5 h-3.5 text-[#3C52C3]"></i>
-                 <span>View</span>
-               </a>`
-            : `<span class="text-neutral-300 text-xs">—</span>`;
+          // Proof Documents Links
+          let proofCell = `<span class="text-neutral-300 text-xs">—</span>`;
+          if (item.proofFiles && item.proofFiles.length > 0) {
+            proofCell = `
+              <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                ${item.proofFiles.map((f, i) => `
+                  <a href="${f}" target="_blank" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-semibold transition" title="View Document ${i+1}">
+                    <i data-lucide="paperclip" class="w-3 h-3 text-[#3C52C3]"></i>
+                    <span>Doc ${i+1}</span>
+                  </a>
+                `).join('')}
+              </div>
+            `;
+          }
 
           // Actions / Feedback
           let feedbackCell = '';
-          if (item.status === 'pending') {
+          if (st === 'pending') {
             feedbackCell = `
               <button type="button" 
                       onclick="window.cancelApplication(${item.requestId})" 
@@ -295,7 +307,7 @@
                 <span>Withdraw</span>
               </button>
             `;
-          } else if (item.status === 'rejected') {
+          } else if (st === 'rejected') {
             const reasonText = item.rejectionReason || 'No feedback provided';
             feedbackCell = `
               <div class="text-left text-xs text-rose-600 font-medium truncate max-w-xs" title="${reasonText}">
@@ -316,7 +328,7 @@
                 ${item.requestDate}
               </div>
 
-              <!-- Col 2: Time Frame (Full Day or specific hours) -->
+              <!-- Col 2: Time Frame -->
               <div class="col-span-2 text-xs font-semibold ${item.isFullDay ? 'text-[#3C52C3]' : 'font-mono text-neutral-500'}">
                 ${item.timeDisplay}
               </div>
@@ -353,7 +365,7 @@
         if (!confirm('Are you sure you want to withdraw this pending leave application?')) return;
 
         try {
-          const res = await fetch('./leave_actions.php?action=cancel_leave', {
+          const res = await fetch('./leave-actions.php?action=cancel_leave', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ requestId })
@@ -368,6 +380,47 @@
           alert('Network error: ' + err.message);
         }
       };
+
+      // Render Selected Multiple Files in Modal
+      function renderSelectedFiles() {
+        const container = document.getElementById('selected-files-list');
+        if (!container) return;
+
+        if (selectedFilesArray.length === 0) {
+          container.innerHTML = '';
+          return;
+        }
+
+        container.innerHTML = selectedFilesArray.map((file, idx) => `
+          <div class="flex items-center justify-between p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs">
+            <div class="flex items-center gap-2 min-w-0 pr-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-[#3C52C3] shrink-0"></i>
+              <span class="font-medium text-neutral-800 truncate">${file.name}</span>
+              <span class="text-[10px] text-neutral-400">(${(file.size / 1024).toFixed(1)} KB)</span>
+            </div>
+            <button type="button" onclick="window.removeSelectedFile(${idx})" class="text-neutral-400 hover:text-rose-600 transition p-1 cursor-pointer">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      window.removeSelectedFile = function(index) {
+        selectedFilesArray.splice(index, 1);
+        renderSelectedFiles();
+      };
+
+      // Reset Modal Form completely
+      function resetModalForm() {
+        const form = document.getElementById('apply-leave-form');
+        if (form) form.reset();
+        selectedFilesArray = [];
+        renderSelectedFiles();
+        document.getElementById('time-range-wrapper').classList.remove('hidden');
+        resetDateInput();
+      }
 
       // Events
       function initEvents() {
@@ -395,48 +448,41 @@
           }
         });
 
-        // File upload input change
+        // Multiple file input handling
         const fileInput = document.getElementById('apply-proof-file');
-        const uploadPlaceholder = document.getElementById('file-upload-placeholder');
-        const uploadInfo = document.getElementById('file-upload-info');
-        const selectedFileName = document.getElementById('selected-file-name');
-        const removeFileBtn = document.getElementById('remove-file-btn');
-
         fileInput.addEventListener('change', (e) => {
-          if (e.target.files && e.target.files[0]) {
-            selectedFileName.textContent = e.target.files[0].name;
-            uploadPlaceholder.classList.add('hidden');
-            uploadInfo.classList.remove('hidden');
-            uploadInfo.classList.add('flex');
-            if (window.lucide) lucide.createIcons();
+          if (e.target.files) {
+            for (let i = 0; i < e.target.files.length; i++) {
+              selectedFilesArray.push(e.target.files[i]);
+            }
+            renderSelectedFiles();
+            fileInput.value = ''; // Reset input to allow re-selection
           }
         });
 
-        removeFileBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          fileInput.value = '';
-          uploadInfo.classList.add('hidden');
-          uploadInfo.classList.remove('flex');
-          uploadPlaceholder.classList.remove('hidden');
-        });
-
-        // Modal controls
+        // Modal controls with automatic reset
         const modal = document.getElementById('apply-modal');
         const openBtn = document.getElementById('open-apply-modal-btn');
         const closeBtn = document.getElementById('close-apply-modal-btn');
         const closeX = document.getElementById('close-apply-modal-x');
 
-        const showModal = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+        const showModal = () => { 
+          resetModalForm();
+          modal.classList.remove('hidden'); 
+          modal.classList.add('flex'); 
+        };
+
         const hideModal = () => { 
           modal.classList.add('hidden'); 
           modal.classList.remove('flex'); 
+          resetModalForm();
         };
 
         if (openBtn) openBtn.onclick = showModal;
         if (closeBtn) closeBtn.onclick = hideModal;
         if (closeX) closeX.onclick = hideModal;
 
-        // Submit form using FormData (supports file upload)
+        // Submit form
         const form = document.getElementById('apply-leave-form');
         form.onsubmit = async (e) => {
           e.preventDefault();
@@ -455,24 +501,27 @@
             formData.append('endTime', endTimeInput.value);
           }
 
-          if (fileInput.files && fileInput.files[0]) {
-            formData.append('proofDocument', fileInput.files[0]);
-          }
+          // Append multiple files
+          selectedFilesArray.forEach((file) => {
+            formData.append('proofDocuments[]', file);
+          });
 
           try {
-            const res = await fetch('./leave_actions.php?action=submit_leave', {
+            const res = await fetch('./leave-actions.php?action=submit_leave', {
               method: 'POST',
               body: formData
             });
-            const result = await res.json();
+
+            const text = await res.text();
+            let result;
+            try {
+              result = JSON.parse(text);
+            } catch (err) {
+              throw new Error(text || 'Invalid response from server');
+            }
 
             if (result.status === 'success') {
               hideModal();
-              form.reset();
-              timeRangeWrapper.classList.remove('hidden');
-              uploadInfo.classList.add('hidden');
-              uploadInfo.classList.remove('flex');
-              uploadPlaceholder.classList.remove('hidden');
               await loadMyLeaves();
             } else {
               alert(result.message || 'Submission failed');
