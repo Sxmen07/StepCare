@@ -15,30 +15,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$userID        = (int)$_SESSION['userID'];
-$appointmentID = (int)($_POST['appointmentID'] ?? 0);
+$userID = (int)$_SESSION['userID'];
 
-if ($appointmentID <= 0 || !isset($_FILES['paymentProof']) || $_FILES['paymentProof']['error'] !== UPLOAD_ERR_OK) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Please upload a valid payment proof image.']); exit; }
-    $_SESSION['booking_flash'] = ['title' => 'Upload Failed', 'message' => 'Please upload a valid payment proof image.'];
-    header("Location: payment.php?id=$appointmentID");
+if (empty($_SESSION['pending_booking'])) {
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'No pending booking found. Please fill the form again.']); exit; }
+    header('Location: services.php');
     exit;
 }
 
-$stmt = $pdo->prepare("
-    SELECT a.appointmentID, a.appointmentStatus, s.serviceName, 
-           DATE_FORMAT(a.startDateTime, '%a, %d %b %Y') as prettyDate, 
-           DATE_FORMAT(a.startDateTime, '%g:%i %p') as prettyTime 
-    FROM appointments a 
-    JOIN services s ON s.serviceID = a.serviceID
-    JOIN payments p ON p.appointmentID = a.appointmentID
-    WHERE a.appointmentID = ? AND a.userID = ? AND p.paymentStatus = 'pending'
-");
-$stmt->execute([$appointmentID, $userID]);
-$appt = $stmt->fetch();
-
-if (!$appt) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Appointment not found or already paid.']); exit; }
+if (!isset($_FILES['paymentProof']) || $_FILES['paymentProof']['error'] !== UPLOAD_ERR_OK) {
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Please upload a valid payment proof image.']); exit; }
     header('Location: services.php');
     exit;
 }
@@ -49,59 +35,105 @@ $allowed = ['jpg', 'jpeg', 'png'];
 
 if (!in_array($ext, $allowed)) {
     if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Only JPG and PNG images are allowed.']); exit; }
-    $_SESSION['booking_flash'] = ['title' => 'Invalid File', 'message' => 'Only JPG and PNG images are allowed.'];
-    header("Location: payment.php?id=$appointmentID");
+    header('Location: services.php');
     exit;
 }
 
 if ($file['size'] > 5 * 1024 * 1024) {
     if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Maximum file size is 5MB.']); exit; }
-    $_SESSION['booking_flash'] = ['title' => 'File Too Large', 'message' => 'Maximum file size is 5MB.'];
-    header("Location: payment.php?id=$appointmentID");
+    header('Location: services.php');
     exit;
 }
 
-$uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0755, true);
+$booking = $_SESSION['pending_booking'];
+
+// 再次检查库存（防止用户停留在支付页太久被别人抢掉）
+$totalNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
+if ($totalNurses <= 0) $totalNurses = 3;
+
+$stmt = $pdo->prepare(
+    "SELECT COUNT(*) FROM appointments
+     WHERE DATE(startDateTime) = ? AND TIME(startDateTime) = ?
+       AND appointmentStatus IN ('pending','confirmed','in_progress')"
+);
+$stmt->execute([$booking['startDate'], $booking['startTime']]);
+if ((int)$stmt->fetchColumn() >= $totalNurses) {
+    unset($_SESSION['pending_booking']);
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Sorry, that slot was just taken. Please book again.']); exit; }
+    header('Location: services.php');
+    exit;
 }
 
-$fileName = 'pay_' . $appointmentID . '_' . time() . '.' . $ext;
-$uploadPath = $uploadDir . $fileName;
-$dbPath = '../../uploads/payment_proofs/' . $fileName;
+try {
+    $pdo->beginTransaction();
 
-if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+    // 1. 生成真实的 appointment
+    $stmt = $pdo->prepare(
+        'INSERT INTO appointments
+            (serviceID, userID, patientName, startDateTime, endDateTime,
+             locationAddress, specialInstructions, appointmentStatus)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "pending")'
+    );
+    $stmt->execute([
+        $booking['serviceID'], $userID, $booking['patientName'],
+        $booking['startDateTime'], $booking['endDateTime'], $booking['address'],
+        $booking['specialInstructions']
+    ]);
+    $appointmentID = $pdo->lastInsertId();
+
+    // 2. 生成 payments 记录
     $stmt = $pdo->prepare("
-        UPDATE payments 
-        SET paymentProofURL = ?, paymentStatus = 'pending_verification', paymentMethod = 'Bank Transfer' 
-        WHERE appointmentID = ?
+        INSERT INTO payments (appointmentID, totalAmount, paymentStatus)
+        VALUES (?, ?, 'pending_verification')
     ");
-    $stmt->execute([$dbPath, $appointmentID]);
+    $stmt->execute([$appointmentID, $booking['price']]);
+    $paymentID = $pdo->lastInsertId();
 
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO trackServiceStatus (appointmentID, serviceID, userID, status, message)
-            SELECT appointmentID, serviceID, userID, 'pending', 'Payment proof uploaded. Awaiting verification.' 
-            FROM appointments WHERE appointmentID = ?
-        ");
-        $stmt->execute([$appointmentID]);
-    } catch (Exception $e) {}
-
-    if ($isAjax) {
-        echo json_encode(['success' => true]);
-        exit;
+    // 3. 保存图片
+    $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
     }
+    $fileName = 'pay_' . $appointmentID . '_' . time() . '.' . $ext;
+    $uploadPath = $uploadDir . $fileName;
+    $dbPath = '../../uploads/payment_proofs/' . $fileName;
 
-    $redirect = 'services.php?booked=1'
-              . '&ref='     . urlencode('#SC' . str_pad($appointmentID, 6, '0', STR_PAD_LEFT))
-              . '&date='    . urlencode($appt['prettyDate'])
-              . '&time='    . urlencode($appt['prettyTime'])
-              . '&service=' . urlencode($appt['serviceName']);
-    header('Location: ' . $redirect);
-    exit;
-} else {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Could not save the uploaded file.']); exit; }
-    $_SESSION['booking_flash'] = ['title' => 'Server Error', 'message' => 'Could not save the uploaded file.'];
-    header("Location: payment.php?id=$appointmentID");
+    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        // 4. 更新图片路径
+        $stmt = $pdo->prepare("
+            UPDATE payments 
+            SET paymentProofURL = ?, paymentMethod = 'Bank Transfer' 
+            WHERE paymentID = ?
+        ");
+        $stmt->execute([$dbPath, $paymentID]);
+
+        // 5. 记录 Timeline
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO trackServiceStatus (appointmentID, serviceID, userID, status, message)
+                VALUES (?, ?, ?, 'pending', 'Payment proof uploaded. Awaiting verification.')
+            ");
+            $stmt->execute([$appointmentID, $booking['serviceID'], $userID]);
+        } catch (Exception $e) {}
+
+        $pdo->commit();
+        
+        // 清除暂存数据
+        unset($_SESSION['pending_booking']);
+
+        if ($isAjax) {
+            echo json_encode(['success' => true, 'appointmentID' => $appointmentID]);
+            exit;
+        }
+        header('Location: services.php');
+        exit;
+    } else {
+        throw new Exception('Could not save the uploaded file.');
+    }
+} catch (Exception $e) {
+    $pdo->rollBack();
+    error_log($e->getMessage());
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Database or file error.']); exit; }
+    header('Location: services.php');
     exit;
 }

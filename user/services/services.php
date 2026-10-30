@@ -2,18 +2,6 @@
 session_start();
 require __DIR__ . '/../../config/db_connect.php';
 
-// --- AUTO-CANCEL ABANDONED UNPAID BOOKINGS ---
-if (!empty($_SESSION['userID'])) {
-    $cleanup = $pdo->prepare("
-        UPDATE appointments a
-        JOIN payments p ON a.appointmentID = p.appointmentID
-        SET a.appointmentStatus = 'cancelled', p.paymentStatus = 'failed'
-        WHERE a.userID = ? AND a.appointmentStatus = 'pending' AND p.paymentStatus = 'pending'
-          AND a.createdAt < NOW() - INTERVAL 15 MINUTE
-    ");
-    $cleanup->execute([$_SESSION['userID']]);
-}
-
 /* ---------- Fetch all services ---------- */
 $sql = "
     SELECT

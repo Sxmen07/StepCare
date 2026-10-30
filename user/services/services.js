@@ -462,7 +462,7 @@
 
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // ASYNC SUBMIT
+    // ASYNC SUBMIT (保存数据到 Session)
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const picked = form.querySelector('input[name="startTime"]:checked');
@@ -486,10 +486,15 @@
 
         if (data.success) {
           // 设置支付面板信息
-          document.getElementById('paymentAppointmentID').value = data.appointmentID;
           document.getElementById('payAmount').textContent = `RM ${data.price}`;
           window._currentBooking = data; // 保存以供支付成功后重定向
           
+          // 重置支付表单
+          payFileInput.value = '';
+          payPreviewContainer.classList.add('hidden');
+          payImagePreview.src = '';
+          paySubmitBtn.disabled = true;
+
           // 滑到支付面板
           slideToPayment();
 
@@ -581,7 +586,7 @@
           const b = window._currentBooking || {};
           const urlParams = new URLSearchParams({
             booked: 1,
-            ref: '#SC' + String(document.getElementById('paymentAppointmentID').value).padStart(6, '0'),
+            ref: '#SC' + String(data.appointmentID).padStart(6, '0'),
             date: b.prettyDate || '',
             time: b.prettyTime || '',
             service: b.serviceName || ''

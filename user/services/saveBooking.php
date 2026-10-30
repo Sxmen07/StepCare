@@ -1,26 +1,16 @@
 <?php
 session_start();
-
 require __DIR__ . '/../../config/db_connect.php';
 
-// 判断是否为 AJAX 请求
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
 if (empty($_SESSION['userID'])) {
-    if ($isAjax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Session expired. Please log in again.']);
-        exit;
-    }
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Session expired. Please log in again.']); exit; }
     header('Location: ../../loginNsignup/login/login.html');
     exit;
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    if ($isAjax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Invalid request.']);
-        exit;
-    }
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Invalid request.']); exit; }
     header('Location: services.php');
     exit;
 }
@@ -46,11 +36,7 @@ if ($location === '')                            $errors[] = 'Street / building 
 if ($area === '')                                $errors[] = 'Area is required.';
 
 if ($errors) {
-    if ($isAjax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => implode(' ', $errors)]);
-        exit;
-    }
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => implode(' ', $errors)]); exit; }
     $_SESSION['booking_flash'] = ['title' => 'Booking failed', 'message' => implode(' ', $errors)];
     header('Location: services.php');
     exit;
@@ -58,11 +44,7 @@ if ($errors) {
 
 $startDateTime = date('Y-m-d H:i:s', strtotime("$startDate $startTime"));
 if (strtotime($startDateTime) < time()) {
-    if ($isAjax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'That time has already passed.']);
-        exit;
-    }
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'That time has already passed.']); exit; }
     $_SESSION['booking_flash'] = ['title' => 'Booking failed', 'message' => 'That time has already passed.'];
     header('Location: services.php');
     exit;
@@ -86,24 +68,11 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute([$startDate, $startTime]);
 if ((int)$stmt->fetchColumn() >= $totalNurses) {
-    if ($isAjax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Sorry, that slot just filled up. Please pick another.']);
-        exit;
-    }
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Sorry, that slot just filled up. Please pick another.']); exit; }
     $_SESSION['booking_flash'] = ['title' => 'Slot no longer available', 'message' => 'Sorry, that slot just filled up. Please pick another.'];
     header('Location: services.php');
     exit;
 }
-
-// Cleanup abandoned unpaid bookings older than 15 minutes
-$pdo->prepare("
-    UPDATE appointments a
-    JOIN payments p ON a.appointmentID = p.appointmentID
-    SET a.appointmentStatus = 'cancelled', p.paymentStatus = 'failed'
-    WHERE a.userID = ? AND a.appointmentStatus = 'pending' AND p.paymentStatus = 'pending'
-      AND a.createdAt < NOW() - INTERVAL 15 MINUTE
-")->execute([$userID]);
 
 $address = $location;
 if ($area !== '')     $address .= ', ' . $area;
@@ -116,37 +85,26 @@ $endDateTime = date('Y-m-d H:i:s', strtotime("$startDateTime +$durationMin minut
 $prettyDate = date('D, d M Y', strtotime($startDateTime));
 $prettyTime = date('g:i A',     strtotime($startDateTime));
 
-$stmt = $pdo->prepare('SELECT firstName, email FROM users WHERE userID = ?');
-$stmt->execute([$userID]);
-$user = $stmt->fetch();
+// 验证通过，暂存数据到 Session 中，不再插入数据库
+$_SESSION['pending_booking'] = [
+    'serviceID' => $serviceID,
+    'patientName' => $patientName,
+    'startDate' => $startDate,
+    'startTime' => $startTime,
+    'startDateTime' => $startDateTime,
+    'endDateTime' => $endDateTime,
+    'address' => $address,
+    'specialInstructions' => $notes !== '' ? $notes : null,
+    'price' => $service['price'],
+    'serviceName' => $service['serviceName'],
+    'prettyDate' => $prettyDate,
+    'prettyTime' => $prettyTime
+];
 
-/* ---------- Insert as PENDING ---------- */
-$stmt = $pdo->prepare(
-    'INSERT INTO appointments
-        (serviceID, userID, patientName, startDateTime, endDateTime,
-         locationAddress, specialInstructions, appointmentStatus)
-     VALUES (?, ?, ?, ?, ?, ?, ?, "pending")'
-);
-$stmt->execute([
-    $serviceID, $userID, $patientName,
-    $startDateTime, $endDateTime, $address,
-    $notes !== '' ? $notes : null,
-]);
-$appointmentID = $pdo->lastInsertId();
-
-/* ---------- Create PENDING payment record ---------- */
-$stmt = $pdo->prepare("
-    INSERT INTO payments (appointmentID, totalAmount, paymentStatus)
-    VALUES (?, ?, 'pending')
-");
-$stmt->execute([$appointmentID, $service['price']]);
-
-/* ---------- Return Response ---------- */
 if ($isAjax) {
     header('Content-Type: application/json');
     echo json_encode([
         'success' => true,
-        'appointmentID' => $appointmentID,
         'prettyDate' => $prettyDate,
         'prettyTime' => $prettyTime,
         'serviceName' => $service['serviceName'],
@@ -155,5 +113,5 @@ if ($isAjax) {
     exit;
 }
 
-header('Location: payment.php?id=' . $appointmentID);
+header('Location: services.php');
 exit;
