@@ -2,8 +2,6 @@
 (function () {
   'use strict';
 
-  // If the user is not logged in, selfData will be null. 
-  // We don't need to run any JS on the landing page.
   if (!window.selfData) return; 
 
   /* ============================================================
@@ -211,8 +209,9 @@
     const timeStr = fmtTime(a.startDateTime);
 
     return `
-      <article class="bg-white rounded-2xl ring-1 ring-slate-200 overflow-hidden
-                      flex flex-col md:flex-row hover:ring-[#3C52C3]/40 transition">
+      <article class="appt-detail-trigger bg-white rounded-2xl ring-1 ring-slate-200 overflow-hidden
+                      flex flex-col md:flex-row hover:ring-[#3C52C3]/40 hover:-translate-y-0.5 transition duration-200 cursor-pointer"
+               data-appt-id="${a.appointmentID}">
 
         <div class="md:w-44 flex-shrink-0 bg-slate-100 aspect-[16/10] md:aspect-auto overflow-hidden">
           <img src="${esc(img)}" alt=""
@@ -282,7 +281,179 @@
   });
 
   /* ============================================================
-     MODALS
+     APPOINTMENT DETAIL MODAL LOGIC (升级版)
+     ============================================================ */
+  const apptDetailModal = document.getElementById('apptDetailModal');
+  const closeApptDetail = document.getElementById('closeApptDetail');
+  
+  const detUserName  = document.getElementById('detUserName');
+  const detUserEmail = document.getElementById('detUserEmail');
+  const detUserPhone = document.getElementById('detUserPhone');
+  
+  const detPatient   = document.getElementById('detPatient');
+  const detAddress   = document.getElementById('detAddress');
+
+  const detServiceName = document.getElementById('detServiceName');
+  const detCategory    = document.getElementById('detCategory');
+  const detStatus      = document.getElementById('detStatus');
+  
+  const detDate = document.getElementById('detDate');
+  const detTime = document.getElementById('detTime');
+  const detPrice = document.getElementById('detPrice');
+  const detUnit = document.getElementById('detUnit');
+  const detRef = document.getElementById('detRef');
+  
+  const detInstructionsWrapper = document.getElementById('detInstructionsWrapper');
+  const detInstructions = document.getElementById('detInstructions');
+
+  const detTimeline = document.getElementById('detTimeline');
+  const detTimelineCount = document.getElementById('detTimelineCount');
+  const detNurseContent = document.getElementById('detNurseContent');
+
+  function openApptDetail(a) {
+    const meta = statusMeta(a.appointmentStatus);
+
+    // 1. Fill basic info
+    detUserName.textContent  = `${a.userFirstName || ''} ${a.userLastName || ''}`.trim() || '—';
+    detUserEmail.textContent = a.userEmail || '—';
+    detUserPhone.textContent = a.userPhone || '—';
+    
+    detPatient.textContent = a.patientName || '—';
+    detAddress.textContent = a.locationAddress || '—';
+
+    detServiceName.textContent = a.serviceName || 'Service';
+    detCategory.textContent    = a.category || 'General';
+    
+    detStatus.textContent = meta.label;
+    detStatus.className   = `inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] ring-1 shrink-0 ${colorMap[meta.color]}`;
+
+    detDate.textContent  = fmtDate(a.startDateTime);
+    detTime.textContent  = fmtTime(a.startDateTime);
+    detPrice.innerHTML   = `RM${Number(a.price).toFixed(2)}`;
+    detUnit.textContent  = `/${a.price_unit || 'visit'}`;
+    detRef.textContent   = a.ref;
+
+    if (a.specialInstructions && a.specialInstructions.trim() !== '') {
+      detInstructionsWrapper.classList.remove('hidden');
+      detInstructions.innerHTML = a.specialInstructions.replace(/\n/g, '<br>');
+    } else {
+      detInstructionsWrapper.classList.add('hidden');
+    }
+
+    // 2. Render Timeline
+    detTimelineCount.textContent = `${a.timeline.length} update${a.timeline.length === 1 ? '' : 's'}`;
+    detTimeline.innerHTML = '';
+    
+    if (a.timeline && a.timeline.length > 0) {
+      const lastIdx = a.timeline.length - 1;
+      a.timeline.forEach((t, i) => {
+        const isLast = (i === lastIdx);
+        const dotColor = statusMeta(t.status).color;
+        const colorClass = colorMap[dotColor].split(' ')[0].replace('-100', '-500'); // e.g., bg-amber-500
+        
+        const tDate = fmtDate(t.createdAt).replace(/^\w+, /, ''); // "30 Oct 2026"
+        const tTime = fmtTime(t.createdAt);
+
+        detTimeline.innerHTML += `
+          <div class="relative ${isLast ? '' : 'pb-8'}">
+            <span class="absolute -left-[26px] top-1.5 w-3.5 h-3.5 rounded-full
+                         ${isLast ? `${colorClass} ring-4 ring-${dotColor}-500/20` : 'bg-white border-2 border-slate-300'}"></span>
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-800 leading-snug">${esc(t.title || 'Update')}</p>
+                ${t.message ? `<p class="text-sm text-slate-600 mt-1 leading-relaxed">${esc(t.message)}</p>` : ''}
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-1.5">
+                  ${esc((t.createdBy || 'system').charAt(0).toUpperCase() + (t.createdBy || 'system').slice(1))}
+                </p>
+              </div>
+              <div class="flex-shrink-0 text-left sm:text-right sm:pl-6">
+                <p class="text-xs font-bold text-slate-700">${tDate}</p>
+                <p class="text-xs text-slate-400">${tTime}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // 3. Render Nurse Info
+    if (a.nurseID) {
+      const nurseImg = a.nursePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.nurseFirstName + ' ' + a.nurseLastName)}&background=3C52C3&color=fff&size=200`;
+      const ratingHtml = a.nurseRating ? `<p class="mt-2 text-xs font-semibold text-amber-500">★ ${Number(a.nurseRating).toFixed(1)} rating</p>` : '';
+      
+      detNurseContent.innerHTML = `
+        <div class="flex flex-col items-center text-center">
+          <img src="${esc(nurseImg)}" alt="Nurse"
+               class="w-24 h-24 rounded-full object-cover shadow-md border-4 border-white bg-slate-100"
+               onerror="this.src='https://ui-avatars.com/api/?name=Nurse&background=3C52C3&color=fff&size=200'">
+          <h3 class="mt-4 text-lg font-extrabold text-slate-800">
+            ${esc(a.nurseFirstName)} ${esc(a.nurseLastName)}
+          </h3>
+          <p class="mt-1 text-sm font-semibold text-[#3C52C3]">
+            ${esc(a.nurseSpecialization || 'General Nurse')}
+          </p>
+          ${ratingHtml}
+          <div class="w-full mt-6 pt-5 border-t border-slate-100 space-y-3 text-left">
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Contact</p>
+              <a href="tel:${esc(a.nursePhone)}" class="text-sm font-semibold text-slate-800 hover:text-[#3C52C3] transition break-all">
+                ${esc(a.nursePhone || '—')}
+              </a>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Specialization</p>
+              <p class="text-sm font-semibold text-slate-800">${esc(a.nurseSpecialization || '—')}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      detNurseContent.innerHTML = `
+        <div class="text-center py-10">
+          <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0"/></svg>
+          </div>
+          <p class="text-sm font-bold text-slate-700">Awaiting assignment</p>
+          <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            A licensed nurse will accept your booking shortly.<br>You'll receive an email once assigned.
+          </p>
+        </div>
+      `;
+    }
+
+    apptDetailModal.classList.remove('hidden');
+    apptDetailModal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetailModal() {
+    apptDetailModal.classList.add('hidden');
+    apptDetailModal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  // 事件委托：点击动态生成的卡片
+  activityList.addEventListener('click', (e) => {
+    const card = e.target.closest('.appt-detail-trigger');
+    if (!card) return;
+    
+    const id = card.dataset.apptId;
+    const appt = allAppts.find(a => String(a.appointmentID) === String(id));
+    if (appt) openApptDetail(appt);
+  });
+
+  if (closeApptDetail) {
+    closeApptDetail.addEventListener('click', closeDetailModal);
+  }
+
+  if (apptDetailModal) {
+    apptDetailModal.addEventListener('click', (e) => {
+      if (e.target === apptDetailModal) closeDetailModal();
+    });
+  }
+
+  /* ============================================================
+     OTHER MODALS (Create / Enter)
      ============================================================ */
   const createModal = document.getElementById('createModal');
   const enterModal  = document.getElementById('enterModal');
@@ -315,6 +486,7 @@
     if (e.key !== 'Escape') return;
     if (!createModal.classList.contains('hidden')) closeModal(createModal);
     if (!enterModal.classList.contains('hidden'))  closeModal(enterModal);
+    if (!apptDetailModal.classList.contains('hidden')) closeDetailModal();
   });
 
   /* ============================================================
