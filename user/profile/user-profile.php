@@ -1,3 +1,8 @@
+<?php
+// user/profile/user-profile.php
+session_start();
+require_once __DIR__ . '/../../config/db_connect.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,8 +23,8 @@
 </head>
 <body class="bg-[#fafafa] min-h-screen flex flex-col text-neutral-800 antialiased">
 
-  <!-- Mount Point for Teammate Header -->
-  <div id="header-container" class="w-full shrink-0"></div>
+  <!-- Include Standardized Header -->
+  <?php include __DIR__ . '/../headerNfooter/header/header.php'; ?>
 
   <!-- Main View Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10">
@@ -109,7 +114,7 @@
 
                 <div id="family-not-joined-view">
                   <p class="text-xs text-neutral-500 font-medium">Currently not join any family</p>
-                  <a href="/StepCare/user/familyCare/familyCare.html" class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition border border-emerald-200">
+                  <a href="/StepCare/user/familyCare/familyCare.php" class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition border border-emerald-200">
                     <span>Join or Create Family</span>
                     <i data-lucide="arrow-right" class="w-3 h-3"></i>
                   </a>
@@ -288,29 +293,6 @@
     document.addEventListener("DOMContentLoaded", () => {
       if (window.lucide) lucide.createIcons();
 
-      // Render Clean User Header directly (Bypasses any 403 Forbidden issues permanently)
-      const headerContainer = document.getElementById('header-container');
-      headerContainer.innerHTML = `
-        <header class="bg-white border-b border-neutral-200 h-20 px-8 flex items-center justify-between sticky top-0 z-30 select-none">
-          <div class="flex items-center gap-3">
-            <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-8 h-8 object-contain" onerror="this.src='/StepCare/images/services/logo.png'">
-            <span class="text-xl font-black tracking-tight"><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></span>
-          </div>
-          <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-neutral-600">
-            <a href="/StepCare/user/aboutUs/aboutUs.html" class="hover:text-black transition">About Us</a>
-            <a href="/StepCare/user/services/services.html" class="hover:text-black transition">Services</a>
-            <a href="/StepCare/user/appointments/appointments.html" class="hover:text-black transition">Appointments</a>
-            <a href="/StepCare/user/familyCare/familyCare.html" class="hover:text-black transition">FamilyCare</a>
-          </nav>
-          <div class="flex items-center gap-4">
-            <a href="/StepCare/user/profile/user-profile.html" class="w-10 h-10 rounded-full border border-neutral-200 overflow-hidden flex items-center justify-center bg-neutral-100">
-              <img id="nav-avatar" src="/StepCare/images/default.jpg" class="w-full h-full object-cover">
-            </a>
-          </div>
-        </header>
-      `;
-      if (window.lucide) lucide.createIcons();
-
       let activeUser = null;
 
       // Fetch User Profile from Database
@@ -334,6 +316,8 @@
 
             const photoPath = u.userPhotoURL || '/StepCare/images/default.jpg';
             document.getElementById('avatar-image').src = photoPath;
+            
+            // This now safely targets the avatar inside the PHP included header
             const navAvatar = document.getElementById('nav-avatar');
             if (navAvatar) navAvatar.src = photoPath;
 
@@ -451,6 +435,8 @@
             if (res.success) {
               const freshUrl = res.photoURL + '?t=' + new Date().getTime();
               document.getElementById('avatar-image').src = freshUrl;
+              
+              // Update header avatar
               const navAvatar = document.getElementById('nav-avatar');
               if (navAvatar) navAvatar.src = freshUrl;
             } else {
