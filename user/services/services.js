@@ -132,6 +132,7 @@
   const detailBookNow = document.getElementById('detailBookNow');
   const backToDetail  = document.getElementById('backToDetail');
   const backToBooking = document.getElementById('backToBooking');
+  const cancelBookingBtn = document.getElementById('cancelBookingBtn');
 
   const sharedImgEl    = document.getElementById('sharedImg');
   const sharedTitle    = document.getElementById('sharedTitle');
@@ -157,6 +158,12 @@
   const paySubmitBtn = document.getElementById('paySubmitBtn');
   const payDropZone = document.getElementById('payDropZone');
 
+  // Cancel Modal DOM
+  const cancelModal = document.getElementById('cancelConfirmModal');
+  const btnConfirmCancel = document.getElementById('btnConfirmCancel');
+  const btnKeepAppt = document.getElementById('btnKeepAppt');
+  let cancelCountdown = null;
+
   let activeServiceID = null;
   let activeSourceImg = null;
   let isOpen = false;
@@ -166,6 +173,10 @@
   function slideToDetail()  { modalSlider.style.transform = 'translateX(0)'; }
   function slideToBooking() { modalSlider.style.transform = 'translateX(-33.3333%)'; }
   function slideToPayment() { modalSlider.style.transform = 'translateX(-66.6666%)'; }
+
+  function isOnPaymentStep() {
+    return modalSlider.style.transform === 'translateX(-66.6666%)';
+  }
 
   function createImageClone(imgEl, rect, radius) {
     const clone = document.createElement('img');
@@ -606,7 +617,68 @@
   }
 
   /* ============================================================
-     OPEN / CLOSE
+     CANCEL CONFIRMATION LOGIC
+     ============================================================ */
+  function openCancelModal() {
+    btnConfirmCancel.disabled = true;
+    btnConfirmCancel.textContent = 'Wait 5s...';
+    btnConfirmCancel.className = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
+    
+    cancelModal.classList.remove('hidden');
+    cancelModal.classList.add('flex');
+
+    let seconds = 5;
+    clearInterval(cancelCountdown);
+    cancelCountdown = setInterval(() => {
+      seconds--;
+      if (seconds > 0) {
+        btnConfirmCancel.textContent = `Wait ${seconds}s...`;
+      } else {
+        clearInterval(cancelCountdown);
+        btnConfirmCancel.disabled = false;
+        btnConfirmCancel.textContent = 'Yes, Cancel Appointment';
+        btnConfirmCancel.className = 'w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white hover:bg-red-700 active:scale-95 transition';
+      }
+    }, 1000);
+  }
+
+  function closeCancelModal() {
+    clearInterval(cancelCountdown);
+    cancelModal.classList.add('hidden');
+    cancelModal.classList.remove('flex');
+  }
+
+  if (cancelBookingBtn) {
+    cancelBookingBtn.addEventListener('click', openCancelModal);
+  }
+
+  if (btnKeepAppt) {
+    btnKeepAppt.addEventListener('click', closeCancelModal);
+  }
+
+  if (btnConfirmCancel) {
+    btnConfirmCancel.addEventListener('click', async () => {
+      btnConfirmCancel.disabled = true;
+      btnConfirmCancel.textContent = 'Cancelling...';
+      
+      try {
+        await fetch('cancelPendingBooking.php', { method: 'POST' });
+      } catch (e) {}
+
+      closeCancelModal();
+      closeModal(); // This will handle the exit animation
+      
+      // Reset booking form
+      if (bookingContainer) bookingContainer.innerHTML = '';
+      payFileInput.value = '';
+      payPreviewContainer.classList.add('hidden');
+      payImagePreview.src = '';
+      paySubmitBtn.disabled = true;
+    });
+  }
+
+  /* ============================================================
+     OPEN / CLOSE (WITH PAYMENT INTERCEPT)
      ============================================================ */
   const EASE_OUT   = 'cubic-bezier(0.32, 0.72, 0, 1)';
   const EASE_INOUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
@@ -847,14 +919,34 @@
     if (activeServiceID) slideToDetail();
   });
 
-  closeModalBtn.addEventListener('click', closeModal);
+  // Intercept X button if on Payment step
+  closeModalBtn.addEventListener('click', () => {
+    if (isOnPaymentStep()) {
+      openCancelModal();
+    } else {
+      closeModal();
+    }
+  });
 
+  // Intercept backdrop if on Payment step
   modalWrapper.addEventListener('click', e => {
-    if (!modalCard.contains(e.target)) closeModal();
+    if (!modalCard.contains(e.target)) {
+      if (isOnPaymentStep()) {
+        openCancelModal();
+      } else {
+        closeModal();
+      }
+    }
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && isOpen && !flipAnimating) closeModal();
+    if (e.key === 'Escape' && isOpen && !flipAnimating) {
+      if (isOnPaymentStep()) {
+        openCancelModal();
+      } else {
+        closeModal();
+      }
+    }
   });
 
   /* ============================================================

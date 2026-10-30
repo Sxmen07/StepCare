@@ -264,13 +264,17 @@
           <section class="w-1/3 h-full flex flex-col relative pt-16 md:pt-20">
             <!-- Scrollable content -->
             <div class="flex-1 overflow-y-auto min-h-0 px-8 md:px-10 pb-28">
-              <button type="button" id="backToBooking"
-                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-[#3C52C3] mb-6 transition group">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 transition-transform group-hover:-translate-x-1">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-                </svg>
-                Back to form
-              </button>
+              
+              <!-- Modified header with both Back and Cancel buttons -->
+              <div class="flex items-center justify-between mb-6">
+                <button type="button" id="backToBooking"
+                        class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-[#3C52C3] transition group">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 transition-transform group-hover:-translate-x-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                  </svg>
+                  Back to form
+                </button>
+              </div>
 
               <h2 class="text-2xl font-extrabold text-slate-800 mb-1">Complete Payment</h2>
               <p class="text-sm text-slate-500 mb-8">Please upload your payment receipt to finalize.</p>
@@ -282,8 +286,6 @@
               </div>
 
               <form id="paymentForm" class="flex flex-col gap-5">
-                <!-- 移除了无用的 appointmentID -->
-                
                 <div>
                   <p class="text-sm font-semibold text-slate-700 mb-2">Upload Payment Proof <span class="text-red-500">*</span></p>
                   
@@ -322,6 +324,35 @@
             </div>
           </section>
 
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CANCEL CONFIRM MODAL ================= -->
+  <div id="cancelConfirmModal" class="fixed inset-0 z-[160] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden text-center animate-success-modal">
+      <div class="p-6">
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Cancel Appointment?</h3>
+        <p class="text-sm text-slate-500 mb-8 leading-relaxed">
+          This action cannot be undone. Are you sure you want to cancel this appointment?
+        </p>
+        <div class="flex flex-col gap-3">
+          <button type="button" id="btnConfirmCancel" disabled
+                  class="w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed">
+            Wait 5s...
+          </button>
+          <button type="button" id="btnKeepAppt"
+                  class="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+            Keep Appointment
+          </button>
         </div>
       </div>
     </div>
