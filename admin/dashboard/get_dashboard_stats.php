@@ -1,4 +1,5 @@
 <?php
+// English comments only
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
@@ -8,42 +9,42 @@ $response = [
         'name' => 'Admin'
     ],
     'metrics' => [
-        'total_revenue'       => '0.00',
-        'active_appointments' => 0,
-        'total_users'         => 0,
-        'pending_nurses'      => 0
+        'total_revenue'        => '0.00',
+        'active_appointments'  => 0,
+        'total_users'          => 0,
+        'unscheduled_bookings' => 0
     ],
-    'recent_appointments' => [],
-    'pending_leaves'      => [],
-    'pending_nurse_list'  => [],
-    'message'             => ''
+    'recent_appointments'  => [],
+    'pending_leaves'       => [],
+    'unscheduled_list'     => [],
+    'message'              => ''
 ];
 
 try {
-    // 1. 获取默认 Admin 名字 (优先取最新插入的 admin)
+    // 1. Fetch latest active admin name
     $resAdmin = $conn->query("SELECT firstName, lastName FROM admins ORDER BY adminID DESC LIMIT 1");
     if ($resAdmin && $rowAdmin = $resAdmin->fetch_assoc()) {
-        $response['admin']['name'] = trim($rowAdmin['firstName'] . ' ' . $rowAdmin['lastName']);
+        $response['admin']['name'] = trim(($rowAdmin['firstName'] ?? '') . ' ' . ($rowAdmin['lastName'] ?? ''));
     }
 
-    // 2. 指标统计
-    // 2.1 总收入 (已支付)
+    // 2. Metrics Calculation
+    // 2.1 Total paid revenue
     $resRev = $conn->query("SELECT IFNULL(SUM(totalAmount), 0) AS rev FROM payments WHERE paymentStatus = 'paid'");
     if ($resRev) $response['metrics']['total_revenue'] = number_format($resRev->fetch_assoc()['rev'], 2);
 
-    // 2.2 活跃预约数 (待处理、已确认、进行中)
+    // 2.2 Active appointments count
     $resAppt = $conn->query("SELECT COUNT(*) AS total FROM appointments WHERE appointmentStatus IN ('pending', 'confirmed', 'in_progress')");
     if ($resAppt) $response['metrics']['active_appointments'] = (int)$resAppt->fetch_assoc()['total'];
 
-    // 2.3 注册普通用户总数
+    // 2.3 Registered users count
     $resUsers = $conn->query("SELECT COUNT(*) AS total FROM users");
     if ($resUsers) $response['metrics']['total_users'] = (int)$resUsers->fetch_assoc()['total'];
 
-    // 2.4 待核准护士总数
-    $resNurses = $conn->query("SELECT COUNT(*) AS total FROM nurses WHERE isVerified = 0");
-    if ($resNurses) $response['metrics']['pending_nurses'] = (int)$resNurses->fetch_assoc()['total'];
+    // 2.4 Unscheduled bookings (Pending and without an assigned nurse)
+    $resUnscheduled = $conn->query("SELECT COUNT(*) AS total FROM appointments WHERE (nurseID IS NULL OR nurseID = 0) AND appointmentStatus != 'cancelled'");
+    if ($resUnscheduled) $response['metrics']['unscheduled_bookings'] = (int)$resUnscheduled->fetch_assoc()['total'];
 
-    // 3. 中间大卡片：近期预约记录 (最多 8 笔)
+    // 3. Center Workspace: Recent 8 appointments
     $apptSql = "SELECT a.appointmentID, a.startDateTime, a.appointmentStatus, 
                        s.serviceName, s.price,
                        CONCAT(u.firstName, ' ', u.lastName) AS userName,
@@ -60,7 +61,7 @@ try {
         }
     }
 
-    // 4. 右侧 Sticky 卡片：待处理护士请假申请
+    // 4. Action Queue: Pending Nurse Leave Applications
     $leaveSql = "SELECT r.requestID, r.requestDate, r.reason,
                         n.firstName, n.lastName
                  FROM nurseRequestOffDay r 
@@ -74,15 +75,18 @@ try {
         }
     }
 
-    // 5. 右侧 Sticky 卡片：待核准护士列表
-    $nurseVerifSql = "SELECT nurseID, firstName, lastName, specialization, createdAt 
-                      FROM nurses 
-                      WHERE isVerified = 0 
-                      ORDER BY createdAt DESC LIMIT 4";
-    $resVerif = $conn->query($nurseVerifSql);
-    if ($resVerif) {
-        while ($row = $resVerif->fetch_assoc()) {
-            $response['pending_nurse_list'][] = $row;
+    // 5. Action Queue: Unscheduled Bookings Queue
+    $unscheduledSql = "SELECT a.appointmentID, a.createdAt, s.serviceName, 
+                              CONCAT(u.firstName, ' ', u.lastName) AS userName
+                       FROM appointments a
+                       JOIN services s ON a.serviceID = s.serviceID
+                       JOIN users u ON a.userID = u.userID
+                       WHERE (a.nurseID IS NULL OR a.nurseID = 0) AND a.appointmentStatus != 'cancelled'
+                       ORDER BY a.createdAt DESC LIMIT 4";
+    $resUnscheduledList = $conn->query($unscheduledSql);
+    if ($resUnscheduledList) {
+        while ($row = $resUnscheduledList->fetch_assoc()) {
+            $response['unscheduled_list'][] = $row;
         }
     }
 

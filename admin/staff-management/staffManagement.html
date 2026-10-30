@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Management — StepCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+    .staff-row {
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .staff-row:hover {
+      background-color: #f8fafc;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+
+  <!-- Modular Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
+
+  <!-- Main View Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- Modular Topbar Container -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Sticky Sub-Bar: Search, Filter, Export & Create Action (Matching Notifications layout) -->
+    <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 flex-1">
+        <!-- Search Bar -->
+        <div class="relative w-72">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+          <input type="text" 
+                 id="staff-search-input" 
+                 placeholder="Search by ID, name or email..." 
+                 class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
+        </div>
+
+        <!-- Filter By Role -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Role:</span>
+          <select id="filter-role" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="All">All Roles</option>
+            <option value="Admin">Admin</option>
+            <option value="Nurse">Nurse</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Export to Excel Button -->
+        <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
+          <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
+          <span>Export Excel</span>
+        </button>
+
+        <!-- Create Staff Account Button -->
+        <button id="open-create-modal-btn" type="button" class="px-5 py-2 bg-[#3C52C3] hover:bg-[#3245a8] text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Create Staff Account</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Table Header Grid (Aligns precisely with Row stream) -->
+    <div class="grid grid-cols-12 px-8 py-3 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+      <div class="col-span-2 text-left pl-2">Staff ID</div>
+      <div class="col-span-3 text-left">Full Name</div>
+      <div class="col-span-3 text-left">Email Address</div>
+      <div class="col-span-2 text-center">Role</div>
+      <div class="col-span-2 text-center">Actions</div>
+    </div>
+
+    <!-- Full-Width Stream Container -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="staff-list-container" class="divide-y divide-neutral-100 w-full">
+        <!-- Dynamic Rows Rendered Here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Staff Account Modal -->
+  <div id="create-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
+      <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
+        <div>
+          <h3 class="text-lg font-bold text-neutral-900">Create Staff Account</h3>
+          <p class="text-xs text-neutral-400">Generate an authenticated account for internal personnel</p>
+        </div>
+        <button type="button" id="close-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="create-staff-form" class="space-y-4">
+        <!-- Role Selection -->
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Account Role</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-neutral-200 bg-white cursor-pointer has-[:checked]:border-[#3C52C3] has-[:checked]:bg-[#EEF2FF] has-[:checked]:text-[#3C52C3] transition">
+              <input type="radio" name="staffRole" value="Nurse" checked class="hidden create-role-radio" />
+              <i data-lucide="stethoscope" class="w-4 h-4"></i>
+              <span class="text-xs font-bold">Nurse</span>
+            </label>
+            <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-neutral-200 bg-white cursor-pointer has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50 has-[:checked]:text-teal-700 transition">
+              <input type="radio" name="staffRole" value="Admin" class="hidden create-role-radio" />
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span class="text-xs font-bold">Admin</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Name Inputs -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">First Name</label>
+            <input type="text" id="create-first-name" required placeholder="e.g. Sarah" class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+          </div>
+          <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Last Name</label>
+            <input type="text" id="create-last-name" required placeholder="e.g. Lee" class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Email Prefix Input -->
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Email Prefix</label>
+          <div class="flex rounded-xl border border-neutral-200 bg-white overflow-hidden focus-within:border-[#3C52C3] transition">
+            <input type="text" id="create-email-prefix" required placeholder="e.g. sarah" class="flex-1 px-4 py-2.5 text-xs font-semibold bg-transparent focus:outline-none" />
+            <span id="create-role-suffix" class="px-3.5 py-2.5 bg-neutral-100 text-neutral-500 text-xs font-bold border-l border-neutral-200 flex items-center select-none">
+              @nurse.stepcare.com
+            </span>
+          </div>
+        </div>
+
+        <!-- Notice -->
+        <div class="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 flex items-start gap-2.5 text-neutral-500">
+          <i data-lucide="info" class="w-4 h-4 shrink-0 text-neutral-400 mt-0.5"></i>
+          <p class="text-[11px] leading-relaxed">
+            Initial password will be automatically generated as <strong class="text-neutral-700">[firstname][id]</strong>. Staff can reset their credentials upon first sign-in.
+          </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <button type="button" id="close-modal-btn" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="submit-create-btn" class="px-6 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Staff Account Modal -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
+      <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
+        <div>
+          <h3 class="text-lg font-bold text-neutral-900">Edit Staff Details</h3>
+          <p class="text-xs text-neutral-400">Modify information or transfer roles for <span id="edit-modal-target-id" class="font-mono font-bold text-[#3C52C3]"></span></p>
+        </div>
+        <button type="button" id="close-edit-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="edit-staff-form" class="space-y-4">
+        <input type="hidden" id="edit-raw-id" />
+        <input type="hidden" id="edit-original-role" />
+
+        <!-- Role Selection -->
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Assigned Role</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-neutral-200 bg-white cursor-pointer has-[:checked]:border-[#3C52C3] has-[:checked]:bg-[#EEF2FF] has-[:checked]:text-[#3C52C3] transition">
+              <input type="radio" name="editStaffRole" value="Nurse" id="edit-role-nurse" class="hidden edit-role-radio" />
+              <i data-lucide="stethoscope" class="w-4 h-4"></i>
+              <span class="text-xs font-bold">Nurse</span>
+            </label>
+            <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-neutral-200 bg-white cursor-pointer has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50 has-[:checked]:text-teal-700 transition">
+              <input type="radio" name="editStaffRole" value="Admin" id="edit-role-admin" class="hidden edit-role-radio" />
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span class="text-xs font-bold">Admin</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Name Inputs -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">First Name</label>
+            <input type="text" id="edit-first-name" required class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+          </div>
+          <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Last Name</label>
+            <input type="text" id="edit-last-name" required class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Email Prefix Input -->
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Email Prefix</label>
+          <div class="flex rounded-xl border border-neutral-200 bg-white overflow-hidden focus-within:border-[#3C52C3] transition">
+            <input type="text" id="edit-email-prefix" required class="flex-1 px-4 py-2.5 text-xs font-semibold bg-transparent focus:outline-none" />
+            <span id="edit-role-suffix" class="px-3.5 py-2.5 bg-neutral-100 text-neutral-500 text-xs font-bold border-l border-neutral-200 flex items-center select-none">
+              @nurse.stepcare.com
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <button type="button" id="close-edit-modal-btn" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="submit-edit-btn" class="px-6 py-2.5 bg-neutral-900 hover:bg-black text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Credential Prompt Modal -->
+  <div id="credential-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-neutral-200 text-center">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="check-circle" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-bold text-neutral-900 mb-1">Account Created Successfully</h3>
+      <p class="text-xs text-neutral-400 mb-6">Deliver the following credentials to the staff member:</p>
+
+      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2 text-left mb-6 text-xs">
+        <div class="flex justify-between"><span class="text-neutral-400">Staff ID:</span><span id="res-staff-id" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Full Name:</span><span id="res-staff-name" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Email:</span><span id="res-staff-email" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between border-t border-neutral-200 pt-2"><span class="text-neutral-400">Initial Password:</span><span id="res-staff-pass" class="font-mono font-bold text-[#3C52C3]"></span></div>
+      </div>
+
+      <button type="button" id="dismiss-credential-btn" class="w-full py-3 bg-neutral-900 hover:bg-black text-white rounded-2xl text-xs font-bold transition cursor-pointer">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- Page Logic Controller -->
+  <script>
+    // English comments only
+    (function () {
+      'use strict';
+
+      let staffList = [];
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Mount sidebar
+        fetch('/StepCare/components/sidebar-admin.html')
+          .then(res => res.text())
+          .then(html => {
+            const sb = document.getElementById('sidebar-container');
+            if (sb) {
+              sb.innerHTML = html;
+              sb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 2. Mount topbar with title 'Staff Management'
+        fetch('/StepCare/components/topbar.html')
+          .then(res => res.text())
+          .then(html => {
+            const tb = document.getElementById('topbar-container');
+            if (tb) {
+              tb.innerHTML = html;
+              tb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              const title = document.getElementById('topbar-page-title');
+              if (title) title.textContent = 'Staff Management';
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 3. Load staff list
+        loadStaffData();
+
+        // 4. Bind events
+        initEventHandlers();
+      });
+
+      // Fetch unified staff data
+      async function loadStaffData() {
+        try {
+          const res = await fetch('./staff_actions.php?action=fetch_staff');
+          const data = await res.json();
+          if (data.status === 'success') {
+            staffList = data.data || [];
+            renderTable();
+          } else {
+            console.error('Fetch error:', data.message);
+            renderTable();
+          }
+        } catch (err) {
+          console.error('Request error:', err);
+          renderTable();
+        }
+      }
+
+      // Generate avatar fallback initials bubble
+      function getAvatarBubble(name, role) {
+        const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'SC';
+        const bgClass = (role === 'Nurse') ? 'bg-[#EEF2FF] text-[#3C52C3]' : 'bg-teal-50 text-teal-700';
+        return `
+          <div class="w-8 h-8 rounded-full ${bgClass} font-bold text-[11px] flex items-center justify-center border border-black/5 shrink-0 select-none">
+            ${initials}
+          </div>
+        `;
+      }
+
+      // Render rows adhering to Notifications grid pattern
+      function renderTable() {
+        const container = document.getElementById('staff-list-container');
+        const searchInput = document.getElementById('staff-search-input');
+        const roleFilter = document.getElementById('filter-role');
+
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const currentRole = roleFilter ? roleFilter.value : 'All';
+
+        const filtered = staffList.filter(item => {
+          const matchesRole = (currentRole === 'All') || (item.role === currentRole);
+          const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                                item.email.toLowerCase().includes(searchTerm) ||
+                                item.id.toLowerCase().includes(searchTerm);
+          return matchesRole && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="py-24 text-center">
+              <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-neutral-600">No staff members found</p>
+              <p class="text-xs text-neutral-400 mt-1">There are no personnel records matching your filter.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+          const isNurse = item.role === 'Nurse';
+          // Generous padding role badge (px-4 py-1.5)
+          const roleBadge = isNurse
+            ? '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-sky-50 text-sky-700 border-sky-200">Nurse</span>'
+            : '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Admin</span>';
+
+          const fallbackBadge = getAvatarBubble(item.name, item.role);
+          const avatarHtml = item.photo
+            ? `<div class="relative w-8 h-8 shrink-0">
+                 <img src="${item.photo}" 
+                      alt="${item.name}" 
+                      class="w-8 h-8 rounded-full object-cover border border-neutral-200" 
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                 <div style="display:none;" class="absolute inset-0">${fallbackBadge}</div>
+               </div>`
+            : fallbackBadge;
+
+          return `
+            <div class="staff-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100">
+              
+              <!-- Col 1: Staff ID (Left Aligned) -->
+              <div class="col-span-2 text-xs font-mono font-bold text-neutral-500 pl-2">
+                ${item.id}
+              </div>
+
+              <!-- Col 2: Full Name with Profile Photo -->
+              <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
+                ${avatarHtml}
+                <span class="text-xs font-bold text-neutral-900 truncate">${item.name}</span>
+              </div>
+
+              <!-- Col 3: Email Address -->
+              <div class="col-span-3 text-xs text-neutral-600 font-medium truncate pr-4">
+                ${item.email}
+              </div>
+
+              <!-- Col 4: Role Badge (Centered) -->
+              <div class="col-span-2 text-center">
+                ${roleBadge}
+              </div>
+
+              <!-- Col 5: Actions Real Button (Centered) -->
+              <div class="col-span-2 flex items-center justify-center">
+                <button type="button" 
+                        onclick="window.openEditModal('${item.id}')" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-lg border border-neutral-200 hover:border-neutral-300 shadow-2xs transition cursor-pointer">
+                  <i data-lucide="pencil-line" class="w-3.5 h-3.5 text-neutral-400"></i>
+                  <span>Edit</span>
+                </button>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Open Edit Modal & Populate Current Data
+      window.openEditModal = function (formattedId) {
+        const item = staffList.find(s => s.id === formattedId);
+        if (!item) return;
+
+        document.getElementById('edit-raw-id').value = item.raw_id;
+        document.getElementById('edit-original-role').value = item.role;
+        document.getElementById('edit-modal-target-id').textContent = item.id;
+        document.getElementById('edit-first-name').value = item.first_name || item.name.split(' ')[0] || '';
+        document.getElementById('edit-last-name').value = item.last_name || item.name.split(' ').slice(1).join(' ') || '';
+
+        const emailParts = item.email.split('@');
+        document.getElementById('edit-email-prefix').value = emailParts[0] || '';
+
+        if (item.role === 'Nurse') {
+          document.getElementById('edit-role-nurse').checked = true;
+          document.getElementById('edit-role-suffix').textContent = '@nurse.stepcare.com';
+        } else {
+          document.getElementById('edit-role-admin').checked = true;
+          document.getElementById('edit-role-suffix').textContent = '@admin.stepcare.com';
+        }
+
+        const editModal = document.getElementById('edit-modal');
+        editModal.classList.remove('hidden');
+        editModal.classList.add('flex');
+      };
+
+      // Event handlers setup
+      function initEventHandlers() {
+        const searchInput = document.getElementById('staff-search-input');
+        if (searchInput) searchInput.addEventListener('input', renderTable);
+
+        const filterRole = document.getElementById('filter-role');
+        if (filterRole) filterRole.addEventListener('change', renderTable);
+
+        // Export Excel Button
+        const exportBtn = document.getElementById('export-excel-btn');
+        if (exportBtn) {
+          exportBtn.addEventListener('click', () => {
+            const currentRole = filterRole ? filterRole.value : 'All';
+            window.location.href = `./staff_actions.php?action=export_excel&role=${encodeURIComponent(currentRole)}`;
+          });
+        }
+
+        // Create Role Radio change
+        const createSuffixLabel = document.getElementById('create-role-suffix');
+        document.querySelectorAll('.create-role-radio').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            if (createSuffixLabel) {
+              createSuffixLabel.textContent = (e.target.value === 'Nurse') 
+                ? '@nurse.stepcare.com' 
+                : '@admin.stepcare.com';
+            }
+          });
+        });
+
+        // Edit Role Radio change
+        const editSuffixLabel = document.getElementById('edit-role-suffix');
+        document.querySelectorAll('.edit-role-radio').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            if (editSuffixLabel) {
+              editSuffixLabel.textContent = (e.target.value === 'Nurse') 
+                ? '@nurse.stepcare.com' 
+                : '@admin.stepcare.com';
+            }
+          });
+        });
+
+        // Create Modal Controls
+        const createModal = document.getElementById('create-modal');
+        const openCreateBtn = document.getElementById('open-create-modal-btn');
+        const closeCreateBtn = document.getElementById('close-modal-btn');
+        const closeCreateX = document.getElementById('close-modal-x');
+
+        const showCreate = () => { createModal.classList.remove('hidden'); createModal.classList.add('flex'); };
+        const hideCreate = () => { createModal.classList.add('hidden'); createModal.classList.remove('flex'); };
+
+        if (openCreateBtn) openCreateBtn.onclick = showCreate;
+        if (closeCreateBtn) closeCreateBtn.onclick = hideCreate;
+        if (closeCreateX) closeCreateX.onclick = hideCreate;
+
+        // Edit Modal Controls
+        const editModal = document.getElementById('edit-modal');
+        const closeEditBtn = document.getElementById('close-edit-modal-btn');
+        const closeEditX = document.getElementById('close-edit-modal-x');
+
+        const hideEdit = () => { editModal.classList.add('hidden'); editModal.classList.remove('flex'); };
+        if (closeEditBtn) closeEditBtn.onclick = hideEdit;
+        if (closeEditX) closeEditX.onclick = hideEdit;
+
+        // Create Form Submit
+        const createForm = document.getElementById('create-staff-form');
+        createForm.onsubmit = async (e) => {
+          e.preventDefault();
+          const submitBtn = document.getElementById('submit-create-btn');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating...';
+
+          const selectedRole = createForm.querySelector('input[name="staffRole"]:checked').value;
+          const payload = {
+            firstName: document.getElementById('create-first-name').value.trim(),
+            lastName: document.getElementById('create-last-name').value.trim(),
+            emailPrefix: document.getElementById('create-email-prefix').value.trim(),
+            role: selectedRole
+          };
+
+          try {
+            const res = await fetch('./staff_actions.php?action=create_staff', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.status === 'success') {
+              hideCreate();
+              createForm.reset();
+              if (createSuffixLabel) createSuffixLabel.textContent = '@nurse.stepcare.com';
+
+              document.getElementById('res-staff-id').textContent = result.created_user.id;
+              document.getElementById('res-staff-name').textContent = result.created_user.name;
+              document.getElementById('res-staff-email').textContent = result.created_user.email;
+              document.getElementById('res-staff-pass').textContent = result.created_user.default_password;
+
+              const credModal = document.getElementById('credential-modal');
+              credModal.classList.remove('hidden');
+              credModal.classList.add('flex');
+
+              await loadStaffData();
+            } else {
+              alert(result.message || 'Creation failed');
+            }
+          } catch (err) {
+            alert('Request error: ' + err.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
+          }
+        };
+
+        // Edit Form Submit
+        const editForm = document.getElementById('edit-staff-form');
+        editForm.onsubmit = async (e) => {
+          e.preventDefault();
+          const submitBtn = document.getElementById('submit-edit-btn');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Saving...';
+
+          const selectedRole = editForm.querySelector('input[name="editStaffRole"]:checked').value;
+          const payload = {
+            rawId: document.getElementById('edit-raw-id').value,
+            originalRole: document.getElementById('edit-original-role').value,
+            firstName: document.getElementById('edit-first-name').value.trim(),
+            lastName: document.getElementById('edit-last-name').value.trim(),
+            emailPrefix: document.getElementById('edit-email-prefix').value.trim(),
+            role: selectedRole
+          };
+
+          try {
+            const res = await fetch('./staff_actions.php?action=update_staff', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if (result.status === 'success') {
+              hideEdit();
+              await loadStaffData();
+            } else {
+              alert(result.message || 'Update failed');
+            }
+          } catch (err) {
+            alert('Request error: ' + err.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Changes';
+          }
+        };
+
+        // Dismiss credential modal
+        document.getElementById('dismiss-credential-btn').onclick = () => {
+          const credModal = document.getElementById('credential-modal');
+          credModal.classList.add('hidden');
+          credModal.classList.remove('flex');
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

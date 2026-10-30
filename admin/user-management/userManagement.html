@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management — StepCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+    .user-row {
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .user-row:hover {
+      background-color: #f8fafc;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+
+  <!-- Modular Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
+
+  <!-- Main View Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- Modular Topbar Container -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Sticky Sub-Bar: Search, Filter, Batch Ban & Export Actions -->
+    <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 flex-1">
+        <!-- Search Bar -->
+        <div class="relative w-80">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+          <input type="text" 
+                 id="user-search-input" 
+                 placeholder="Search by ID, name, IC, email or phone..." 
+                 class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
+        </div>
+
+        <!-- Filter By Status -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Status:</span>
+          <select id="filter-status" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="All">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Banned">Banned</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Batch Ban Button -->
+        <button id="batch-ban-btn" 
+                type="button" 
+                disabled 
+                class="px-4 py-2 bg-rose-50 text-rose-300 border border-rose-200/60 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-not-allowed shadow-2xs">
+          <i data-lucide="ban" class="w-4 h-4"></i>
+          <span>Ban Selected (<span id="selected-count">0</span>)</span>
+        </button>
+
+        <!-- Export to Excel Button -->
+        <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
+          <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
+          <span>Export Excel</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Table Header Grid (Balanced Column Spacing with Wider Checkbox Gap) -->
+    <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+      <!-- Col 1: Select & ID (col-span-2, gap-5 加大间距) -->
+      <div class="col-span-2 flex items-center gap-5 text-left pl-2">
+        <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 cursor-pointer shrink-0" />
+        <span>User ID</span>
+      </div>
+      <!-- Col 2: Name (col-span-3) -->
+      <div class="col-span-3 text-left">Full Name</div>
+      <!-- Col 3: IC / Passport (col-span-2) -->
+      <div class="col-span-2 text-left">IC / Passport</div>
+      <!-- Col 4: Email Address (col-span-2) -->
+      <div class="col-span-2 text-left">Email Address</div>
+      <!-- Col 5: Status (col-span-1) -->
+      <div class="col-span-1 text-center">Status</div>
+      <!-- Col 6: Action (col-span-2) -->
+      <div class="col-span-2 text-center">Action</div>
+    </div>
+
+    <!-- Full-Width Stream Container -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="user-list-container" class="divide-y divide-neutral-100 w-full">
+        <!-- Dynamic Rows Rendered Here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Single / Batch Ban Confirmation Modal with Comment Box & Larger Typography -->
+  <div id="ban-confirm-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
+      <div class="text-center">
+        <div id="modal-icon-container" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <!-- Dynamic Warning Icon -->
+        </div>
+        <h3 id="modal-title" class="text-xl font-bold text-neutral-900 mb-2">Confirm Identity Ban</h3>
+        <p id="modal-desc" class="text-sm text-neutral-500 mb-6 leading-relaxed"></p>
+      </div>
+
+      <!-- Ban Reason / Comment Input Section -->
+      <div id="ban-reason-wrapper" class="space-y-2.5 mb-6 text-left">
+        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600">
+          Reason for Ban <span class="text-neutral-400 font-normal">(Recorded for Audit)</span>
+        </label>
+        <textarea id="ban-reason-input" 
+                  rows="3" 
+                  placeholder="Specify violation details (e.g. Fraudulent booking, abusive behavior, unpaid service fees)..." 
+                  class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500 font-medium transition resize-none"></textarea>
+        
+        <!-- Quick Preset Tags -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-bold text-neutral-400">Presets:</span>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Repeated No-Show</button>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Fraudulent Info</button>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Harassment</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" id="cancel-ban-btn" class="px-6 py-3 border border-neutral-200 rounded-xl text-sm font-semibold hover:bg-neutral-50 transition cursor-pointer text-neutral-700">
+          Cancel
+        </button>
+        <button type="button" id="confirm-ban-btn" class="px-7 py-3 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // English comments only
+    (function () {
+      'use strict';
+
+      let userList = [];
+      let selectedIcs = new Set();
+      let pendingAction = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Mount sidebar
+        fetch('/StepCare/components/sidebar-admin.html')
+          .then(res => res.text())
+          .then(html => {
+            const sb = document.getElementById('sidebar-container');
+            if (sb) {
+              sb.innerHTML = html;
+              sb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 2. Mount topbar
+        fetch('/StepCare/components/topbar.html')
+          .then(res => res.text())
+          .then(html => {
+            const tb = document.getElementById('topbar-container');
+            if (tb) {
+              tb.innerHTML = html;
+              tb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              const title = document.getElementById('topbar-page-title');
+              if (title) title.textContent = 'User Management';
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // 3. Load users
+        loadUsersData();
+
+        // 4. Bind events
+        initEvents();
+      });
+
+      // Fetch users
+      async function loadUsersData() {
+        try {
+          const res = await fetch('./user_management_actions.php?action=fetch_users');
+          const data = await res.json();
+          if (data.status === 'success') {
+            userList = data.data || [];
+            selectedIcs.clear();
+            updateBatchButton();
+            renderTable();
+          } else {
+            console.error('Fetch error:', data.message);
+            renderTable();
+          }
+        } catch (err) {
+          console.error('Network error:', err);
+          renderTable();
+        }
+      }
+
+      // Avatar Fallback Initial Bubble
+      function getAvatarBubble(name) {
+        const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+        return `
+          <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-700 font-bold text-[11px] flex items-center justify-center border border-black/5 shrink-0 select-none">
+            ${initials}
+          </div>
+        `;
+      }
+
+      // Update the Batch Ban Button state
+      function updateBatchButton() {
+        const batchBtn = document.getElementById('batch-ban-btn');
+        const countSpan = document.getElementById('selected-count');
+        const count = selectedIcs.size;
+
+        if (countSpan) countSpan.textContent = count;
+
+        if (count > 0) {
+          batchBtn.disabled = false;
+          batchBtn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm';
+        } else {
+          batchBtn.disabled = true;
+          batchBtn.className = 'px-4 py-2 bg-rose-50 text-rose-300 border border-rose-200/60 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-not-allowed shadow-2xs';
+        }
+      }
+
+      // Render table rows
+      function renderTable() {
+        const container = document.getElementById('user-list-container');
+        const searchInput = document.getElementById('user-search-input');
+        const filterStatus = document.getElementById('filter-status');
+        const selectAllCb = document.getElementById('select-all-checkbox');
+
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const currentStatus = filterStatus ? filterStatus.value : 'All';
+
+        const filtered = userList.filter(user => {
+          const matchesStatus = (currentStatus === 'All') || (user.status === currentStatus);
+          const matchesSearch = user.name.toLowerCase().includes(searchTerm) || 
+                                user.email.toLowerCase().includes(searchTerm) ||
+                                user.id.toLowerCase().includes(searchTerm) ||
+                                user.ic.toLowerCase().includes(searchTerm) ||
+                                user.phone.toLowerCase().includes(searchTerm);
+          return matchesStatus && matchesSearch;
+        });
+
+        // Sync header select all checkbox
+        const eligibleToBan = filtered.filter(u => u.status !== 'Banned' && u.ic && u.ic !== 'N/A');
+        if (selectAllCb) {
+          selectAllCb.checked = (eligibleToBan.length > 0 && eligibleToBan.every(u => selectedIcs.has(u.ic)));
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="py-24 text-center">
+              <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-neutral-600">No users found</p>
+              <p class="text-xs text-neutral-400 mt-1">There are no client accounts matching your filter criteria.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = filtered.map(user => {
+          const isBanned = (user.status === 'Banned');
+          const isChecked = selectedIcs.has(user.ic);
+          const banReasonTooltip = user.ban_reason ? `title="Reason: ${user.ban_reason.replace(/"/g, '&quot;')}"` : '';
+
+          const statusBadge = isBanned
+            ? `<span ${banReasonTooltip} class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200 cursor-help">Banned</span>`
+            : `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Active</span>`;
+
+          const fallbackBadge = getAvatarBubble(user.name);
+          const avatarHtml = user.photo
+            ? `<div class="relative w-8 h-8 shrink-0">
+                 <img src="${user.photo}" 
+                      alt="${user.name}" 
+                      class="w-8 h-8 rounded-full object-cover border border-neutral-200" 
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                 <div style="display:none;" class="absolute inset-0">${fallbackBadge}</div>
+               </div>`
+            : fallbackBadge;
+
+          const actionButton = isBanned
+            ? `<button type="button" 
+                       onclick="window.promptToggleBan('${user.ic}', 'Active', '${user.name}')" 
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 hover:border-emerald-300 shadow-2xs transition cursor-pointer">
+                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                 <span>Unban</span>
+               </button>`
+            : `<button type="button" 
+                       onclick="window.promptToggleBan('${user.ic}', 'Banned', '${user.name}')" 
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:border-rose-300 shadow-2xs transition cursor-pointer">
+                 <i data-lucide="ban" class="w-3.5 h-3.5"></i>
+                 <span>Ban</span>
+               </button>`;
+
+          return `
+            <div class="user-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100 ${isBanned ? 'bg-neutral-50/50' : ''}">
+              
+              <!-- Col 1: Select Checkbox & User ID (gap-5 加大间距) -->
+              <div class="col-span-2 flex items-center gap-5 pl-2">
+                <input type="checkbox" 
+                       data-ic="${user.ic}" 
+                       ${isBanned ? 'disabled title="User is already banned"' : ''}
+                       ${isChecked ? 'checked' : ''} 
+                       class="user-row-checkbox w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 shrink-0 ${isBanned ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}" />
+                <span class="text-xs font-mono font-bold text-neutral-500">${user.id}</span>
+              </div>
+
+              <!-- Col 2: Full Name with Photo (col-span-3) -->
+              <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
+                ${avatarHtml}
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-neutral-900 truncate">${user.name}</div>
+                  <div class="text-[10px] text-neutral-400">Joined ${user.created_at}</div>
+                </div>
+              </div>
+
+              <!-- Col 3: IC / Passport (col-span-2) -->
+              <div class="col-span-2 text-xs font-mono font-bold text-neutral-700 truncate pr-4">
+                ${user.ic}
+              </div>
+
+              <!-- Col 4: Email Address (col-span-2) -->
+              <div class="col-span-2 text-xs text-neutral-600 font-medium truncate pr-4">
+                ${user.email}
+              </div>
+
+              <!-- Col 5: Status Badge (col-span-1) -->
+              <div class="col-span-1 flex items-center justify-center">
+                ${statusBadge}
+              </div>
+
+              <!-- Col 6: Ban/Unban Action (col-span-2) -->
+              <div class="col-span-2 flex items-center justify-center">
+                ${actionButton}
+              </div>
+
+            </div>
+          `;
+        }).join('');
+
+        if (window.lucide) lucide.createIcons();
+
+        // Bind Row Checkbox Change Listeners
+        document.querySelectorAll('.user-row-checkbox').forEach(cb => {
+          cb.addEventListener('change', (e) => {
+            const ic = e.target.getAttribute('data-ic');
+            if (e.target.checked) {
+              selectedIcs.add(ic);
+            } else {
+              selectedIcs.delete(ic);
+            }
+            updateBatchButton();
+            if (selectAllCb) {
+              selectAllCb.checked = (eligibleToBan.length > 0 && eligibleToBan.every(u => selectedIcs.has(u.ic)));
+            }
+          });
+        });
+      }
+
+      // Prompt Single Ban / Unban Modal tied to IC
+      window.promptToggleBan = function (ic, targetStatus, userName) {
+        if (!ic || ic === 'N/A') {
+          alert('Cannot perform identity ban: This user does not have a registered IC number.');
+          return;
+        }
+
+        pendingAction = { type: 'single', ic, status: targetStatus };
+        const modal = document.getElementById('ban-confirm-modal');
+        const iconContainer = document.getElementById('modal-icon-container');
+        const titleEl = document.getElementById('modal-title');
+        const descEl = document.getElementById('modal-desc');
+        const reasonWrapper = document.getElementById('ban-reason-wrapper');
+        const reasonInput = document.getElementById('ban-reason-input');
+        const confirmBtn = document.getElementById('confirm-ban-btn');
+
+        reasonInput.value = '';
+
+        if (targetStatus === 'Banned') {
+          reasonWrapper.classList.remove('hidden');
+          iconContainer.className = 'w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4';
+          iconContainer.innerHTML = '<i data-lucide="shield-alert" class="w-8 h-8"></i>';
+          titleEl.textContent = 'Ban Physical Identity';
+          descEl.innerHTML = `You are banning the identity of <strong class="text-neutral-900">${userName}</strong> (IC: <span class="font-mono font-bold text-rose-600">${ic}</span>). All accounts associated with this IC will be immediately locked out.`;
+          confirmBtn.className = 'px-7 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
+          confirmBtn.textContent = 'Yes, Ban Identity';
+        } else {
+          reasonWrapper.classList.add('hidden');
+          iconContainer.className = 'w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4';
+          iconContainer.innerHTML = '<i data-lucide="shield-check" class="w-8 h-8"></i>';
+          titleEl.textContent = 'Reactivate Identity';
+          descEl.innerHTML = `Restore system access for <strong class="text-neutral-900">${userName}</strong> (IC: <span class="font-mono font-bold text-emerald-600">${ic}</span>)?`;
+          confirmBtn.className = 'px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
+          confirmBtn.textContent = 'Yes, Unban Identity';
+        }
+
+        if (window.lucide) lucide.createIcons();
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      };
+
+      // Prompt Batch Ban Modal
+      function promptBatchBan() {
+        if (selectedIcs.size === 0) return;
+
+        pendingAction = { type: 'batch', ics: Array.from(selectedIcs) };
+        const modal = document.getElementById('ban-confirm-modal');
+        const iconContainer = document.getElementById('modal-icon-container');
+        const titleEl = document.getElementById('modal-title');
+        const descEl = document.getElementById('modal-desc');
+        const reasonWrapper = document.getElementById('ban-reason-wrapper');
+        const reasonInput = document.getElementById('ban-reason-input');
+        const confirmBtn = document.getElementById('confirm-ban-btn');
+
+        reasonInput.value = '';
+        reasonWrapper.classList.remove('hidden');
+
+        iconContainer.className = 'w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4';
+        iconContainer.innerHTML = '<i data-lucide="shield-alert" class="w-8 h-8"></i>';
+        titleEl.textContent = 'Batch Ban Identities';
+        descEl.innerHTML = `You have selected <strong class="text-rose-600">${selectedIcs.size}</strong> physical identity records. All client accounts linked to these IC numbers will be immediately banned.`;
+        confirmBtn.className = 'px-7 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
+        confirmBtn.textContent = `Yes, Ban ${selectedIcs.size} Identities`;
+
+        if (window.lucide) lucide.createIcons();
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      // Events
+      function initEvents() {
+        const searchInput = document.getElementById('user-search-input');
+        if (searchInput) searchInput.addEventListener('input', renderTable);
+
+        const filterStatus = document.getElementById('filter-status');
+        if (filterStatus) filterStatus.addEventListener('change', renderTable);
+
+        // Preset Reason Buttons
+        document.querySelectorAll('.preset-reason-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const input = document.getElementById('ban-reason-input');
+            if (input) input.value = e.target.textContent;
+          });
+        });
+
+        // Select All Checkbox
+        const selectAllCb = document.getElementById('select-all-checkbox');
+        if (selectAllCb) {
+          selectAllCb.addEventListener('change', (e) => {
+            const currentStatus = filterStatus ? filterStatus.value : 'All';
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            
+            const filtered = userList.filter(user => {
+              const matchesStatus = (currentStatus === 'All') || (user.status === currentStatus);
+              const matchesSearch = user.name.toLowerCase().includes(searchTerm) || 
+                                    user.email.toLowerCase().includes(searchTerm) ||
+                                    user.id.toLowerCase().includes(searchTerm) ||
+                                    user.ic.toLowerCase().includes(searchTerm) ||
+                                    user.phone.toLowerCase().includes(searchTerm);
+              return matchesStatus && matchesSearch;
+            });
+
+            const eligibleToBan = filtered.filter(u => u.status !== 'Banned' && u.ic && u.ic !== 'N/A');
+
+            if (e.target.checked) {
+              eligibleToBan.forEach(u => selectedIcs.add(u.ic));
+            } else {
+              eligibleToBan.forEach(u => selectedIcs.delete(u.ic));
+            }
+
+            updateBatchButton();
+            renderTable();
+          });
+        }
+
+        // Batch Ban Button Click
+        const batchBtn = document.getElementById('batch-ban-btn');
+        if (batchBtn) {
+          batchBtn.addEventListener('click', promptBatchBan);
+        }
+
+        // Export Excel
+        const exportBtn = document.getElementById('export-excel-btn');
+        if (exportBtn) {
+          exportBtn.addEventListener('click', () => {
+            const currentStatus = filterStatus ? filterStatus.value : 'All';
+            window.location.href = `./user_management_actions.php?action=export_excel&status=${encodeURIComponent(currentStatus)}`;
+          });
+        }
+
+        // Modal Controls
+        const modal = document.getElementById('ban-confirm-modal');
+        const cancelBtn = document.getElementById('cancel-ban-btn');
+        const confirmBtn = document.getElementById('confirm-ban-btn');
+
+        const closeModal = () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          pendingAction = null;
+        };
+
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+
+        if (confirmBtn) {
+          confirmBtn.onclick = async () => {
+            if (!pendingAction) return;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            const reasonText = document.getElementById('ban-reason-input').value.trim();
+
+            try {
+              let res, result;
+              if (pendingAction.type === 'batch') {
+                res = await fetch('./user_management_actions.php?action=batch_ban', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ics: pendingAction.ics, reason: reasonText })
+                });
+              } else {
+                res = await fetch('./user_management_actions.php?action=toggle_ban', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ic: pendingAction.ic, status: pendingAction.status, reason: reasonText })
+                });
+              }
+
+              result = await res.json();
+              if (result.status === 'success') {
+                closeModal();
+                await loadUsersData();
+              } else {
+                alert(result.message || 'Operation failed');
+              }
+            } catch (err) {
+              alert('Error: ' + err.message);
+            } finally {
+              confirmBtn.disabled = false;
+            }
+          };
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
