@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — StepCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-white text-neutral-800 font-sans antialiased flex h-screen overflow-hidden">
+
+  <!-- Mount Point for Sidebar -->
+  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
+
+  <!-- Main View Container -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    
+    <!-- Mount Point for Topbar -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Scrollable Main View -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          <!-- Left: Profile Card -->
+          <div class="lg:col-span-4 bg-white border border-neutral-200/90 rounded-[2.5rem] p-8 shadow-sm flex flex-col items-center text-center">
+            
+            <!-- Avatar Section -->
+            <div class="relative mb-6">
+              <div class="w-36 h-36 rounded-full bg-neutral-100 flex items-center justify-center overflow-hidden border-4 border-neutral-50 shadow-inner">
+                <img id="admin-avatar-img" 
+                     src="/StepCare/images/default.jpg" 
+                     alt="" 
+                     class="w-full h-full object-cover"
+                     onerror="this.src='/StepCare/images/default.jpg';" />
+              </div>
+
+              <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+
+              <button id="btn-trigger-upload" 
+                      type="button" 
+                      title="Change Profile Picture"
+                      class="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-[#3C52C3] hover:bg-[#3245a8] text-white flex items-center justify-center shadow-md border-2 border-white transition transform active:scale-95 cursor-pointer">
+                <i data-lucide="camera" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Full Name from admins table -->
+            <h2 id="card-admin-name" class="text-xl font-black text-neutral-900 uppercase tracking-wide mb-1">
+              -
+            </h2>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 mb-8">
+              System Administrator
+            </span>
+
+            <!-- Info Pill Rows -->
+            <div class="w-full space-y-4 mb-8">
+              <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+                <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Name</p>
+                <p id="info-admin-name" class="text-sm font-bold text-neutral-800 truncate">-</p>
+              </div>
+
+              <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+                <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Email</p>
+                <p id="info-admin-email" class="text-sm font-bold text-neutral-800 truncate">-</p>
+              </div>
+
+              <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs flex items-center justify-between">
+                <div>
+                  <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Password</p>
+                  <p class="text-sm font-bold text-neutral-800 tracking-widest leading-none">••••••••••</p>
+                </div>
+                <i data-lucide="lock" class="w-4 h-4 text-neutral-400"></i>
+              </div>
+            </div>
+
+            <!-- Edit Button -->
+            <button id="open-edit-modal-btn" type="button" class="w-36 py-3 bg-[#6979F8] hover:bg-[#5868e8] text-white rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer">
+              Edit
+            </button>
+          </div>
+
+          <!-- Right: Metrics & Schedules -->
+          <div class="lg:col-span-8 flex flex-col gap-8">
+            
+            <!-- Metric Card: Unassigned Appointments -->
+            <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] p-7 shadow-sm flex items-center justify-between relative overflow-hidden">
+              <div>
+                <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Unassigned Appointments</p>
+                <h3 id="stat-unassigned-num" class="text-4xl font-black text-neutral-900 mt-2">0</h3>
+                <p id="stat-unassigned-desc" class="text-xs text-neutral-400 mt-1 font-medium">All appointments assigned</p>
+              </div>
+
+              <div id="stat-icon-wrapper" class="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600">
+                <i id="stat-icon" data-lucide="check" class="w-8 h-8"></i>
+              </div>
+            </div>
+
+            <!-- Appointment Schedules -->
+            <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] p-8 shadow-sm flex flex-col min-h-[420px]">
+              <div class="flex items-center justify-between border-b border-neutral-100 pb-4 mb-6">
+                <div>
+                  <h3 class="text-base font-bold text-neutral-900">Appointment Schedules & Slots</h3>
+                  <p class="text-xs text-neutral-400">Time-slot tracking with real-time assignment status</p>
+                </div>
+                <span class="text-xs font-medium text-neutral-400">Live Status</span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead>
+                    <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100">
+                      <th class="py-3 px-4">Date</th>
+                      <th class="py-3 px-4">Time Slot</th>
+                      <th class="py-3 px-4">Service</th>
+                      <th class="py-3 px-4 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-slots-body" class="divide-y divide-neutral-100 font-medium text-neutral-700">
+                    <!-- Dynamic rendering -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-profile-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
+      
+      <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
+        <div>
+          <h3 class="text-lg font-bold text-neutral-900">Edit Admin Profile</h3>
+          <p class="text-xs text-neutral-400">Update credentials in admins table</p>
+        </div>
+        <button type="button" id="close-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="admin-edit-form" class="space-y-4">
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">First Name</label>
+          <input type="text" id="edit-admin-first-name" required class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+        </div>
+
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Last Name</label>
+          <input type="text" id="edit-admin-last-name" class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+        </div>
+
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Email Address</label>
+          <input type="email" id="edit-admin-email" required class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+        </div>
+
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">New Password</label>
+          <input type="password" id="edit-admin-password" placeholder="Leave blank to keep unchanged" class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <button type="button" id="close-modal-btn" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" id="save-profile-btn" class="px-6 py-2.5 bg-[#3C52C3] hover:bg-[#3245a8] text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Integrated Script Section -->
+  <script>
+    // English comments only
+    (function () {
+      'use strict';
+
+      let currentAdminData = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Mount sidebar
+        fetch('/StepCare/components/sidebar-admin.html')
+          .then(res => res.text())
+          .then(html => {
+            const sb = document.getElementById('sidebar-container');
+            sb.innerHTML = html;
+            sb.querySelectorAll('script').forEach(s => {
+              const ns = document.createElement('script');
+              ns.textContent = s.textContent;
+              document.body.appendChild(ns);
+            });
+            if (window.lucide) lucide.createIcons();
+          });
+
+        // 2. Mount topbar and bind authentic user name
+        fetch('/StepCare/components/topbar.html')
+          .then(res => res.text())
+          .then(html => {
+            const tb = document.getElementById('topbar-container');
+            tb.innerHTML = html;
+            tb.querySelectorAll('script').forEach(s => {
+              const ns = document.createElement('script');
+              ns.textContent = s.textContent;
+              document.body.appendChild(ns);
+            });
+
+            const title = document.getElementById('topbar-page-title');
+            if (title) title.textContent = 'Profile';
+
+            if (currentAdminData) {
+              syncNameToTopbar(currentAdminData);
+            }
+            if (window.lucide) lucide.createIcons();
+          });
+
+        // 3. Load profile from admins table
+        loadDatabaseProfile();
+
+        // 4. Initialize controls
+        initModalControls();
+        initAvatarUpload();
+      });
+
+      // Load profile directly from admins table
+      async function loadDatabaseProfile() {
+        try {
+          const res = await fetch('./admin_profile_actions.php?action=get_data');
+          const data = await res.json();
+
+          if (data.status === 'success') {
+            currentAdminData = data.admin;
+            renderAdminProfile(data.admin);
+            renderSlotsAndMetrics(data.unassigned_count, data.slots);
+            syncNameToTopbar(data.admin);
+          } else {
+            alert(data.message);
+          }
+        } catch (err) {
+          console.error('Fetch failed:', err);
+        }
+      }
+
+      // Populate interface with authentic record
+      function renderAdminProfile(admin) {
+        const fullName = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Admin';
+
+        document.getElementById('card-admin-name').textContent = fullName;
+        document.getElementById('info-admin-name').textContent = fullName;
+        document.getElementById('info-admin-email').textContent = admin.email || '-';
+
+        // Connect directly to adminPhotoURL from admins table
+        if (admin.adminPhotoURL) {
+          document.getElementById('admin-avatar-img').src = '/StepCare/' + admin.adminPhotoURL + '?t=' + Date.now();
+        }
+
+        // Prefill modal inputs
+        document.getElementById('edit-admin-first-name').value = admin.firstName || '';
+        document.getElementById('edit-admin-last-name').value = admin.lastName || '';
+        document.getElementById('edit-admin-email').value = admin.email || '';
+      }
+
+      // Synchronize full name and initial across Topbar
+      function syncNameToTopbar(admin) {
+        if (!admin) return;
+        const fullName = `${admin.firstName || ''} ${admin.lastName || ''}`.trim();
+        if (!fullName) return;
+
+        localStorage.setItem('stepcare_username', fullName);
+
+        // Update avatar circle initial
+        const avatarBadge = document.getElementById('topbar-avatar-badge') || document.getElementById('user-menu-btn');
+        if (avatarBadge && !avatarBadge.querySelector('img')) {
+          avatarBadge.textContent = fullName.charAt(0).toUpperCase();
+        }
+
+        // Update dropdown name
+        const topbarUserName = document.getElementById('topbar-user-fullname') || document.querySelector('.topbar-user-name');
+        if (topbarUserName) {
+          topbarUserName.textContent = fullName;
+        }
+
+        const menuHeaders = document.querySelectorAll('#user-menu-dropdown p, #topbar-container .text-sm.font-bold');
+        menuHeaders.forEach(el => {
+          if (el.textContent.toLowerCase().includes('administrator') || el.previousElementSibling?.textContent.includes('Signed in as')) {
+            el.textContent = fullName;
+          }
+        });
+      }
+
+      // Render stats counter and schedule slot table
+      function renderSlotsAndMetrics(unassignedCount, slots) {
+        const numEl = document.getElementById('stat-unassigned-num');
+        const descEl = document.getElementById('stat-unassigned-desc');
+        const iconWrap = document.getElementById('stat-icon-wrapper');
+
+        const count = parseInt(unassignedCount) || 0;
+        numEl.textContent = count;
+
+        if (count === 0) {
+          descEl.textContent = 'All appointments assigned';
+          iconWrap.className = 'w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600';
+          iconWrap.innerHTML = '<i data-lucide="check" class="w-8 h-8"></i>';
+        } else {
+          descEl.textContent = 'Appointments needing nurse assignment';
+          iconWrap.className = 'w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-500';
+          iconWrap.innerHTML = '<i data-lucide="alert-circle" class="w-8 h-8"></i>';
+        }
+
+        const tbody = document.getElementById('admin-slots-body');
+        if (!slots || slots.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="py-16 text-center">
+                <div class="flex flex-col items-center justify-center space-y-3">
+                  <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400">
+                    <i data-lucide="calendar-x" class="w-7 h-7"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-bold text-neutral-800">No appointments scheduled yet</h4>
+                    <p class="text-xs text-neutral-400 mt-0.5">There are currently no assigned or pending service booking records.</p>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+        } else {
+          tbody.innerHTML = slots.map(s => {
+            const isAssigned = (s.status || '').toLowerCase() === 'assigned';
+            const badgeClass = isAssigned 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              : 'bg-amber-50 text-amber-700 border-amber-200';
+            return `
+              <tr class="hover:bg-neutral-50/70 transition">
+                <td class="py-3.5 px-4 text-xs font-bold text-neutral-900">${s.date}</td>
+                <td class="py-3.5 px-4 text-xs text-neutral-600 font-semibold">${s.timeSlot}</td>
+                <td class="py-3.5 px-4 text-xs text-neutral-600">${s.serviceName || 'General Care'}</td>
+                <td class="py-3.5 px-4 text-right">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeClass}">
+                    ${isAssigned ? 'Assigned' : 'Pending'}
+                  </span>
+                </td>
+              </tr>`;
+          }).join('');
+        }
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Handle edit profile modal interactions
+      function initModalControls() {
+        const modal = document.getElementById('edit-profile-modal');
+        const openBtn = document.getElementById('open-edit-modal-btn');
+        const closeBtn = document.getElementById('close-modal-btn');
+        const closeX = document.getElementById('close-modal-x');
+
+        const show = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+        const hide = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+
+        if (openBtn) openBtn.onclick = show;
+        if (closeBtn) closeBtn.onclick = hide;
+        if (closeX) closeX.onclick = hide;
+
+        document.getElementById('admin-edit-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById('save-profile-btn');
+          btn.disabled = true;
+          btn.textContent = 'Saving...';
+
+          const payload = {
+            firstName: document.getElementById('edit-admin-first-name').value.trim(),
+            lastName: document.getElementById('edit-admin-last-name').value.trim(),
+            email: document.getElementById('edit-admin-email').value.trim(),
+            password: document.getElementById('edit-admin-password').value
+          };
+
+          try {
+            const res = await fetch('./admin_profile_actions.php?action=update_profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+              hide();
+              await loadDatabaseProfile();
+              alert('Profile updated successfully in database!');
+            } else {
+              alert(result.message || 'Update failed');
+            }
+          } catch (err) {
+            alert('Request failed: ' + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+          }
+        };
+      }
+
+      // Handle avatar upload and update image path
+      function initAvatarUpload() {
+        const trigger = document.getElementById('btn-trigger-upload');
+        const input = document.getElementById('avatar-file-input');
+
+        if (trigger && input) {
+          trigger.onclick = () => input.click();
+          input.onchange = async () => {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            
+            const fd = new FormData();
+            fd.append('avatar', file);
+
+            try {
+              const res = await fetch('./admin_profile_actions.php?action=upload_avatar', {
+                method: 'POST',
+                body: fd
+              });
+              const result = await res.json();
+              if (result.status === 'success') {
+                document.getElementById('admin-avatar-img').src = '/StepCare/' + result.avatar_url + '?t=' + Date.now();
+              } else {
+                alert(result.message || 'Avatar upload failed');
+              }
+            } catch (err) {
+              alert('Avatar network error: ' + err.message);
+            }
+          };
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

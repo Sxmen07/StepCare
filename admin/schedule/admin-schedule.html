@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schedule & Bookings — StepCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-white text-neutral-800 font-sans antialiased flex h-screen overflow-hidden">
+
+  <!-- Sidebar Mount Point -->
+  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
+
+  <!-- Main View Container -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    
+    <!-- Topbar Mount Point -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Scrollable Main Content -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
+      <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Controls Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Search Bar -->
+          <div class="relative flex-1 max-w-lg">
+            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+            <input type="text" 
+                   id="schedule-search-input" 
+                   placeholder="Search patient, service, or booking ref..." 
+                   class="w-full pl-11 pr-4 py-3 bg-neutral-50/70 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
+          </div>
+
+          <!-- Quick Filters -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Filter:</span>
+            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-filter="all">All Bookings</button>
+            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="unscheduled">Unscheduled</button>
+            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="assigned">Assigned</button>
+          </div>
+        </div>
+
+        <!-- Schedule Dispatches Table (Centered Alignment) -->
+        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-center border-collapse table-fixed">
+              <thead>
+                <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/40">
+                  <th class="py-4 px-4 w-[12%] text-center align-middle">Booking Ref</th>
+                  <th class="py-4 px-4 w-[18%] text-center align-middle">Patient / Contact</th>
+                  <th class="py-4 px-4 w-[20%] text-center align-middle">Care Package</th>
+                  <th class="py-4 px-4 w-[18%] text-center align-middle">Date & Time</th>
+                  <th class="py-4 px-4 w-[18%] text-center align-middle">Assigned Nurse</th>
+                  <th class="py-4 px-4 w-[14%] text-center align-middle">Action</th>
+                </tr>
+              </thead>
+              <tbody id="schedules-table-body" class="divide-y divide-neutral-100 text-neutral-700">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="schedules-empty-state" class="hidden py-16 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
+              <i data-lucide="calendar-x" class="w-7 h-7"></i>
+            </div>
+            <h4 class="text-sm font-bold text-neutral-800">No bookings found</h4>
+            <p class="text-xs text-neutral-400 mt-1">There are currently no appointments matching the selected filter.</p>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Nurse Assignment Modal -->
+  <div id="assign-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-neutral-200">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-blue-50 text-[#3C52C3]">
+        <i data-lucide="calendar-check-2" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-bold text-neutral-900 text-center mb-1">Assign Nurse to Booking</h3>
+      <p class="text-xs text-neutral-400 text-center mb-6 leading-relaxed">
+        Select an available nurse to dispatch for this appointment.
+      </p>
+
+      <!-- Booking Brief -->
+      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs mb-5">
+        <div class="flex justify-between"><span class="text-neutral-400">Booking Ref:</span><span id="modal-booking-ref" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Package:</span><span id="modal-service-name" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Schedule:</span><span id="modal-date-time" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Location:</span><span id="modal-location" class="font-bold text-neutral-800 truncate max-w-[200px]"></span></div>
+      </div>
+
+      <!-- Nurse Selection Form -->
+      <form id="assign-form" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Primary Assigned Nurse *</label>
+          <select id="select-primary-nurse" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]">
+            <option value="">Select a nurse...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Backup Nurse (Optional)</label>
+          <select id="select-backup-nurse" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]">
+            <option value="">None (Optional)</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-2xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" id="modal-submit-btn" class="flex-1 py-3 rounded-2xl bg-[#3C52C3] hover:bg-[#3245a8] text-white font-bold text-xs transition cursor-pointer shadow-sm">
+            Confirm Dispatch
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Page Logic Controller -->
+  <script>
+    // English comments only
+    (function () {
+      'use strict';
+
+      let currentFilter = 'all';
+      let schedulesList = [];
+      let nursesList = [];
+      let currentBookingId = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Mount Sidebar
+        fetch('/StepCare/components/sidebar-admin.html')
+          .then(res => res.text())
+          .then(html => {
+            const sb = document.getElementById('sidebar-container');
+            if (sb) {
+              sb.innerHTML = html;
+              sb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // Mount Topbar
+        fetch('/StepCare/components/topbar.html')
+          .then(res => res.text())
+          .then(html => {
+            const tb = document.getElementById('topbar-container');
+            if (tb) {
+              tb.innerHTML = html;
+              tb.querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+              });
+              const title = document.getElementById('topbar-page-title');
+              if (title) title.textContent = 'Schedule & Dispatches';
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+
+        // Initial Data Fetch
+        loadSchedules();
+        loadNurses();
+        initEventHandlers();
+      });
+
+      // Load schedule appointments
+      async function loadSchedules() {
+        try {
+          const res = await fetch(`./schedule_actions.php?action=fetch_schedules&filter=${currentFilter}`);
+          const json = await res.json();
+          if (json.status === 'success') {
+            schedulesList = json.data || [];
+            renderTable();
+          }
+        } catch (err) {
+          console.error('Failed to load schedules:', err);
+        }
+      }
+
+      // Load nurses for dropdown
+      async function loadNurses() {
+        try {
+          const res = await fetch(`./schedule_actions.php?action=fetch_available_nurses`);
+          const json = await res.json();
+          if (json.status === 'success') {
+            nursesList = json.data || [];
+            populateNurseSelects();
+          }
+        } catch (err) {
+          console.error('Failed to load nurses:', err);
+        }
+      }
+
+      function populateNurseSelects() {
+        const primarySelect = document.getElementById('select-primary-nurse');
+        const backupSelect = document.getElementById('select-backup-nurse');
+
+        primarySelect.innerHTML = '<option value="">Select a nurse...</option>';
+        backupSelect.innerHTML = '<option value="">None (Optional)</option>';
+
+        nursesList.forEach(n => {
+          const text = `${n.name} (${n.specialization} • ★${n.rating})`;
+          primarySelect.appendChild(new Option(text, n.nurseId));
+          backupSelect.appendChild(new Option(text, n.nurseId));
+        });
+      }
+
+      // Render Table
+      function renderTable() {
+        const tbody = document.getElementById('schedules-table-body');
+        const emptyState = document.getElementById('schedules-empty-state');
+        const searchInput = document.getElementById('schedule-search-input');
+        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+        const filtered = schedulesList.filter(item => {
+          return item.patientName.toLowerCase().includes(searchTerm) || 
+                 item.serviceName.toLowerCase().includes(searchTerm) ||
+                 item.bookingRef.toLowerCase().includes(searchTerm) ||
+                 item.nurseName.toLowerCase().includes(searchTerm);
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = filtered.map(item => {
+          // Nurse Status & Name
+          let nurseCell = '';
+          if (item.isAssigned) {
+            nurseCell = `
+              <div>
+                <p class="text-xs font-bold text-neutral-900">${item.nurseName}</p>
+                <p class="text-[10px] text-neutral-400">${item.nurseSpecialization}</p>
+              </div>
+            `;
+          } else {
+            nurseCell = `
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                Unassigned
+              </span>
+            `;
+          }
+
+          // Action Button
+          const actionBtn = item.isAssigned
+            ? `<button type="button" onclick="window.openAssignModal(${item.appointmentId})" class="px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold transition cursor-pointer">Reassign</button>`
+            : `<button type="button" onclick="window.openAssignModal(${item.appointmentId})" class="px-3 py-1.5 rounded-xl bg-[#3C52C3] hover:bg-[#3245a8] text-white text-xs font-bold transition cursor-pointer shadow-2xs">Assign Nurse</button>`;
+
+          return `
+            <tr class="hover:bg-neutral-50/70 transition">
+              <td class="py-4 px-4 text-center align-middle font-mono font-bold text-xs text-neutral-500">${item.bookingRef}</td>
+              <td class="py-4 px-4 text-center align-middle">
+                <p class="text-xs font-bold text-neutral-900">${item.patientName}</p>
+                <p class="text-[10px] text-neutral-400 font-mono">${item.patientPhone}</p>
+              </td>
+              <td class="py-4 px-4 text-center align-middle">
+                <p class="text-xs font-bold text-neutral-800 truncate max-w-[180px] mx-auto">${item.serviceName}</p>
+                <p class="text-[10px] text-neutral-400 font-semibold">RM ${item.price}</p>
+              </td>
+              <td class="py-4 px-4 text-center align-middle">
+                <p class="text-xs font-bold text-neutral-800">${item.date}</p>
+                <p class="text-[10px] text-neutral-400 font-mono">${item.timeRange}</p>
+              </td>
+              <td class="py-4 px-4 text-center align-middle">${nurseCell}</td>
+              <td class="py-4 px-4 text-center align-middle">${actionBtn}</td>
+            </tr>
+          `;
+        }).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Modal Triggers
+      window.openAssignModal = function (appointmentId) {
+        const item = schedulesList.find(s => s.appointmentId === appointmentId);
+        if (!item) return;
+
+        currentBookingId = appointmentId;
+        document.getElementById('modal-booking-ref').textContent = item.bookingRef;
+        document.getElementById('modal-service-name').textContent = item.serviceName;
+        document.getElementById('modal-date-time').textContent = `${item.date} (${item.timeRange})`;
+        document.getElementById('modal-location').textContent = item.location;
+
+        const primarySelect = document.getElementById('select-primary-nurse');
+        primarySelect.value = item.nurseId || '';
+
+        const modal = document.getElementById('assign-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      };
+
+      function initEventHandlers() {
+        const modal = document.getElementById('assign-modal');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const form = document.getElementById('assign-form');
+
+        const closeModal = () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          currentBookingId = null;
+        };
+
+        cancelBtn.onclick = closeModal;
+
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          const nurseId = document.getElementById('select-primary-nurse').value;
+          const backupNurseId = document.getElementById('select-backup-nurse').value;
+
+          if (!currentBookingId || !nurseId) return;
+
+          try {
+            const res = await fetch('./schedule_actions.php?action=assign_nurse', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                appointmentId: currentBookingId,
+                nurseId: parseInt(nurseId, 10),
+                backupNurseId: backupNurseId ? parseInt(backupNurseId, 10) : null
+              })
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+              closeModal();
+              await loadSchedules();
+            } else {
+              alert(json.message || 'Dispatch failed');
+            }
+          } catch (err) {
+            alert('Request error: ' + err.message);
+          }
+        };
+
+        // Search Input
+        const searchInput = document.getElementById('schedule-search-input');
+        if (searchInput) searchInput.addEventListener('input', renderTable);
+
+        // Filter Buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+              b.className = 'filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
+            });
+            btn.className = 'filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
+            currentFilter = btn.getAttribute('data-filter');
+            loadSchedules();
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,67 +1,172 @@
-<!-- Nurse Sidebar Component -->
-<aside id="sidebar" class="bg-white border-r border-neutral-200 min-h-screen flex flex-col justify-between transition-all duration-300 w-56 p-3 z-40 select-none shrink-0 shadow-sm">
+<!-- Nurse Sidebar Component (Self-Contained) -->
+<aside id="nurse-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden">
   
-  <!-- Top Section: Brand Header & Main Navigation -->
-  <div class="flex flex-col">
-    <!-- Brand Logo Header -->
-    <div class="flex items-center h-14 px-2 mb-4 border-b border-neutral-100 overflow-hidden">
-      <div id="sidebar-logo-box" class="flex items-center gap-2.5 w-full transition-all">
-        <img src="/StepCare/images/StepCare.png" 
-             alt="StepCare Logo" 
-             class="w-7 h-7 object-contain shrink-0 rounded-lg">
-        <span class="sidebar-text font-black text-lg tracking-tight transition-opacity duration-200 whitespace-nowrap">
-          <span style="color: #3C52C3;">Step</span><span style="color: #10B981;">Care</span>
+  <div class="flex flex-col min-w-0">
+    <!-- Brand Logo -->
+    <div class="h-16 px-6 flex items-center shrink-0">
+      <a href="/StepCare/nurse/dashboard/nurse-dashboard.html" class="flex items-center gap-2 overflow-hidden">
+        <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-7 h-7 object-contain shrink-0" onerror="this.src='/StepCare/images/services/logo.png'">
+        <span class="sidebar-text text-lg font-black tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
         </span>
+      </a>
+    </div>
+
+    <!-- Navigation List -->
+    <div class="py-2 space-y-1">
+      <div class="px-6 py-1.5 overflow-hidden">
+        <p class="sidebar-text text-xs font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Nurse Portal
+        </p>
       </div>
+
+      <!-- 1. Dashboard -->
+      <a href="/StepCare/nurse/dashboard/nurse-dashboard.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="dashboard">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Dashboard
+        </span>
+      </a>
+
+      <!-- 2. Job Market -->
+      <a href="/StepCare/nurse/job-market.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="job-market">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="briefcase" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Job Market
+        </span>
+      </a>
+
+      <!-- 3. Care Log -->
+      <a href="/StepCare/nurse/care-log.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="care-log">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Care Log
+        </span>
+      </a>
+
+      <!-- 4. Profile -->
+      <a href="/StepCare/nurse/profile/nurse-profile.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="profile">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="user" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          Profile
+        </span>
+      </a>
     </div>
-
-    <!-- Navigation Label -->
-    <div class="sidebar-text text-[11px] font-bold text-neutral-400 tracking-wider uppercase mb-2 px-2.5">
-      Nurse Portal
-    </div>
-
-    <!-- Main Navigation Menu -->
-    <nav class="space-y-2">
-      <a href="/StepCare/nurse/nurse-dashboard.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Dashboard</span>
-      </a>
-
-      <a href="/StepCare/nurse/job-market.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="briefcase" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Job Market</span>
-      </a>
-
-      <a href="/StepCare/nurse/care-log.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Care Log</span>
-      </a>
-
-      <a href="/StepCare/components/profile.html?role=nurse" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-        <i data-lucide="user" class="w-4 h-4 shrink-0 text-black"></i>
-        <span class="sidebar-text truncate">Profile</span>
-      </a>
-    </nav>
   </div>
 
-  <!-- Bottom Section: Utility Links & Collapse Toggle -->
-  <div class="pt-3 border-t border-neutral-100 space-y-1.5">
-    <a href="/StepCare/nurse/settings.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-      <i data-lucide="settings" class="w-4 h-4 shrink-0 text-black"></i>
-      <span class="sidebar-text truncate">Settings</span>
-    </a>
-
-    <a href="/StepCare/nurse/customer-service.html" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm group">
-      <i data-lucide="headphones" class="w-4 h-4 shrink-0 text-black"></i>
-      <span class="sidebar-text truncate">Customer Services</span>
-    </a>
-
-    <!-- Bottom Collapse Toggle Button -->
-    <button id="sidebar-toggle-btn" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-neutral-700 hover:text-black hover:bg-neutral-100 transition font-medium text-sm cursor-pointer group">
-      <span id="toggle-icon-wrapper" class="shrink-0 transition-transform duration-300">
-        <i data-lucide="panel-left-close" class="w-4 h-4 text-black"></i>
+  <!-- Bottom Utility Section -->
+  <div class="py-4 space-y-1 shrink-0">
+    <!-- Customer Service -->
+    <a href="/StepCare/nurse/customer-service.html" 
+       class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+       data-page="customer-service">
+      <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+        <i data-lucide="headphones" class="w-5 h-5"></i>
       </span>
-      <span class="sidebar-text truncate font-semibold">Hide sidebar</span>
+      <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+        Customer Service
+      </span>
+    </a>
+
+    <!-- Settings -->
+    <a href="/StepCare/nurse/settings/nurse-settings.html" 
+       class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+       data-page="settings">
+      <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </span>
+      <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+        Settings
+      </span>
+    </a>
+
+    <!-- Collapsible Toggle -->
+    <button id="toggle-nurse-sidebar-btn" 
+            type="button" 
+            class="sidebar-item w-full flex items-center px-6 py-3 text-sm font-semibold text-neutral-500 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors cursor-pointer">
+      <span id="toggle-nurse-sidebar-icon-wrap" class="w-6 h-6 shrink-0 flex items-center justify-center">
+        <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+      </span>
+      <span id="toggle-nurse-sidebar-text" class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+        Hide sidebar
+      </span>
     </button>
   </div>
+
+  <!-- Self-contained activation vector executing without page-level script helpers -->
+  <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="hidden" onload="(function(){
+    const sidebar = document.getElementById('nurse-sidebar');
+    if (!sidebar || sidebar.dataset.initialized) return;
+    sidebar.dataset.initialized = 'true';
+
+    const toggleBtn = document.getElementById('toggle-nurse-sidebar-btn');
+    const iconWrap = document.getElementById('toggle-nurse-sidebar-icon-wrap');
+    const textLabels = sidebar.querySelectorAll('.sidebar-text');
+
+    function applyState(collapse) {
+      if (collapse) {
+        sidebar.classList.remove('w-52');
+        sidebar.classList.add('w-[72px]');
+        textLabels.forEach(el => {
+          el.style.maxWidth = '0px';
+          el.style.opacity = '0';
+          el.style.marginLeft = '0px';
+        });
+        if (iconWrap) {
+          iconWrap.innerHTML = '<i data-lucide=\'panel-left-open\' class=\'w-5 h-5\'></i>';
+        }
+        localStorage.setItem('stepcare_nurse_sidebar_collapsed', 'true');
+      } else {
+        sidebar.classList.remove('w-[72px]');
+        sidebar.classList.add('w-52');
+        textLabels.forEach(el => {
+          el.style.maxWidth = '140px';
+          el.style.opacity = '1';
+          el.style.marginLeft = '0.875rem';
+        });
+        if (iconWrap) {
+          iconWrap.innerHTML = '<i data-lucide=\'panel-left-close\' class=\'w-5 h-5\'></i>';
+        }
+        localStorage.setItem('stepcare_nurse_sidebar_collapsed', 'false');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    const isCollapsed = localStorage.getItem('stepcare_nurse_sidebar_collapsed') === 'true';
+    if (isCollapsed) applyState(true);
+
+    const path = window.location.pathname.toLowerCase();
+    sidebar.querySelectorAll('.sidebar-item').forEach(item => {
+      const pageKey = item.getAttribute('data-page');
+      if (pageKey && path.includes(pageKey)) {
+        item.classList.add('bg-[#EEF2FF]', 'text-[#3C52C3]', 'font-bold');
+        item.classList.remove('text-neutral-600');
+      }
+    });
+
+    if (toggleBtn) {
+      toggleBtn.onclick = function(e) {
+        e.preventDefault();
+        applyState(!sidebar.classList.contains('w-[72px]'));
+      };
+    }
+
+    if (window.lucide) lucide.createIcons();
+  })()" />
 </aside>
