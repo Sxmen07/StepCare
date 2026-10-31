@@ -8,61 +8,61 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../config/db_connect.php';
 
-// Detect role explicitly from session or request query
-$role = $_SESSION['role'] ?? $_GET['role'] ?? null;
-$adminId = $_SESSION['adminID'] ?? null;
-$nurseId = $_SESSION['nurseID'] ?? null;
+// Strict session retrieval: check both session and query params
+$sessionRole = $_SESSION['role'] ?? null;
+$queryRole   = $_GET['role'] ?? null;
+$adminId     = $_SESSION['adminID'] ?? $_SESSION['user_id'] ?? null;
+$nurseId     = $_SESSION['nurseID'] ?? null;
 
-// Determine role based on session presence if not explicitly declared
-if (!$role) {
-    if ($adminId) {
-        $role = 'admin';
-    } elseif ($nurseId) {
-        $role = 'nurse';
-    } else {
-        // Fallback default based on client hint or primary admin
-        $role = 'admin';
-    }
+// Determine role strictly from session or explicit request
+$role = $sessionRole ?: $queryRole;
+
+// Determine target authenticated ID strictly
+$authenticatedId = null;
+if ($role === 'nurse') {
+    $authenticatedId = $nurseId;
+} else {
+    // Admin role
+    $authenticatedId = $adminId;
+}
+
+// If no valid session exists, return unauthenticated status immediately (do not grab arbitrary records)
+if (!$authenticatedId) {
+    http_response_code(401);
+    echo json_encode([
+        'status' => 'unauthenticated',
+        'message' => 'No active user session found. Please log in.'
+    ]);
+    exit;
 }
 
 try {
     if ($role === 'nurse') {
-        // Fetch from nurses table
-        $targetId = $nurseId ?? 1;
         $stmt = $pdo->prepare("SELECT nurseID AS id, firstName, lastName, email, nursePhotoURL AS photoURL FROM nurses WHERE nurseID = ? LIMIT 1");
-        $stmt->execute([$targetId]);
+        $stmt->execute([$authenticatedId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            $stmt = $pdo->query("SELECT nurseID AS id, firstName, lastName, email, nursePhotoURL AS photoURL FROM nurses ORDER BY nurseID ASC LIMIT 1");
-            $user = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-        }
 
         $profileLink = '/StepCare/nurse/profile/nurse-profile.html';
         $settingsLink = '/StepCare/nurse/settings/nurse-settings.html';
     } else {
-        // Fetch from admins table
-        $targetId = $adminId ?? 1;
         $stmt = $pdo->prepare("SELECT adminID AS id, firstName, lastName, email, adminPhotoURL AS photoURL FROM admins WHERE adminID = ? LIMIT 1");
-        $stmt->execute([$targetId]);
+        $stmt->execute([$authenticatedId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            $stmt = $pdo->query("SELECT adminID AS id, firstName, lastName, email, adminPhotoURL AS photoURL FROM admins ORDER BY adminID ASC LIMIT 1");
-            $user = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-        }
 
         $profileLink = '/StepCare/admin/profile/admin-profile.html';
         $settingsLink = '/StepCare/admin/settings/admin-settings.html';
     }
 
     if ($user) {
+        // Build clean full name
+        $fullName = trim(($user['firstName'] ?? '') . ' ' . ($user['lastName'] ?? ''));
+
         echo json_encode([
             'status' => 'success',
             'role' => $role,
             'user' => [
                 'id' => $user['id'],
-                'fullName' => trim(($user['firstName'] ?? '') . ' ' . ($user['lastName'] ?? '')),
+                'fullName' => $fullName ?: 'Authenticated User',
                 'email' => $user['email'] ?? '',
                 'photoURL' => $user['photoURL'] ?? null,
                 'profileLink' => $profileLink,
@@ -70,9 +70,11 @@ try {
             ]
         ]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'No active user found']);
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'User account not found']);
     }
 } catch (Exception $e) {
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
