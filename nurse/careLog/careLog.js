@@ -123,7 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div class="mt-8 flex justify-end">
-              <button class="flex items-center gap-2 bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer">
+              <button onclick="window.location.href='careLogDetails/careLogDetails.php?id=${currentService.appointmentID}'" 
+                      class="flex items-center gap-2 bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer">
                 Start Session <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
             </div>
@@ -165,7 +166,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const statusLabel = appt.appointmentStatus === 'confirmed' ? 'Confirmed' : 'Pending';
 
       html += `
-        <div class="schedule-item bg-white rounded-2xl p-4 flex flex-col md:flex-row items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/30 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
+        <div onclick="window.location.href='careLogDetails/careLogDetails.php?id=${appt.appointmentID}'" 
+             class="schedule-item bg-white rounded-2xl p-4 flex flex-col md:flex-row items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/30 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
           
           <!-- Date Badge -->
           <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-[#3C52C3]/5 group-hover:border-[#3C52C3]/20 transition-colors">
