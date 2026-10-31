@@ -22,59 +22,119 @@ document.addEventListener("DOMContentLoaded", () => {
   // Populate Notes
   document.getElementById('nurseNotes').value = appt.nurseNotes || '';
 
-  // 2. Render Timeline
+  // 2. Setup Action Button Logic (Sequential State Machine)
+  const actionBtn = document.getElementById('actionBtn');
+  let latestStatus = 'confirmed'; // Default starting point
+  
+  if (timeline.length > 0) {
+    latestStatus = timeline[timeline.length - 1].status;
+  }
+
+  let nextAction = null;
+  let btnText = '';
+
+  if (latestStatus === 'confirmed' || latestStatus === 'pending') {
+    nextAction = 'on_the_way';
+    btnText = 'On The Way';
+    actionBtn.className = 'px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 text-white bg-blue-600 hover:bg-blue-700';
+  } else if (latestStatus === 'on_the_way') {
+    nextAction = 'arrived';
+    btnText = 'Arrived';
+    actionBtn.className = 'px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 text-white bg-indigo-600 hover:bg-indigo-700';
+  } else if (latestStatus === 'arrived') {
+    nextAction = 'in_progress';
+    btnText = 'Start Service';
+    actionBtn.className = 'px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 text-white bg-violet-600 hover:bg-violet-700';
+  } else if (latestStatus === 'in_progress') {
+    nextAction = 'completed';
+    btnText = 'Complete Service';
+    actionBtn.className = 'px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 text-white bg-emerald-600 hover:bg-emerald-700';
+  }
+
+  if (nextAction) {
+    actionBtn.classList.remove('hidden');
+    actionBtn.textContent = btnText;
+    actionBtn.onclick = () => updateStatus(nextAction, btnText);
+  } else {
+    actionBtn.classList.remove('hidden');
+    actionBtn.textContent = 'Completed';
+    actionBtn.className = 'px-5 py-2.5 rounded-xl font-bold text-sm bg-slate-200 text-slate-500 cursor-not-allowed';
+    actionBtn.disabled = true;
+  }
+
+  // 3. Render Timeline
   function renderTimeline(data) {
     const container = document.getElementById('timeline-container');
+    document.getElementById('update-count').textContent = `${data.length} update${data.length === 1 ? '' : 's'}`;
     
     if (data.length === 0) {
-      container.innerHTML = '<p class="text-sm text-slate-500 italic">No activity logged yet.</p>';
+      container.innerHTML = '<p class="text-sm text-slate-500 italic pb-4">No activity logged yet.</p>';
       return;
     }
 
-    container.innerHTML = data.map(t => {
+    container.innerHTML = data.map((t, index) => {
       const d = new Date(t.createdAt.replace(' ', 'T'));
-      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); // e.g., 31 Oct 2026
+      const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); // e.g., 10:53 PM
       
-      let dotColor = 'bg-slate-300';
-      if (t.status === 'completed') dotColor = 'bg-emerald-500';
-      else if (t.status === 'in_progress') dotColor = 'bg-violet-500';
-      else if (t.status === 'arrived') dotColor = 'bg-indigo-500';
-      else if (t.status === 'on_the_way') dotColor = 'bg-blue-500';
+      // Determine dot color (active vs past)
+      const isLast = index === data.length - 1;
+      
+      let dotColor = 'bg-slate-300'; // Default past
+      if (isLast) {
+        if (t.status === 'completed') dotColor = 'bg-emerald-500 ring-emerald-100';
+        else if (t.status === 'in_progress') dotColor = 'bg-violet-500 ring-violet-100';
+        else if (t.status === 'arrived') dotColor = 'bg-indigo-500 ring-indigo-100';
+        else if (t.status === 'on_the_way') dotColor = 'bg-blue-500 ring-blue-100';
+        else dotColor = 'bg-[#3C52C3] ring-indigo-100';
+      }
+
+      // Hide connecting line for the last item
+      const lineHtml = !isLast ? `<div class="absolute left-[7px] top-6 bottom-[-24px] w-px bg-slate-200"></div>` : '';
 
       return `
-        <div class="relative">
-          <span class="absolute -left-6 top-1 w-3 h-3 rounded-full ${dotColor} ring-4 ring-white"></span>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <p class="text-sm font-bold text-slate-800">${t.title}</p>
-              <p class="text-[11px] font-semibold text-slate-400">${dateStr} at ${timeStr}</p>
+        <div class="relative pl-8">
+          ${lineHtml}
+          <span class="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full ${dotColor} ring-4 ring-white z-10"></span>
+          
+          <div class="flex items-start justify-between gap-4 mb-1">
+            <p class="text-sm font-bold text-slate-900">${t.title}</p>
+            <div class="text-right shrink-0">
+              <p class="text-xs font-bold text-slate-800">${dateStr}</p>
+              <p class="text-[11px] text-slate-400">${timeStr}</p>
             </div>
-            <p class="text-sm text-slate-600 leading-relaxed">${t.message}</p>
           </div>
+          
+          <p class="text-sm text-slate-600 leading-relaxed mb-1.5">${t.message}</p>
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${t.createdBy}</p>
         </div>
       `;
     }).join('');
-    
-    if (window.lucide) lucide.createIcons();
   }
 
   renderTimeline(timeline);
 });
 
 // ==========================================
-// 3. AJAX Actions
+// 4. AJAX Actions
 // ==========================================
 
-// Update Activity Status
-async function updateStatus(status, defaultMessage) {
+async function updateStatus(status, title) {
   const apptID = window.appointmentData.appointmentID;
+  const btn = document.getElementById('actionBtn');
+  
+  // Save original state
+  const origText = btn.textContent;
+  const origClass = btn.className;
+  
+  btn.textContent = 'Updating...';
+  btn.disabled = true;
   
   const payload = {
     appointmentID: apptID,
     status: status,
-    title: defaultMessage,
-    message: defaultMessage
+    title: title,
+    message: title // Using the button text as the message
   };
 
   try {
@@ -86,13 +146,18 @@ async function updateStatus(status, defaultMessage) {
     const data = await res.json();
     
     if (data.success) {
-      // Reload page to reflect new timeline and top status
       window.location.reload();
     } else {
       alert(data.message || 'Error updating status');
+      btn.textContent = origText;
+      btn.className = origClass;
+      btn.disabled = false;
     }
   } catch (err) {
     alert('Network error');
+    btn.textContent = origText;
+    btn.className = origClass;
+    btn.disabled = false;
   }
 }
 
