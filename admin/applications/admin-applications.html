@@ -18,7 +18,7 @@
     }
   </style>
 </head>
-<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden font-sans">
 
   <!-- Modular Sidebar Container -->
   <div id="sidebar-container" class="shrink-0 h-full"></div>
@@ -55,7 +55,6 @@
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-3 shrink-0">
-        <!-- Export to Excel Button -->
         <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
           <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
           <span>Export Excel</span>
@@ -63,12 +62,13 @@
       </div>
     </section>
 
-    <!-- Table Header Grid (Full-width 12 cols) -->
+    <!-- Table Header Grid (Full-width 12 cols: 2 - 2 - 2 - 2 - 1 - 1 - 2) -->
     <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
       <div class="col-span-2 text-left pl-2">Nurse ID</div>
-      <div class="col-span-3 text-left">Nurse Name</div>
+      <div class="col-span-2 text-left">Nurse Name</div>
       <div class="col-span-2 text-left">Requested Schedule</div>
       <div class="col-span-2 text-left">Reason</div>
+      <div class="col-span-1 text-center">Document</div>
       <div class="col-span-1 text-center">Status</div>
       <div class="col-span-2 text-center">Actions</div>
     </div>
@@ -81,13 +81,53 @@
     </main>
   </div>
 
-  <!-- Review Confirmation Modal with Large Typography & Reject Comment Box -->
+  <!-- Document Preview Modal (Supports Image & Native PDF) -->
+  <div id="doc-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2rem] p-6 w-full max-w-2xl shadow-2xl border border-neutral-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-neutral-100">
+        <div>
+          <h3 class="text-base font-bold text-neutral-900" id="doc-modal-title">Proof Document Preview</h3>
+          <p class="text-xs text-neutral-400" id="doc-modal-subtitle">Supporting off-day attachment</p>
+        </div>
+        <button type="button" id="close-doc-modal-btn" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Preview Container: 450px Height Frame -->
+      <div class="w-full h-[450px] bg-neutral-50 border border-neutral-200 rounded-2xl overflow-hidden flex items-center justify-center relative">
+        <!-- Image Preview -->
+        <img id="doc-modal-img" src="" alt="Proof Preview" class="max-h-full max-w-full object-contain hidden" />
+        
+        <!-- PDF Native Preview -->
+        <iframe id="doc-modal-pdf" src="" class="w-full h-full border-0 hidden"></iframe>
+        
+        <!-- Error or Missing Fallback -->
+        <div id="doc-modal-empty" class="text-center text-neutral-400 p-6 hidden">
+          <i data-lucide="file-warning" class="w-10 h-10 mx-auto mb-2 text-neutral-300"></i>
+          <p class="text-xs font-semibold text-neutral-600">Preview not directly available or file missing</p>
+          <p class="text-[11px] text-neutral-400 mt-1">Click "Open Full File" below to download or view directly.</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-2">
+        <a id="doc-modal-raw-link" href="#" target="_blank" class="text-xs font-semibold text-[#3C52C3] hover:underline flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          <span>Open Full File</span>
+        </a>
+        <button type="button" id="doc-modal-close-bottom" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold rounded-xl transition cursor-pointer">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Confirmation Modal -->
   <div id="action-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
     <div class="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
       <div class="text-center">
-        <div id="modal-icon-container" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <!-- Dynamic Status Icon -->
-        </div>
+        <div id="modal-icon-container" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"></div>
         <h3 id="modal-title" class="text-xl font-bold text-neutral-900 mb-2">Review Request</h3>
         <p id="modal-desc" class="text-sm text-neutral-500 mb-6 leading-relaxed"></p>
       </div>
@@ -100,17 +140,16 @@
         <div class="flex justify-between border-t border-neutral-200/60 pt-2"><span class="text-neutral-400">Nurse Note:</span><span id="modal-nurse-reason" class="text-neutral-700 italic max-w-xs truncate"></span></div>
       </div>
 
-      <!-- Rejection Reason / Comment Input Section (Only active when rejecting) -->
+      <!-- Rejection Reason Input -->
       <div id="reject-reason-wrapper" class="space-y-2.5 mb-6 text-left hidden">
         <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600">
           Reason for Rejection <span class="text-neutral-400 font-normal">(Sent to Nurse)</span>
         </label>
         <textarea id="reject-reason-input" 
                   rows="3" 
-                  placeholder="Specify reason (e.g., Staff shortage on this shift, pending urgent appointments)..." 
+                  placeholder="Specify reason..." 
                   class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500 font-medium transition resize-none"></textarea>
         
-        <!-- Preset Reason Quick Tags -->
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-[11px] font-bold text-neutral-400">Presets:</span>
           <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Staff Shortage</button>
@@ -119,20 +158,14 @@
         </div>
       </div>
 
-      <!-- Modal Action Buttons -->
       <div class="flex justify-end gap-3 pt-2">
-        <button type="button" id="modal-cancel-btn" class="px-6 py-3 border border-neutral-200 rounded-xl text-sm font-semibold hover:bg-neutral-50 transition cursor-pointer text-neutral-700">
-          Cancel
-        </button>
-        <button type="button" id="modal-confirm-btn" class="px-7 py-3 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm">
-          Confirm
-        </button>
+        <button type="button" id="modal-cancel-btn" class="px-6 py-3 border border-neutral-200 rounded-xl text-sm font-semibold hover:bg-neutral-50 transition cursor-pointer text-neutral-700">Cancel</button>
+        <button type="button" id="modal-confirm-btn" class="px-7 py-3 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm">Confirm</button>
       </div>
     </div>
   </div>
 
   <script>
-    // English comments only
     (function () {
       'use strict';
 
@@ -145,7 +178,7 @@
           .then(res => res.text())
           .then(html => {
             const sb = document.getElementById('sidebar-container');
-            if (sb) {
+            if (sb && !html.includes('404')) {
               sb.innerHTML = html;
               sb.querySelectorAll('script').forEach(s => {
                 const ns = document.createElement('script');
@@ -156,52 +189,54 @@
             }
           });
 
-        // 2. Mount topbar with title 'Applications'
+        // 2. Mount topbar & activate interactions
         fetch('/StepCare/components/topbar.html')
           .then(res => res.text())
           .then(html => {
             const tb = document.getElementById('topbar-container');
-            if (tb) {
+            if (tb && !html.includes('404')) {
               tb.innerHTML = html;
               tb.querySelectorAll('script').forEach(s => {
                 const ns = document.createElement('script');
                 ns.textContent = s.textContent;
                 document.body.appendChild(ns);
               });
+
               const title = document.getElementById('topbar-page-title');
               if (title) title.textContent = 'Applications';
+
+              if (typeof window.initTopbar === 'function') {
+                window.initTopbar();
+              }
               if (window.lucide) lucide.createIcons();
             }
           });
 
-        // 3. Load applications
         loadApplications();
-
-        // 4. Bind events
         initEventHandlers();
       });
 
-      // Fetch applications from backend
       async function loadApplications() {
         try {
-          const filterStatus = document.getElementById('filter-status');
-          const currentStatus = filterStatus ? filterStatus.value : 'All';
-          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${currentStatus}`);
+          const filterElem = document.getElementById('filter-status');
+          const currentStatus = filterElem ? filterElem.value : 'All';
+          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${encodeURIComponent(currentStatus)}`);
           const result = await res.json();
           if (result.status === 'success') {
             applicationsList = result.data || [];
             renderTable();
           } else {
             console.error('Fetch error:', result.message);
+            applicationsList = [];
             renderTable();
           }
         } catch (err) {
           console.error('Network request failed:', err);
+          applicationsList = [];
           renderTable();
         }
       }
 
-      // Avatar Fallback Initial Bubble
       function getAvatarBubble(name) {
         const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NR';
         return `
@@ -211,20 +246,26 @@
         `;
       }
 
-      // Render applications in Notifications full-width stream
       function renderTable() {
         const container = document.getElementById('applications-list-container');
         const searchInput = document.getElementById('app-search-input');
-        const filterStatus = document.getElementById('filter-status');
+        const filterElem = document.getElementById('filter-status');
 
-        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
+        const searchTerm = String(searchInput ? searchInput.value : '').trim().toLowerCase();
+        const currentFilter = String(filterElem ? filterElem.value : 'All').toLowerCase();
 
         const filtered = applicationsList.filter(item => {
-          const matchesStatus = (currentStatus === 'all') || (item.status === currentStatus);
-          const matchesSearch = item.nurseName.toLowerCase().includes(searchTerm) || 
-                                item.nurseId.toLowerCase().includes(searchTerm) ||
-                                item.reason.toLowerCase().includes(searchTerm);
+          const itemStatus = String(item.status || '').toLowerCase();
+          const matchesStatus = (currentFilter === 'all') || (itemStatus === currentFilter);
+
+          const nurseName = String(item.nurseName || '').toLowerCase();
+          const nurseId = String(item.nurseId || '').toLowerCase();
+          const reason = String(item.reason || '').toLowerCase();
+
+          const matchesSearch = nurseName.includes(searchTerm) || 
+                                nurseId.includes(searchTerm) ||
+                                reason.includes(searchTerm);
+
           return matchesStatus && matchesSearch;
         });
 
@@ -243,18 +284,17 @@
         }
 
         container.innerHTML = filtered.map(item => {
-          // Status Badges with larger padding
           let statusBadge = '';
-          if (item.status === 'pending') {
-            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
-          } else if (item.status === 'approved') {
-            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
+          const st = String(item.status || '').toLowerCase();
+          if (st === 'pending') {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
+          } else if (st === 'approved') {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
           } else {
             const tooltip = item.rejectionReason ? `title="Reason: ${item.rejectionReason.replace(/"/g, '&quot;')}"` : '';
-            statusBadge = `<span ${tooltip} class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200 cursor-help">Rejected</span>`;
+            statusBadge = `<span ${tooltip} class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200 cursor-help">Rejected</span>`;
           }
 
-          // Avatar rendering
           const fallbackBadge = getAvatarBubble(item.nurseName);
           const avatarHtml = item.photo
             ? `<div class="relative w-8 h-8 shrink-0">
@@ -266,9 +306,16 @@
                </div>`
             : fallbackBadge;
 
-          // Actions
+          // Document View Button
+          const docCell = item.proofDocumentURL
+            ? `<button type="button" onclick="window.viewDocument(${item.requestId})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EEF2FF] hover:bg-blue-100 text-[#3C52C3] text-[11px] font-semibold transition cursor-pointer">
+                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                 <span>View Doc</span>
+               </button>`
+            : `<span class="text-neutral-300 text-xs">—</span>`;
+
           let actionCell = '';
-          if (item.status === 'pending') {
+          if (st === 'pending') {
             actionCell = `
               <div class="flex items-center justify-center gap-2">
                 <button type="button" 
@@ -295,42 +342,32 @@
 
           return `
             <div class="app-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100">
-              
-              <!-- Col 1: Nurse ID -->
               <div class="col-span-2 text-xs font-mono font-bold text-neutral-500 pl-2">
                 ${item.nurseId}
               </div>
-
-              <!-- Col 2: Nurse Name with Profile Photo -->
-              <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
+              <div class="col-span-2 flex items-center gap-3 min-w-0 pr-4">
                 ${avatarHtml}
                 <div class="min-w-0">
                   <div class="text-xs font-bold text-neutral-900 truncate">${item.nurseName}</div>
                   <div class="text-[10px] text-neutral-400 truncate">${item.email}</div>
                 </div>
               </div>
-
-              <!-- Col 3: Requested Date & Time -->
               <div class="col-span-2 text-xs pr-4">
                 <div class="font-semibold text-neutral-800">${item.requestDate}</div>
                 <div class="text-[11px] font-mono text-neutral-400">${item.startTime} - ${item.endTime}</div>
               </div>
-
-              <!-- Col 4: Reason -->
               <div class="col-span-2 text-xs text-neutral-600 truncate pr-4" title="${item.reason}">
                 ${item.reason}
               </div>
-
-              <!-- Col 5: Status Badge -->
+              <div class="col-span-1 text-center">
+                ${docCell}
+              </div>
               <div class="col-span-1 text-center">
                 ${statusBadge}
               </div>
-
-              <!-- Col 6: Actions Button Group -->
               <div class="col-span-2 flex items-center justify-center">
                 ${actionCell}
               </div>
-
             </div>
           `;
         }).join('');
@@ -338,7 +375,49 @@
         if (window.lucide) lucide.createIcons();
       }
 
-      // Prompt Approval or Rejection Modal
+      // Robust View Document Modal Handler (Image + Native PDF)
+      window.viewDocument = function(requestId) {
+        const item = applicationsList.find(a => a.requestId === requestId);
+        if (!item || !item.proofDocumentURL) return;
+
+        const modal = document.getElementById('doc-modal');
+        const img = document.getElementById('doc-modal-img');
+        const pdf = document.getElementById('doc-modal-pdf');
+        const empty = document.getElementById('doc-modal-empty');
+        const rawLink = document.getElementById('doc-modal-raw-link');
+
+        document.getElementById('doc-modal-title').textContent = `Attachment — ${item.nurseName}`;
+        document.getElementById('doc-modal-subtitle').textContent = `Request Date: ${item.requestDate} (${item.nurseId})`;
+
+        const targetUrl = item.proofDocumentURL;
+        rawLink.href = targetUrl;
+
+        const ext = targetUrl.split('?')[0].split('.').pop().toLowerCase();
+        const isPdf = ext === 'pdf';
+
+        img.classList.add('hidden');
+        pdf.classList.add('hidden');
+        empty.classList.add('hidden');
+
+        if (isPdf) {
+          pdf.src = targetUrl;
+          pdf.classList.remove('hidden');
+        } else {
+          img.onload = () => {
+            img.classList.remove('hidden');
+          };
+          img.onerror = () => {
+            img.classList.add('hidden');
+            empty.classList.remove('hidden');
+          };
+          img.src = targetUrl;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      };
+
       window.promptAction = function(requestId, targetStatus) {
         const item = applicationsList.find(a => a.requestId === requestId);
         if (!item) return;
@@ -383,7 +462,6 @@
         if (window.lucide) lucide.createIcons();
       };
 
-      // Configure Event Handlers
       function initEventHandlers() {
         const searchInput = document.getElementById('app-search-input');
         if (searchInput) searchInput.addEventListener('input', renderTable);
@@ -391,7 +469,6 @@
         const filterStatus = document.getElementById('filter-status');
         if (filterStatus) filterStatus.addEventListener('change', loadApplications);
 
-        // Export Excel Button
         const exportBtn = document.getElementById('export-excel-btn');
         if (exportBtn) {
           exportBtn.addEventListener('click', () => {
@@ -400,7 +477,6 @@
           });
         }
 
-        // Preset Rejection Reason Buttons
         document.querySelectorAll('.preset-reason-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             const input = document.getElementById('reject-reason-input');
@@ -408,7 +484,20 @@
           });
         });
 
-        // Modal Controls
+        const docModal = document.getElementById('doc-modal');
+        const closeDocX = document.getElementById('close-doc-modal-btn');
+        const closeDocBottom = document.getElementById('doc-modal-close-bottom');
+
+        const closeDoc = () => {
+          docModal.classList.add('hidden');
+          docModal.classList.remove('flex');
+          document.getElementById('doc-modal-img').src = '';
+          document.getElementById('doc-modal-pdf').src = '';
+        };
+
+        if (closeDocX) closeDocX.onclick = closeDoc;
+        if (closeDocBottom) closeDocBottom.onclick = closeDoc;
+
         const modal = document.getElementById('action-modal');
         const cancelBtn = document.getElementById('modal-cancel-btn');
         const confirmBtn = document.getElementById('modal-confirm-btn');

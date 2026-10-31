@@ -30,7 +30,7 @@ switch ($action) {
         break;
 }
 
-// 1. Fetch leave applications with nurse details & rejection reasons
+// 1. Fetch leave applications with nurse details, proof document & rejection reason
 function fetchApplications($pdo) {
     try {
         $statusFilter = $_GET['status'] ?? 'All';
@@ -45,6 +45,7 @@ function fetchApplications($pdo) {
                 r.status,
                 r.reason,
                 r.rejectionReason,
+                r.proofDocumentURL,
                 r.createdAt,
                 r.adminID,
                 n.firstName,
@@ -77,6 +78,14 @@ function fetchApplications($pdo) {
             $cleanPhoto = !empty($rawPhoto) ? basename($rawPhoto) : '';
             $avatarPath = !empty($cleanPhoto) ? "/StepCare/images/avatars/nurse/{$cleanPhoto}" : null;
 
+            // 彻底标准化 proofDocumentURL，只提取文件名以避免相对路径错乱
+            $rawDoc = trim($row['proofDocumentURL'] ?? '');
+            $docUrl = null;
+            if (!empty($rawDoc)) {
+                $filename = basename($rawDoc);
+                $docUrl = "/StepCare/nurse/leave-applications/proof_doc/{$filename}";
+            }
+
             $results[] = [
                 'requestId' => (int)$row['requestID'],
                 'nurseId' => $formattedNurseId,
@@ -89,6 +98,7 @@ function fetchApplications($pdo) {
                 'endTime' => date('H:i', strtotime($row['endTime'])),
                 'reason' => $row['reason'] ?: 'No explanation provided.',
                 'rejectionReason' => $row['rejectionReason'] ?? '',
+                'proofDocumentURL' => $docUrl,
                 'status' => strtolower($row['status']),
                 'submittedAt' => date('M d, Y H:i', strtotime($row['createdAt'])),
                 'reviewedBy' => $row['adminFirstName'] ? trim($row['adminFirstName'] . ' ' . ($row['adminLastName'] ?? '')) : null
@@ -116,7 +126,6 @@ function updateApplicationStatus($pdo) {
             return;
         }
 
-        // Fetch application before updating
         $stmt = $pdo->prepare("SELECT nurseID, requestDate FROM nurseRequestOffDay WHERE requestID = ? LIMIT 1");
         $stmt->execute([$requestId]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -126,12 +135,10 @@ function updateApplicationStatus($pdo) {
             return;
         }
 
-        // Update application status & rejection reason
         $reasonToStore = ($newStatus === 'rejected') ? ($rejectionReason ?: 'Scheduling conflicts / Operational requirements') : null;
         $updateStmt = $pdo->prepare("UPDATE nurseRequestOffDay SET status = ?, rejectionReason = ?, adminID = ? WHERE requestID = ?");
         $updateStmt->execute([$newStatus, $reasonToStore, $adminId, $requestId]);
 
-        // Insert notification for the nurse
         $readableDate = date('M d, Y', strtotime($app['requestDate']));
         $notifTitle   = ($newStatus === 'approved') ? "Off-Day Request Approved" : "Off-Day Request Declined";
         $notifMessage = ($newStatus === 'approved')
@@ -153,7 +160,7 @@ function updateApplicationStatus($pdo) {
     }
 }
 
-// 3. Export Leave Applications to Excel (CSV with UTF-8 BOM)
+// 3. Export to Excel
 function exportApplicationsToExcel($pdo) {
     $statusFilter = $_GET['status'] ?? 'All';
     $filename = "StepCare_Applications_Export_" . date('Ymd_His') . ".csv";
@@ -162,9 +169,9 @@ function exportApplicationsToExcel($pdo) {
     header('Content-Disposition: attachment; filename="' . $filename . '"');
 
     $output = fopen('php://output', 'w');
-    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM for Excel
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
-    fputcsv($output, ['Application ID', 'Nurse ID', 'Nurse Name', 'Target Date', 'Start Time', 'End Time', 'Nurse Reason', 'Status', 'Rejection Reason', 'Reviewed By', 'Submission Date']);
+    fputcsv($output, ['Application ID', 'Nurse ID', 'Nurse Name', 'Target Date', 'Start Time', 'End Time', 'Nurse Reason', 'Document Attached', 'Status', 'Rejection Reason', 'Reviewed By', 'Submission Date']);
 
     try {
         $query = "
@@ -177,6 +184,7 @@ function exportApplicationsToExcel($pdo) {
                 r.status,
                 r.reason,
                 r.rejectionReason,
+                r.proofDocumentURL,
                 r.createdAt,
                 n.firstName,
                 n.lastName,
@@ -206,6 +214,7 @@ function exportApplicationsToExcel($pdo) {
                 date('H:i', strtotime($row['startTime'])),
                 date('H:i', strtotime($row['endTime'])),
                 $row['reason'] ?? '',
+                !empty($row['proofDocumentURL']) ? 'Yes' : 'No',
                 strtoupper($row['status'] ?? ''),
                 $row['rejectionReason'] ?? 'N/A',
                 $row['adminFirstName'] ? trim($row['adminFirstName'] . ' ' . ($row['adminLastName'] ?? '')) : 'Pending',
