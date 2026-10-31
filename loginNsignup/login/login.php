@@ -63,10 +63,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt_success->bind_param("i", $user[$idColumn]);
             $stmt_success->execute();
 
-            $_SESSION['userID']       = $user[$idColumn];
+            // Set common session variables
             $_SESSION['firstName']    = $user['firstName'];
             $_SESSION['userPhotoURL'] = $user[$photoColumn] ?? '';
             $_SESSION['role']         = $portal;
+
+            // ★ 修复：根据角色设置专属的 Session 变量
+            if ($portal === 'admin') {
+                $_SESSION['adminID'] = $user['adminID'];
+            } elseif ($portal === 'nurse') {
+                $_SESSION['nurseID'] = $user['nurseID'];
+            } else {
+                $_SESSION['userID'] = $user['userID'];
+            }
 
             header("Location: " . getRedirectByPortal($portal));
             exit();
@@ -83,13 +92,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt_fail = $conn->prepare("UPDATE $table SET failedAttempt = ? WHERE $idColumn = ?");
                 $stmt_fail->bind_param("ii", $attempts, $user[$idColumn]);
                 $stmt_fail->execute();
-                // SPECIFIC WRONG PASSWORD ERROR
                 header("Location: login.html?error=wrong_password&attempt=" . $attempts);
                 exit();
             }
         }
     } else {
-        // SPECIFIC WRONG EMAIL ERROR
         header("Location: login.html?error=wrong_email");
         exit();
     }
