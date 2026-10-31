@@ -32,12 +32,12 @@ if (!$appt) {
     die("Appointment not found or not assigned to you.");
 }
 
-// 2. Fetch Activity Timeline
+// 2. Fetch Activity Timeline (ASC order so oldest is first)
 $stmt = $pdo->prepare("
-    SELECT status, title, message, createdAt 
+    SELECT status, title, message, createdBy, createdAt 
     FROM appointment_timeline 
     WHERE appointmentID = ? 
-    ORDER BY createdAt DESC
+    ORDER BY createdAt ASC
 ");
 $stmt->execute([$appointmentID]);
 $timeline = $stmt->fetchAll(PDO::FETCH_ASSOC);
