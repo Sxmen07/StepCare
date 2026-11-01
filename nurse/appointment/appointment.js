@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200"><span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> In Progress</span>`
       : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-200"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Confirmed</span>`;
 
-    // ★ 生成 Google Maps 导航链接
+    // 生成 Google Maps 导航链接
     const encodedAddress = encodeURIComponent(currentService.locationAddress || '');
     const mapLink = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
 
@@ -131,36 +131,42 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="lg:col-span-6 p-8 lg:pl-10 flex flex-col justify-between">
             
             <div>
-              <div class="flex justify-between items-start mb-4">
+              <div class="flex justify-between items-start mb-6">
                 <div>
                   <p class="text-xs font-bold text-[#3C52C3] uppercase tracking-wider mb-1">${currentService.category}</p>
                   <h3 class="text-xl font-extrabold text-slate-800">${currentService.serviceName}</h3>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 mt-6">
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0 mt-1">
-                  <i data-lucide="map-pin" class="w-5 h-5"></i>
-                </div>
-                <div>
-                  <!-- ★ 修改点：将地址变为可点击的 Google Maps 链接 -->
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mt-2">
+                
+                <div class="flex-1 min-w-0">
                   <a href="${mapLink}" target="_blank" rel="noopener noreferrer" 
-                     class="text-sm font-bold text-slate-800 hover:text-[#3C52C3] hover:underline transition-colors inline-flex items-center gap-1.5 group/link">
-                    ${currentService.locationAddress}
-                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover/link:opacity-100 group-hover/link:text-[#3C52C3] transition-all"></i>
+                     class="group/address flex items-start gap-2.5 cursor-pointer">
+                    
+
+                    <span class="text-base md:text-lg font-extrabold text-slate-800 group-hover/address:text-[#3C52C3] group-hover/address:-translate-y-1 transition-all duration-300 leading-snug">
+                      ${currentService.locationAddress}
+                    </span>
+                    
+                    <span class="shrink-0 animate-soft-bounce group-hover/address:animate-none mt-0.5">
+                      <i data-lucide="navigation" class="w-5 h-5 md:w-6 md:h-6 text-[#3C52C3] group-hover/address:text-[#2563eb] [stroke-width:2.5] transition-colors"></i>
+                    </span>
                   </a>
-                  
-                  <div class="flex items-center gap-4 mt-2">
-                    <p class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                      <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
-                      ${formatDate(currentService.startDateTime)}
-                    </p>
-                    <p class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                      <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-                      ${formatTime(currentService.startDateTime)} - ${formatTime(currentService.endDateTime)}
-                    </p>
-                  </div>
                 </div>
+
+                <!-- 右：日期与时间 -->
+                <div class="shrink-0 flex flex-col gap-1.5 sm:text-right mt-1 sm:mt-0">
+                  <p class="text-sm font-bold text-slate-800 flex items-center sm:justify-end gap-1.5">
+                    <i data-lucide="calendar" class="w-4 h-4 text-[#3C52C3]"></i>
+                    ${formatDate(currentService.startDateTime)}
+                  </p>
+                  <p class="text-sm font-semibold text-slate-500 flex items-center sm:justify-end gap-1.5">
+                    <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                    ${formatTime(currentService.startDateTime)} - ${formatTime(currentService.endDateTime)}
+                  </p>
+                </div>
+
               </div>
 
               ${currentService.specialInstructions ? `
