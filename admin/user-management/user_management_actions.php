@@ -4,264 +4,187 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 session_start();
-header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../config/db_connect.php';
 
 $action = $_GET['action'] ?? '';
 
 switch ($action) {
-    case 'fetch_staff':
-        fetchStaffList($pdo);
+    case 'fetch_users':
+        header('Content-Type: application/json; charset=utf-8');
+        fetchUsersList($pdo);
         break;
 
-    case 'create_staff':
-        createStaffAccount($pdo);
+    case 'toggle_ban':
+        header('Content-Type: application/json; charset=utf-8');
+        toggleUserBanByIC($pdo);
         break;
 
-    case 'update_staff':
-        updateStaffAccount($pdo);
+    case 'batch_ban':
+        header('Content-Type: application/json; charset=utf-8');
+        batchBanUsersByIC($pdo);
+        break;
+
+    case 'export_excel':
+        exportUsersToExcel($pdo);
         break;
 
     default:
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['status' => 'error', 'message' => 'Invalid action parameter']);
         break;
 }
 
-// 1. Fetch unified staff list
-function fetchStaffList($pdo) {
+// 1. Fetch user accounts including IC & banReason
+function fetchUsersList($pdo) {
     try {
-        $staff = [];
+        $stmt = $pdo->query("
+            SELECT userID, firstName, lastName, email, IC, phoneNumber, gender, dateOfBirth, 
+                   accountStatus, banReason, userPhotoURL, createdAt 
+            FROM users 
+            ORDER BY userID DESC
+        ");
 
-        // Fetch admins
-        $adminStmt = $pdo->query("SELECT adminID AS id, firstName, lastName, email, adminPhotoURL FROM admins ORDER BY adminID DESC");
-        if ($adminStmt) {
-            while ($row = $adminStmt->fetch(PDO::FETCH_ASSOC)) {
-                $staff[] = [
-                    'id' => 'ADM-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT),
-                    'raw_id' => (int)$row['id'],
+        $users = [];
+        if ($stmt) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $rawPhoto = $row['userPhotoURL'] ?? '';
+                $cleanPhoto = !empty($rawPhoto) ? basename($rawPhoto) : '';
+                $avatarPath = !empty($cleanPhoto) ? "/StepCare/images/avatars/user/{$cleanPhoto}" : null;
+
+                $users[] = [
+                    'id' => 'USR-' . str_pad($row['userID'], 4, '0', STR_PAD_LEFT),
+                    'raw_id' => (int)$row['userID'],
                     'first_name' => $row['firstName'] ?? '',
                     'last_name' => $row['lastName'] ?? '',
                     'name' => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
                     'email' => $row['email'],
-                    'role' => 'Admin',
-                    'photo' => $row['adminPhotoURL'] ?? null
+                    'ic' => $row['IC'] ?? 'N/A',
+                    'phone' => $row['phoneNumber'] ?? 'N/A',
+                    'gender' => $row['gender'] ?? 'N/A',
+                    'dob' => $row['dateOfBirth'] ?? 'N/A',
+                    'status' => $row['accountStatus'] ?? 'Active',
+                    'ban_reason' => $row['banReason'] ?? '',
+                    'photo' => $avatarPath,
+                    'created_at' => !empty($row['createdAt']) ? date('Y-m-d', strtotime($row['createdAt'])) : 'N/A'
                 ];
             }
         }
 
-        // Fetch nurses
-        $nurseStmt = $pdo->query("SELECT nurseID AS id, firstName, lastName, email, nursePhotoURL FROM nurses ORDER BY nurseID DESC");
-        if ($nurseStmt) {
-            while ($row = $nurseStmt->fetch(PDO::FETCH_ASSOC)) {
-                $staff[] = [
-                    'id' => 'NUR-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT),
-                    'raw_id' => (int)$row['id'],
-                    'first_name' => $row['firstName'] ?? '',
-                    'last_name' => $row['lastName'] ?? '',
-                    'name' => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
-                    'email' => $row['email'],
-                    'role' => 'Nurse',
-                    'photo' => $row['nursePhotoURL'] ?? null
-                ];
-            }
-        }
-
-        echo json_encode(['status' => 'success', 'data' => $staff]);
+        echo json_encode(['status' => 'success', 'data' => $users]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }
 
-// 2. Create staff account
-function createStaffAccount($pdo) {
+// 2. Toggle Ban / Unban with Reason support
+function toggleUserBanByIC($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
+        $ic = trim($input['ic'] ?? '');
+        $targetStatus = trim($input['status'] ?? '');
+        $reason = trim($input['reason'] ?? '');
 
-        $firstName   = trim($input['firstName'] ?? '');
-        $lastName    = trim($input['lastName'] ?? '');
-        $emailPrefix = trim($input['emailPrefix'] ?? '');
-        $role        = trim($input['role'] ?? '');
-
-        if (empty($firstName) || empty($lastName) || empty($emailPrefix) || empty($role)) {
-            echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+        if (empty($ic) || !in_array($targetStatus, ['Active', 'Banned'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Valid IC number and target status are required.']);
             return;
         }
 
-        if (!in_array($role, ['Admin', 'Nurse'])) {
-            echo json_encode(['status' => 'error', 'message' => 'Selected role is invalid.']);
-            return;
-        }
-
-        $domainSuffix = ($role === 'Nurse') ? '@nurse.stepcare.com' : '@admin.stepcare.com';
-        $fullEmail = strtolower($emailPrefix) . $domainSuffix;
-
-        if (!filter_var($fullEmail, FILTER_VALIDATE_EMAIL)) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid email prefix entered.']);
-            return;
-        }
-
-        // Check duplicates
-        $checkAdmin = $pdo->prepare("SELECT adminID FROM admins WHERE email = ? LIMIT 1");
-        $checkAdmin->execute([$fullEmail]);
-        if ($checkAdmin->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'This email already belongs to an existing admin.']);
-            return;
-        }
-
-        $checkNurse = $pdo->prepare("SELECT nurseID FROM nurses WHERE email = ? LIMIT 1");
-        $checkNurse->execute([$fullEmail]);
-        if ($checkNurse->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'This email already belongs to an existing nurse.']);
-            return;
-        }
-
-        if ($role === 'Admin') {
-            $stmt = $pdo->prepare("INSERT INTO admins (firstName, lastName, email, passwordHash) VALUES (?, ?, ?, 'temp')");
-            $stmt->execute([$firstName, $lastName, $fullEmail]);
-            $newId = $pdo->lastInsertId();
-
-            $cleanFirst = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
-            $defaultPassword = $cleanFirst . $newId;
-            $hashedPassword = password_hash($defaultPassword, PASSWORD_DEFAULT);
-
-            $updateStmt = $pdo->prepare("UPDATE admins SET passwordHash = ? WHERE adminID = ?");
-            $updateStmt->execute([$hashedPassword, $newId]);
-
-            $formattedId = 'ADM-' . str_pad($newId, 3, '0', STR_PAD_LEFT);
+        if ($targetStatus === 'Banned') {
+            $stmt = $pdo->prepare("UPDATE users SET accountStatus = 'Banned', banReason = ? WHERE IC = ?");
+            $stmt->execute([$reason ?: 'Violated community terms', $ic]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash) VALUES (?, ?, ?, 'temp')");
-            $stmt->execute([$firstName, $lastName, $fullEmail]);
-            $newId = $pdo->lastInsertId();
-
-            $cleanFirst = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
-            $defaultPassword = $cleanFirst . $newId;
-            $hashedPassword = password_hash($defaultPassword, PASSWORD_DEFAULT);
-
-            $updateStmt = $pdo->prepare("UPDATE nurses SET passwordHash = ? WHERE nurseID = ?");
-            $updateStmt->execute([$hashedPassword, $newId]);
-
-            $formattedId = 'NUR-' . str_pad($newId, 3, '0', STR_PAD_LEFT);
+            // Clear ban reason upon reactivation
+            $stmt = $pdo->prepare("UPDATE users SET accountStatus = 'Active', banReason = NULL WHERE IC = ?");
+            $stmt->execute([$ic]);
         }
 
+        $statusText = ($targetStatus === 'Banned') ? 'banned' : 'reactivated';
         echo json_encode([
             'status' => 'success',
-            'message' => 'Staff account created successfully.',
-            'created_user' => [
-                'id' => $formattedId,
-                'name' => "{$firstName} {$lastName}",
-                'email' => $fullEmail,
-                'role' => $role,
-                'default_password' => $defaultPassword
-            ]
+            'message' => "All accounts linked to IC {$ic} have been {$statusText}."
         ]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }
 
-// 3. Update staff details with cross-table migration support
-function updateStaffAccount($pdo) {
+// 3. Batch Ban multiple users with a unified Reason
+function batchBanUsersByIC($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
+        $ics = $input['ics'] ?? [];
+        $reason = trim($input['reason'] ?? 'Batch administrative sanction');
 
-        $rawId       = (int)($input['rawId'] ?? 0);
-        $originalRole= trim($input['originalRole'] ?? '');
-        $newRole     = trim($input['role'] ?? '');
-        $firstName   = trim($input['firstName'] ?? '');
-        $lastName    = trim($input['lastName'] ?? '');
-        $emailPrefix = trim($input['emailPrefix'] ?? '');
-
-        if (!$rawId || empty($originalRole) || empty($newRole) || empty($firstName) || empty($lastName) || empty($emailPrefix)) {
-            echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+        if (!is_array($ics) || empty($ics)) {
+            echo json_encode(['status' => 'error', 'message' => 'No ICs provided for batch ban.']);
             return;
         }
 
-        $domainSuffix = ($newRole === 'Nurse') ? '@nurse.stepcare.com' : '@admin.stepcare.com';
-        $fullEmail = strtolower($emailPrefix) . $domainSuffix;
+        $cleanIcs = array_filter(array_map('trim', $ics), function($item) {
+            return !empty($item) && $item !== 'N/A';
+        });
 
-        if (!filter_var($fullEmail, FILTER_VALIDATE_EMAIL)) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid email format.']);
+        if (empty($cleanIcs)) {
+            echo json_encode(['status' => 'error', 'message' => 'Valid IC numbers are required.']);
             return;
         }
 
-        // Email uniqueness validation (excluding current user)
-        $adminCheck = $pdo->prepare("SELECT adminID FROM admins WHERE email = ? AND NOT (adminID = ? AND ? = 'Admin') LIMIT 1");
-        $adminCheck->execute([$fullEmail, $rawId, $originalRole]);
-        if ($adminCheck->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'This email is already in use by another admin.']);
-            return;
-        }
+        $placeholders = implode(',', array_fill(0, count($cleanIcs), '?'));
+        $stmt = $pdo->prepare("UPDATE users SET accountStatus = 'Banned', banReason = ? WHERE IC IN ($placeholders)");
+        $params = array_merge([$reason], array_values($cleanIcs));
+        $stmt->execute($params);
 
-        $nurseCheck = $pdo->prepare("SELECT nurseID FROM nurses WHERE email = ? AND NOT (nurseID = ? AND ? = 'Nurse') LIMIT 1");
-        $nurseCheck->execute([$fullEmail, $rawId, $originalRole]);
-        if ($nurseCheck->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'This email is already in use by another nurse.']);
-            return;
-        }
-
-        // Case A: Role unchanged
-        if ($originalRole === $newRole) {
-            if ($newRole === 'Admin') {
-                $stmt = $pdo->prepare("UPDATE admins SET firstName = ?, lastName = ?, email = ? WHERE adminID = ?");
-                $stmt->execute([$firstName, $lastName, $fullEmail, $rawId]);
-            } else {
-                $stmt = $pdo->prepare("UPDATE nurses SET firstName = ?, lastName = ?, email = ? WHERE nurseID = ?");
-                $stmt->execute([$firstName, $lastName, $fullEmail, $rawId]);
-            }
-            echo json_encode(['status' => 'success', 'message' => 'Staff details updated successfully.']);
-            return;
-        }
-
-        // Case B: Cross-table Role change (Admin -> Nurse or Nurse -> Admin)
-        if ($originalRole === 'Admin' && $newRole === 'Nurse') {
-            // Retrieve admin password hash and photo before moving
-            $srcStmt = $pdo->prepare("SELECT passwordHash, adminPhotoURL FROM admins WHERE adminID = ? LIMIT 1");
-            $srcStmt->execute([$rawId]);
-            $src = $srcStmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$src) {
-                echo json_encode(['status' => 'error', 'message' => 'Original admin account not found.']);
-                return;
-            }
-
-            // Insert into nurses table
-            $insStmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash, nursePhotoURL) VALUES (?, ?, ?, ?, ?)");
-            $insStmt->execute([$firstName, $lastName, $fullEmail, $src['passwordHash'], $src['adminPhotoURL']]);
-
-            // Remove from admins table
-            $delStmt = $pdo->prepare("DELETE FROM admins WHERE adminID = ?");
-            $delStmt->execute([$rawId]);
-
-            echo json_encode(['status' => 'success', 'message' => 'Staff transferred to Nurse role successfully.']);
-            return;
-        }
-
-        if ($originalRole === 'Nurse' && $newRole === 'Admin') {
-            // Retrieve nurse password hash and photo before moving
-            $srcStmt = $pdo->prepare("SELECT passwordHash, nursePhotoURL FROM nurses WHERE nurseID = ? LIMIT 1");
-            $srcStmt->execute([$rawId]);
-            $src = $srcStmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$src) {
-                echo json_encode(['status' => 'error', 'message' => 'Original nurse account not found.']);
-                return;
-            }
-
-            // Insert into admins table
-            $insStmt = $pdo->prepare("INSERT INTO admins (firstName, lastName, email, passwordHash, adminPhotoURL) VALUES (?, ?, ?, ?, ?)");
-            $insStmt->execute([$firstName, $lastName, $fullEmail, $src['passwordHash'], $src['nursePhotoURL']]);
-
-            // Remove from nurses table
-            $delStmt = $pdo->prepare("DELETE FROM nurses WHERE nurseID = ?");
-            $delStmt->execute([$rawId]);
-
-            echo json_encode(['status' => 'success', 'message' => 'Staff transferred to Admin role successfully.']);
-            return;
-        }
-
+        $count = $stmt->rowCount();
+        echo json_encode([
+            'status' => 'success',
+            'message' => "Successfully banned all accounts for the selected {$count} identity record(s)."
+        ]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
+}
+
+// 4. Export users to Excel CSV (Includes Ban Reason column)
+function exportUsersToExcel($pdo) {
+    $filterStatus = $_GET['status'] ?? 'All';
+    $filename = "StepCare_Users_Export_" . date('Ymd_His') . ".csv";
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+
+    fputcsv($output, ['User ID', 'Full Name', 'IC / Passport', 'Email', 'Phone Number', 'Gender', 'Date of Birth', 'Account Status', 'Ban Reason', 'Registered Date']);
+
+    try {
+        if ($filterStatus === 'Active' || $filterStatus === 'Banned') {
+            $stmt = $pdo->prepare("SELECT userID, firstName, lastName, IC, email, phoneNumber, gender, dateOfBirth, accountStatus, banReason, createdAt FROM users WHERE accountStatus = ? ORDER BY userID ASC");
+            $stmt->execute([$filterStatus]);
+        } else {
+            $stmt = $pdo->query("SELECT userID, firstName, lastName, IC, email, phoneNumber, gender, dateOfBirth, accountStatus, banReason, createdAt FROM users ORDER BY userID ASC");
+        }
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            fputcsv($output, [
+                'USR-' . str_pad($row['userID'], 4, '0', STR_PAD_LEFT),
+                trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
+                $row['IC'] ?? 'N/A',
+                $row['email'] ?? 'N/A',
+                $row['phoneNumber'] ?? 'N/A',
+                $row['gender'] ?? 'N/A',
+                $row['dateOfBirth'] ?? 'N/A',
+                $row['accountStatus'] ?? 'Active',
+                $row['banReason'] ?? 'N/A',
+                $row['createdAt'] ?? 'N/A'
+            ]);
+        }
+    } catch (Exception $e) {
+        fputcsv($output, ['Export Error: ' . $e->getMessage()]);
+    }
+
+    fclose($output);
+    exit;
 }
 ?>
