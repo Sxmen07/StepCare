@@ -77,6 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200"><span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> In Progress</span>`
       : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-200"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Confirmed</span>`;
 
+    // ★ 生成 Google Maps 导航链接
+    const encodedAddress = encodeURIComponent(currentService.locationAddress || '');
+    const mapLink = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+
     activeContainer.innerHTML = `
       <div class="bg-white rounded-[2rem] shadow-sm border border-neutral-200/80 overflow-hidden relative group transition-all duration-300 hover:shadow-md">
         
@@ -139,7 +143,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   <i data-lucide="map-pin" class="w-5 h-5"></i>
                 </div>
                 <div>
-                  <p class="text-sm font-bold text-slate-800">${currentService.locationAddress}</p>
+                  <!-- ★ 修改点：将地址变为可点击的 Google Maps 链接 -->
+                  <a href="${mapLink}" target="_blank" rel="noopener noreferrer" 
+                     class="text-sm font-bold text-slate-800 hover:text-[#3C52C3] hover:underline transition-colors inline-flex items-center gap-1.5 group/link">
+                    ${currentService.locationAddress}
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover/link:opacity-100 group-hover/link:text-[#3C52C3] transition-all"></i>
+                  </a>
+                  
                   <div class="flex items-center gap-4 mt-2">
                     <p class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
                       <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
@@ -252,10 +262,9 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    // ★ 添加动画效果
     if (direction) {
       calendarDays.classList.remove('calendar-anim-left', 'calendar-anim-right');
-      void calendarDays.offsetWidth; // 强制重绘
+      void calendarDays.offsetWidth; 
       if (direction === 'left') calendarDays.classList.add('calendar-anim-left');
       if (direction === 'right') calendarDays.classList.add('calendar-anim-right');
     }
@@ -297,16 +306,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <div onclick="window.location.href='appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}'" 
              class="schedule-item bg-white rounded-2xl p-5 flex items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/40 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
           
-          <!-- Time (Fixed Width, No Box) -->
           <div class="w-20 shrink-0 flex flex-col justify-center">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Time</span>
             <span class="text-sm font-extrabold text-slate-800 whitespace-nowrap">${formatTime(appt.startDateTime)}</span>
           </div>
 
-          <!-- Vertical Divider -->
           <div class="w-px h-10 bg-slate-200 shrink-0"></div>
 
-          <!-- Details -->
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-bold text-slate-900 truncate">${appt.serviceName}</h4>
             <div class="flex items-center gap-3 mt-1.5 text-xs font-medium text-slate-500">
@@ -314,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
 
-          <!-- Status -->
           <div class="shrink-0 pr-1">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider border ${statusColor}">
               ${statusLabel}
@@ -329,18 +334,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.selectDate = function(dateStr) {
     selectedDateObj = new Date(dateStr + 'T00:00:00'); 
-    renderCalendar(); // 点击日期时不触发切换月份的滑动动画，保持平滑更新
+    renderCalendar(); 
     renderDayAppointments();
   };
 
   document.getElementById('cal-prev').addEventListener('click', () => {
     currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-    renderCalendar('left'); // 向左滑动
+    renderCalendar('left');
   });
 
   document.getElementById('cal-next').addEventListener('click', () => {
     currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-    renderCalendar('right'); // 向右滑动
+    renderCalendar('right');
   });
 
   renderCalendar();
