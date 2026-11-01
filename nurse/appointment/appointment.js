@@ -179,11 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Calendar & Schedule Logic
   // ==========================================
   
-  // Combine Current Service and Upcoming for the calendar mapping
   const calendarData = [...upcomingSchedules];
   if (currentService) calendarData.push(currentService);
 
-  // Group appointments by Date (YYYY-MM-DD)
   const apptsByDate = {};
   calendarData.forEach(appt => {
     const dateKey = appt.startDateTime.split(' ')[0];
@@ -191,8 +189,8 @@ document.addEventListener("DOMContentLoaded", () => {
     apptsByDate[dateKey].push(appt);
   });
 
-  let currentCalDate = new Date(); // Tracks which month we are viewing
-  let selectedDateObj = new Date(); // Tracks which day is clicked
+  let currentCalDate = new Date(); 
+  let selectedDateObj = new Date(); 
 
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   
@@ -202,7 +200,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const dayApptCount = document.getElementById('day-appt-count');
   const dayAppointmentsList = document.getElementById('day-appointments-list');
 
-  // Helper to format Date object to YYYY-MM-DD
   const toYYYYMMDD = (d) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -210,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${y}-${m}-${day}`;
   };
 
-  function renderCalendar() {
+  function renderCalendar(direction = null) {
     calMonthYear.textContent = `${monthNames[currentCalDate.getMonth()]} ${currentCalDate.getFullYear()}`;
     calendarDays.innerHTML = '';
 
@@ -220,12 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     
-    // Empty cells before 1st day
     for (let i = 0; i < firstDay; i++) {
       calendarDays.innerHTML += `<div></div>`;
     }
 
-    // Days in month
     const todayStr = toYYYYMMDD(new Date());
     const selectedStr = toYYYYMMDD(selectedDateObj);
 
@@ -256,13 +251,20 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
     }
+
+    // ★ 添加动画效果
+    if (direction) {
+      calendarDays.classList.remove('calendar-anim-left', 'calendar-anim-right');
+      void calendarDays.offsetWidth; // 强制重绘
+      if (direction === 'left') calendarDays.classList.add('calendar-anim-left');
+      if (direction === 'right') calendarDays.classList.add('calendar-anim-right');
+    }
   }
 
   function renderDayAppointments() {
     const dateStr = toYYYYMMDD(selectedDateObj);
     const todayStr = toYYYYMMDD(new Date());
     
-    // Update Title
     if (dateStr === todayStr) {
       selectedDateTitle.textContent = "Today's Schedule";
     } else {
@@ -293,22 +295,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return `
         <div onclick="window.location.href='appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}'" 
-             class="schedule-item bg-white rounded-2xl p-4 flex items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/40 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
+             class="schedule-item bg-white rounded-2xl p-5 flex items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/40 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
           
-          <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-[#3C52C3]/5 transition-colors">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time</span>
-            <span class="text-xs font-black text-slate-800 mt-0.5">${formatTime(appt.startDateTime)}</span>
+          <!-- Time (Fixed Width, No Box) -->
+          <div class="w-20 shrink-0 flex flex-col justify-center">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Time</span>
+            <span class="text-sm font-extrabold text-slate-800 whitespace-nowrap">${formatTime(appt.startDateTime)}</span>
           </div>
 
+          <!-- Vertical Divider -->
+          <div class="w-px h-10 bg-slate-200 shrink-0"></div>
+
+          <!-- Details -->
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-bold text-slate-900 truncate">${appt.serviceName}</h4>
-            <div class="flex items-center gap-3 mt-1 text-xs font-medium text-slate-500">
-              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${appt.firstName} ${appt.lastName}</span>
+            <div class="flex items-center gap-3 mt-1.5 text-xs font-medium text-slate-500">
+              <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${appt.firstName} ${appt.lastName}</span>
             </div>
           </div>
 
-          <div class="shrink-0 pr-2">
-            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${statusColor}">
+          <!-- Status -->
+          <div class="shrink-0 pr-1">
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider border ${statusColor}">
               ${statusLabel}
             </span>
           </div>
@@ -319,25 +327,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  // Expose selectDate to global scope for HTML onclick
   window.selectDate = function(dateStr) {
-    selectedDateObj = new Date(dateStr + 'T00:00:00'); // Prevent timezone offset issues
-    renderCalendar();
+    selectedDateObj = new Date(dateStr + 'T00:00:00'); 
+    renderCalendar(); // 点击日期时不触发切换月份的滑动动画，保持平滑更新
     renderDayAppointments();
   };
 
-  // Navigation
   document.getElementById('cal-prev').addEventListener('click', () => {
     currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-    renderCalendar();
+    renderCalendar('left'); // 向左滑动
   });
 
   document.getElementById('cal-next').addEventListener('click', () => {
     currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-    renderCalendar();
+    renderCalendar('right'); // 向右滑动
   });
 
-  // Initial Render
   renderCalendar();
   renderDayAppointments();
 });
