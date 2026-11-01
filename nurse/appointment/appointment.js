@@ -77,15 +77,11 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200"><span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> In Progress</span>`
       : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-200"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Confirmed</span>`;
 
-    // 生成 Google Maps 导航链接
     const encodedAddress = encodeURIComponent(currentService.locationAddress || '');
     const mapLink = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
 
     activeContainer.innerHTML = `
       <div class="bg-white rounded-[2rem] shadow-sm border border-neutral-200/80 overflow-hidden relative group transition-all duration-300 hover:shadow-md">
-        
-        <!-- Top accent bar -->
-        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3C52C3] to-[#10B981]"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12">
           
@@ -138,33 +134,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
               </div>
 
-              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mt-2">
+              <!-- ALIGNED SECTION: Location & Date/Time on the same row -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mt-2">
                 
+                <!-- Left: Address / Location link -->
                 <div class="flex-1 min-w-0">
                   <a href="${mapLink}" target="_blank" rel="noopener noreferrer" 
-                     class="group/address flex items-start gap-2.5 cursor-pointer">
-                    
-
+                     class="group/address flex items-center gap-2.5 cursor-pointer">
                     <span class="text-base md:text-lg font-extrabold text-slate-800 group-hover/address:text-[#3C52C3] group-hover/address:-translate-y-1 transition-all duration-300 leading-snug">
                       ${currentService.locationAddress}
                     </span>
                     
-                    <span class="shrink-0 animate-soft-bounce group-hover/address:animate-none mt-0.5">
+                    <span class="shrink-0 animate-soft-bounce group-hover/address:animate-none">
                       <i data-lucide="navigation" class="w-5 h-5 md:w-6 md:h-6 text-[#3C52C3] group-hover/address:text-[#2563eb] [stroke-width:2.5] transition-colors"></i>
                     </span>
                   </a>
                 </div>
 
-                <!-- 右：日期与时间 -->
-                <div class="shrink-0 flex flex-col gap-1.5 sm:text-right mt-1 sm:mt-0">
-                  <p class="text-sm font-bold text-slate-800 flex items-center sm:justify-end gap-1.5">
-                    <i data-lucide="calendar" class="w-4 h-4 text-[#3C52C3]"></i>
+                <!-- Right: Date on top, Time on bottom, separated by a grey line with hover effect -->
+                <div class="group/datetime shrink-0 flex flex-col items-start sm:items-end gap-1.5 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-6 border-neutral-100 cursor-pointer transition-all duration-300 hover:scale-[1.02]">
+                  <div class="text-sm font-bold text-slate-800 group-hover/datetime:text-[#3C52C3] transition-colors">
                     ${formatDate(currentService.startDateTime)}
-                  </p>
-                  <p class="text-sm font-semibold text-slate-500 flex items-center sm:justify-end gap-1.5">
-                    <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                  </div>
+                  
+                  <!-- Grey divider line that highlights slightly on hover -->
+                  <div class="w-full sm:w-28 h-px bg-neutral-200 group-hover/datetime:bg-[#3C52C3]/40 transition-colors"></div>
+
+                  <div class="text-sm font-semibold text-slate-500 group-hover/datetime:text-slate-700 transition-colors">
                     ${formatTime(currentService.startDateTime)} - ${formatTime(currentService.endDateTime)}
-                  </p>
+                  </div>
                 </div>
 
               </div>
