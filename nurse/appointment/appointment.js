@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const summaryContainer = document.getElementById('summary-cards-container');
   const activeContainer = document.getElementById('active-service-container');
-  const upcomingContainer = document.getElementById('upcoming-schedules-container');
 
   // Format Helpers
   const formatDate = (dtStr) => {
@@ -177,67 +176,168 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
-  // 2. Render Upcoming Schedules
+  // 2. Calendar & Schedule Logic
   // ==========================================
-  if (upcomingSchedules.length === 0) {
-    upcomingContainer.innerHTML = `
-      <div class="bg-white rounded-2xl p-8 border border-neutral-200/60 flex items-center justify-center">
-        <p class="text-sm text-neutral-500 font-medium">No upcoming schedules found.</p>
-      </div>
-    `;
-  } else {
-    let html = `
-      <div class="flex items-center justify-between px-2 mb-2">
-        <h3 class="text-lg font-bold text-slate-800">Upcoming Schedules</h3>
-        <span class="text-xs font-semibold text-slate-400">${upcomingSchedules.length} appointments</span>
-      </div>
-      <div class="flex flex-col gap-3">
-    `;
+  
+  // Combine Current Service and Upcoming for the calendar mapping
+  const calendarData = [...upcomingSchedules];
+  if (currentService) calendarData.push(currentService);
 
-    upcomingSchedules.forEach((appt, index) => {
-      const dateObj = new Date(appt.startDateTime.replace(' ', 'T'));
-      const month = dateObj.toLocaleString('en-US', { month: 'short' });
-      const day = dateObj.getDate();
-      
-      const statusColor = appt.appointmentStatus === 'confirmed' 
-        ? 'bg-blue-50 text-blue-700 border-blue-200' 
-        : 'bg-amber-50 text-amber-700 border-amber-200';
-      
-      const statusLabel = appt.appointmentStatus === 'confirmed' ? 'Confirmed' : 'Pending';
+  // Group appointments by Date (YYYY-MM-DD)
+  const apptsByDate = {};
+  calendarData.forEach(appt => {
+    const dateKey = appt.startDateTime.split(' ')[0];
+    if (!apptsByDate[dateKey]) apptsByDate[dateKey] = [];
+    apptsByDate[dateKey].push(appt);
+  });
 
-      html += `
+  let currentCalDate = new Date(); // Tracks which month we are viewing
+  let selectedDateObj = new Date(); // Tracks which day is clicked
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  const calMonthYear = document.getElementById('cal-month-year');
+  const calendarDays = document.getElementById('calendar-days');
+  const selectedDateTitle = document.getElementById('selected-date-title');
+  const dayApptCount = document.getElementById('day-appt-count');
+  const dayAppointmentsList = document.getElementById('day-appointments-list');
+
+  // Helper to format Date object to YYYY-MM-DD
+  const toYYYYMMDD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  function renderCalendar() {
+    calMonthYear.textContent = `${monthNames[currentCalDate.getMonth()]} ${currentCalDate.getFullYear()}`;
+    calendarDays.innerHTML = '';
+
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Empty cells before 1st day
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.innerHTML += `<div></div>`;
+    }
+
+    // Days in month
+    const todayStr = toYYYYMMDD(new Date());
+    const selectedStr = toYYYYMMDD(selectedDateObj);
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const hasAppt = apptsByDate[dateStr] && apptsByDate[dateStr].length > 0;
+      
+      let baseClass = "w-9 h-9 mx-auto flex flex-col items-center justify-center rounded-full text-sm font-semibold cursor-pointer transition-colors relative";
+      let activeClass = "";
+      
+      if (dateStr === selectedStr) {
+        activeClass = "bg-[#3C52C3] text-white shadow-md";
+      } else if (dateStr === todayStr) {
+        activeClass = "bg-[#3C52C3]/10 text-[#3C52C3]";
+      } else {
+        activeClass = "text-slate-700 hover:bg-slate-100";
+      }
+
+      let dotHtml = '';
+      if (hasAppt) {
+        dotHtml = `<span class="absolute bottom-1 w-1 h-1 rounded-full ${dateStr === selectedStr ? 'bg-white' : 'bg-[#3C52C3]'}"></span>`;
+      }
+
+      calendarDays.innerHTML += `
+        <div class="${baseClass} ${activeClass}" onclick="selectDate('${dateStr}')">
+          ${i}
+          ${dotHtml}
+        </div>
+      `;
+    }
+  }
+
+  function renderDayAppointments() {
+    const dateStr = toYYYYMMDD(selectedDateObj);
+    const todayStr = toYYYYMMDD(new Date());
+    
+    // Update Title
+    if (dateStr === todayStr) {
+      selectedDateTitle.textContent = "Today's Schedule";
+    } else {
+      selectedDateTitle.textContent = selectedDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+
+    const appts = apptsByDate[dateStr] || [];
+    dayApptCount.textContent = `${appts.length} appointment${appts.length === 1 ? '' : 's'}`;
+
+    if (appts.length === 0) {
+      dayAppointmentsList.innerHTML = `
+        <div class="py-12 text-center flex flex-col items-center">
+          <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+            <i data-lucide="calendar-x" class="w-8 h-8 text-slate-300"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-600">No appointments scheduled</p>
+          <p class="text-xs text-slate-400 mt-1">Enjoy your free time!</p>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    dayAppointmentsList.innerHTML = appts.map((appt, index) => {
+      const isConfirmed = appt.appointmentStatus === 'confirmed';
+      const statusColor = isConfirmed ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+      const statusLabel = isConfirmed ? 'Confirmed' : 'Pending';
+
+      return `
         <div onclick="window.location.href='appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}'" 
-             class="schedule-item bg-white rounded-2xl p-4 flex flex-col md:flex-row items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/30 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
+             class="schedule-item bg-white rounded-2xl p-4 flex items-center gap-5 border border-neutral-200/80 hover:border-[#3C52C3]/40 hover:shadow-md transition-all duration-300 group cursor-pointer" style="animation-delay: ${index * 0.05}s">
           
-          <!-- Date Badge -->
-          <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-[#3C52C3]/5 group-hover:border-[#3C52C3]/20 transition-colors">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${month}</span>
-            <span class="text-xl font-black text-slate-800 leading-none mt-0.5">${day}</span>
+          <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-[#3C52C3]/5 transition-colors">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time</span>
+            <span class="text-xs font-black text-slate-800 mt-0.5">${formatTime(appt.startDateTime)}</span>
           </div>
 
-          <!-- Service & Patient Info -->
-          <div class="flex-1 min-w-0 text-center md:text-left">
-            <h4 class="text-base font-bold text-slate-900 truncate">${appt.serviceName}</h4>
-            <div class="flex items-center justify-center md:justify-start gap-3 mt-1 text-xs font-medium text-slate-500">
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-bold text-slate-900 truncate">${appt.serviceName}</h4>
+            <div class="flex items-center gap-3 mt-1 text-xs font-medium text-slate-500">
               <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${appt.firstName} ${appt.lastName}</span>
-              <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${formatTime(appt.startDateTime)}</span>
             </div>
           </div>
 
-          <!-- Status Badge -->
-          <div class="shrink-0">
-            <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider border ${statusColor}">
+          <div class="shrink-0 pr-2">
+            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${statusColor}">
               ${statusLabel}
             </span>
           </div>
-
         </div>
       `;
-    });
-
-    html += `</div>`;
-    upcomingContainer.innerHTML = html;
+    }).join('');
+    
     if (window.lucide) lucide.createIcons();
   }
+
+  // Expose selectDate to global scope for HTML onclick
+  window.selectDate = function(dateStr) {
+    selectedDateObj = new Date(dateStr + 'T00:00:00'); // Prevent timezone offset issues
+    renderCalendar();
+    renderDayAppointments();
+  };
+
+  // Navigation
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+    renderCalendar();
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+    renderCalendar();
+  });
+
+  // Initial Render
+  renderCalendar();
+  renderDayAppointments();
 });
