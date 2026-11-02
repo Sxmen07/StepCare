@@ -119,18 +119,21 @@ document.addEventListener("DOMContentLoaded", () => {
     historyList.innerHTML = filtered.map((appt, index) => {
       const meta = getStatusMeta(appt.appointmentStatus);
       
+      // CHANGED: Wrapped the row in an <a> tag and added cursor-pointer
       return `
-        <div class="history-item w-full flex flex-col md:flex-row md:items-center gap-5 py-6 px-4 border-b border-neutral-200/70 hover:bg-slate-50/80 transition-colors duration-200 group" style="animation-delay: ${index * 0.05}s">
+        <a href="../appointment/appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}" 
+           class="history-item w-full flex flex-col md:flex-row md:items-center gap-5 py-6 px-4 border-b border-neutral-200/70 hover:bg-slate-50/80 transition-colors duration-200 group cursor-pointer" 
+           style="animation-delay: ${index * 0.05}s">
           
           <!-- Date Badge -->
-          <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm">
+          <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm group-hover:border-[#3C52C3]/30 transition-colors">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${formatDate(appt.startDateTime).split(',')[0].split(' ')[0]}</span>
             <span class="text-xl font-black text-slate-800 leading-none mt-0.5">${new Date(appt.startDateTime.replace(' ', 'T')).getDate()}</span>
           </div>
 
           <!-- Details -->
           <div class="flex-1 min-w-0">
-            <h4 class="text-lg font-bold text-slate-900 truncate">${appt.serviceName}</h4>
+            <h4 class="text-lg font-bold text-slate-900 truncate group-hover:text-[#3C52C3] transition-colors">${appt.serviceName}</h4>
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm font-medium text-slate-500">
               <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-4 h-4"></i> ${appt.firstName} ${appt.lastName}</span>
               <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4"></i> ${formatTime(appt.startDateTime)}</span>
@@ -148,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </span>
           </div>
 
-        </div>
+        </a>
       `;
     }).join('');
     
@@ -164,11 +167,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function moveSlider(chip) {
     if (!filterSlider || !chip) return;
     
-    // Update text colors
     filterChips.forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
 
-    // Calculate position and width for the sliding pill
     const left = chip.offsetLeft;
     const width = chip.offsetWidth;
 
@@ -176,34 +177,25 @@ document.addEventListener("DOMContentLoaded", () => {
     filterSlider.style.width = `${width}px`;
   }
 
-  // Initialize slider position on page load
   window.addEventListener('load', () => {
     const activeChip = document.querySelector('.filter-chip.active');
     if (activeChip) {
-      // Disable transition momentarily to snap perfectly to the first button
       filterSlider.style.transition = 'none';
       moveSlider(activeChip);
-      
-      // Re-enable transition after a tiny delay so future clicks animate
       setTimeout(() => {
         filterSlider.style.transition = 'left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
       }, 50);
     }
   });
 
-  // Handle filter clicks
   filterChips.forEach(chip => {
     chip.addEventListener('click', function() {
-      // Move the slider
       moveSlider(this);
-
-      // Update state and re-render the list
       activeStatusFilter = this.dataset.filter;
       renderHistory();
     });
   });
 
-  // Handle window resize to keep slider aligned perfectly
   window.addEventListener('resize', () => {
     const activeChip = document.querySelector('.filter-chip.active');
     if (activeChip) {
