@@ -30,3 +30,30 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* NEW: Filter Chips */
+.filter-chip {
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.filter-chip:hover {
+  border-color: #cbd5e1;
+  color: #334155;
+  background-color: #f8fafc;
+}
+
+.filter-chip.is-active {
+  background-color: #3C52C3;
+  color: #ffffff;
+  border-color: #3C52C3;
+  box-shadow: 0 4px 12px rgba(60, 82, 195, 0.2);
+}

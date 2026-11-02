@@ -1,14 +1,16 @@
 // nurse/appointmentHistory/appointmentHistory.js
 document.addEventListener("DOMContentLoaded", () => {
-  // 修复 Topbar 标题
+  // Setup Topbar Title
   const topbarTitle = document.getElementById('topbar-page-title');
   if (topbarTitle) topbarTitle.textContent = 'Appointment History';
 
   if (window.lucide) lucide.createIcons();
 
+  // Load Data
   const historyData = window.historyData || [];
   const stats = window.statsData || { completed: 0, cancelled: 0, earnings: 0 };
 
+  // DOM Elements
   const summaryContainer = document.getElementById('summary-cards-container');
   const historyList = document.getElementById('history-list');
   const searchInput = document.getElementById('searchInput');
@@ -24,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ==========================================
-  // 0. Render Summary Cards
+  // 1. Render Summary Cards
   // ==========================================
   summaryContainer.innerHTML = `
     <!-- Completed -->
@@ -63,9 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
 
   // ==========================================
-  // 1. Render History List
+  // 2. Helpers for Status
   // ==========================================
-  
   const getStatusMeta = (status) => {
     switch (status) {
       case 'completed': return { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Completed' };
@@ -75,22 +76,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  function renderHistory(filterText = '') {
-    const term = filterText.toLowerCase().trim();
-    
+  // ==========================================
+  // 3. Filter State & Logic
+  // ==========================================
+  let activeStatusFilter = 'all';
+  let activeSearchTerm = '';
+
+  function renderHistory() {
     const filtered = historyData.filter(appt => {
+      // 1. Search Text Match
       const searchStr = `${appt.firstName} ${appt.lastName} ${appt.serviceName}`.toLowerCase();
-      return searchStr.includes(term);
+      const matchesSearch = searchStr.includes(activeSearchTerm);
+
+      // 2. Status Match
+      let matchesStatus = false;
+      if (activeStatusFilter === 'all') {
+        matchesStatus = true;
+      } else if (activeStatusFilter === 'completed') {
+        matchesStatus = (appt.appointmentStatus === 'completed');
+      } else if (activeStatusFilter === 'cancelled') {
+        // Group 'cancelled' and 'declined' together
+        matchesStatus = (appt.appointmentStatus === 'cancelled' || appt.appointmentStatus === 'declined');
+      }
+
+      return matchesSearch && matchesStatus;
     });
 
     if (filtered.length === 0) {
       historyList.innerHTML = `
-        <div class="py-20 text-center flex flex-col items-center justify-center">
-          <div class="w-20 h-20 rounded-full bg-white border border-neutral-100 flex items-center justify-center mb-4 shadow-sm animate-float">
+        <div class="py-20 text-center flex flex-col items-center justify-center bg-white rounded-3xl border border-neutral-200/80 mt-6 shadow-sm">
+          <div class="w-20 h-20 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mb-4 shadow-sm animate-float">
             <i data-lucide="archive" class="w-10 h-10 text-slate-300"></i>
           </div>
           <h3 class="text-base font-bold text-slate-800">No history found</h3>
-          <p class="text-sm text-slate-500 mt-1">Try adjusting your search terms.</p>
+          <p class="text-sm text-slate-500 mt-1">Try adjusting your search or filters.</p>
         </div>
       `;
       if (window.lucide) lucide.createIcons();
@@ -101,30 +120,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const meta = getStatusMeta(appt.appointmentStatus);
       
       return `
-        <div class="history-item bg-white rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-5 border border-neutral-200/80 hover:shadow-md transition-all duration-300 group" style="animation-delay: ${index * 0.05}s">
+        <div class="history-item w-full flex flex-col md:flex-row md:items-center gap-5 py-6 px-4 border-b border-neutral-200/70 hover:bg-slate-50/80 transition-colors duration-200 group" style="animation-delay: ${index * 0.05}s">
           
           <!-- Date Badge -->
-          <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0">
+          <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${formatDate(appt.startDateTime).split(',')[0].split(' ')[0]}</span>
             <span class="text-xl font-black text-slate-800 leading-none mt-0.5">${new Date(appt.startDateTime.replace(' ', 'T')).getDate()}</span>
           </div>
 
           <!-- Details -->
           <div class="flex-1 min-w-0">
-            <h4 class="text-base font-bold text-slate-900 truncate">${appt.serviceName}</h4>
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs font-medium text-slate-500">
-              <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${appt.firstName} ${appt.lastName}</span>
-              <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${formatTime(appt.startDateTime)}</span>
-              <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${formatDate(appt.startDateTime)}</span>
+            <h4 class="text-lg font-bold text-slate-900 truncate">${appt.serviceName}</h4>
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm font-medium text-slate-500">
+              <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-4 h-4"></i> ${appt.firstName} ${appt.lastName}</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4"></i> ${formatTime(appt.startDateTime)}</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4"></i> ${formatDate(appt.startDateTime)}</span>
             </div>
           </div>
 
           <!-- Status & Price -->
-          <div class="flex items-center justify-between md:flex-col md:items-end gap-3 shrink-0 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 mt-2 md:mt-0">
+          <div class="flex items-center justify-between md:flex-col md:items-end gap-3 shrink-0 md:pl-6">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider border ${meta.color}">
               ${meta.label}
             </span>
-            <span class="text-sm font-black text-slate-800">
+            <span class="text-base font-black text-slate-800">
               RM ${parseFloat(appt.price).toFixed(2)}
             </span>
           </div>
@@ -136,13 +155,32 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  // Initial render
-  renderHistory();
-
-  // Search Listener
+  // ==========================================
+  // 4. Event Listeners
+  // ==========================================
+  
+  // Search Input
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      renderHistory(e.target.value);
+      activeSearchTerm = e.target.value.toLowerCase().trim();
+      renderHistory();
     });
   }
+
+  // Filter Chips
+  const filterChips = document.querySelectorAll('.filter-chip');
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+      // Update active styling
+      filterChips.forEach(c => c.classList.remove('is-active'));
+      this.classList.add('is-active');
+
+      // Update state and re-render
+      activeStatusFilter = this.dataset.filter;
+      renderHistory();
+    });
+  });
+
+  // Initial Render
+  renderHistory();
 });
