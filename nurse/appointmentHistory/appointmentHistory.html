@@ -47,11 +47,17 @@
             </div>
           </div>
 
-          <!-- NEW: Filter Bar -->
-          <div class="py-4 flex items-center gap-3">
-            <button type="button" class="filter-chip is-active" data-filter="all">All History</button>
-            <button type="button" class="filter-chip" data-filter="completed">Completed</button>
-            <button type="button" class="filter-chip" data-filter="cancelled">Cancelled</button>
+          <!-- SLIDING FILTER BAR -->
+          <div class="py-4">
+            <div class="relative inline-flex items-center p-1.5 bg-white rounded-full border border-neutral-200/80 shadow-sm" id="filterContainer">
+              <!-- The sliding background pill with gradient -->
+              <div id="filterSlider" class="absolute top-1.5 bottom-1.5 rounded-full z-0 shadow-sm" style="background: linear-gradient(90deg, #3C52C3 0%, #007FFF 100%);"></div>
+              
+              <!-- The clickable buttons -->
+              <button type="button" class="filter-chip active relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="all">All History</button>
+              <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="completed">Completed</button>
+              <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="cancelled">Cancelled</button>
+            </div>
           </div>
 
           <!-- List Container -->

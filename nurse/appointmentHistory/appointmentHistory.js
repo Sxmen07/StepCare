@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ==========================================
-  // 3. Filter State & Logic
+  // 3. Filter State & Render Logic
   // ==========================================
   let activeStatusFilter = 'all';
   let activeSearchTerm = '';
@@ -156,9 +156,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
-  // 4. Event Listeners
+  // 4. Sliding Filter Logic & Events
   // ==========================================
-  
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const filterSlider = document.getElementById('filterSlider');
+
+  function moveSlider(chip) {
+    if (!filterSlider || !chip) return;
+    
+    // Update text colors
+    filterChips.forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+
+    // Calculate position and width for the sliding pill
+    const left = chip.offsetLeft;
+    const width = chip.offsetWidth;
+
+    filterSlider.style.left = `${left}px`;
+    filterSlider.style.width = `${width}px`;
+  }
+
+  // Initialize slider position on page load
+  window.addEventListener('load', () => {
+    const activeChip = document.querySelector('.filter-chip.active');
+    if (activeChip) {
+      // Disable transition momentarily to snap perfectly to the first button
+      filterSlider.style.transition = 'none';
+      moveSlider(activeChip);
+      
+      // Re-enable transition after a tiny delay so future clicks animate
+      setTimeout(() => {
+        filterSlider.style.transition = 'left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      }, 50);
+    }
+  });
+
+  // Handle filter clicks
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+      // Move the slider
+      moveSlider(this);
+
+      // Update state and re-render the list
+      activeStatusFilter = this.dataset.filter;
+      renderHistory();
+    });
+  });
+
+  // Handle window resize to keep slider aligned perfectly
+  window.addEventListener('resize', () => {
+    const activeChip = document.querySelector('.filter-chip.active');
+    if (activeChip) {
+      filterSlider.style.transition = 'none';
+      moveSlider(activeChip);
+      setTimeout(() => {
+        filterSlider.style.transition = 'left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      }, 50);
+    }
+  });
+
   // Search Input
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -166,20 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
       renderHistory();
     });
   }
-
-  // Filter Chips
-  const filterChips = document.querySelectorAll('.filter-chip');
-  filterChips.forEach(chip => {
-    chip.addEventListener('click', function() {
-      // Update active styling
-      filterChips.forEach(c => c.classList.remove('is-active'));
-      this.classList.add('is-active');
-
-      // Update state and re-render
-      activeStatusFilter = this.dataset.filter;
-      renderHistory();
-    });
-  });
 
   // Initial Render
   renderHistory();
