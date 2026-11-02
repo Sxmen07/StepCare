@@ -16,7 +16,8 @@
     <!-- Topbar -->
     <header class="bg-white border-b border-neutral-200 h-20 px-8 flex items-center justify-between sticky top-0 z-30 select-none shrink-0">
       <div class="flex items-center gap-4">
-        <a href="../appointment.php" class="w-10 h-10 rounded-full hover:bg-neutral-100 flex items-center justify-center transition text-neutral-600">
+        <!-- Back button dynamically targets history or active appointment list -->
+        <a href="<?= $backUrl ?>" class="w-10 h-10 rounded-full hover:bg-neutral-100 flex items-center justify-center transition text-neutral-600">
           <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <div>

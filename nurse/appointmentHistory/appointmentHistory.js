@@ -119,9 +119,9 @@ document.addEventListener("DOMContentLoaded", () => {
     historyList.innerHTML = filtered.map((appt, index) => {
       const meta = getStatusMeta(appt.appointmentStatus);
       
-      // CHANGED: Wrapped the row in an <a> tag and added cursor-pointer
+      // Correct relative path matching your actual folder structure
       return `
-        <a href="../appointment/appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}" 
+        <a href="../appointment/appointmentDetails/appointmentDetails.php?id=${appt.appointmentID}&from=history" 
            class="history-item w-full flex flex-col md:flex-row md:items-center gap-5 py-6 px-4 border-b border-neutral-200/70 hover:bg-slate-50/80 transition-colors duration-200 group cursor-pointer" 
            style="animation-delay: ${index * 0.05}s">
           
