@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('det-email').textContent = appt.email || 'N/A';
   document.getElementById('det-emg-name').textContent = appt.emergencyContactName || 'N/A';
   document.getElementById('det-emg-phone').textContent = appt.emergencyContactPhone || 'N/A';
+  document.getElementById('det-gender').textContent = appt.gender || 'N/A';
   document.getElementById('det-address').textContent = appt.locationAddress || 'N/A';
   
   if (appt.specialInstructions) {
