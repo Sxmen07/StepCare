@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Applications — StepCare</title>
+  <title>Applications & Policy — StepCare</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -28,8 +28,8 @@
     <!-- Modular Topbar Container -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
-    <!-- Edge-to-Edge Dual Tabs (Top Indicator Border & Light Blue Hover) -->
-    <div class="grid grid-cols-2 border-b border-neutral-200 bg-neutral-50/40 shrink-0">
+    <!-- Edge-to-Edge Dynamic Tabs -->
+    <div id="tabs-header-container" class="grid grid-cols-2 bg-neutral-50/40 shrink-0">
       <button type="button" 
               id="tab-btn-review" 
               onclick="window.switchTab('review')" 
@@ -45,23 +45,31 @@
         <i data-lucide="file-plus" class="w-4 h-4"></i>
         <span>My Applications</span>
       </button>
+
+      <!-- Tab 3: Super Admin Custom Leave Policy -->
+      <button type="button" 
+              id="tab-btn-policy" 
+              onclick="window.switchTab('policy')" 
+              class="relative py-4 text-xs font-bold transition items-center justify-center gap-2 cursor-pointer border-t-2 border-transparent bg-transparent text-neutral-500 hover:bg-purple-50 hover:text-purple-700 hidden">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span>Leave Policy Settings</span>
+        <span class="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-bold">Super</span>
+      </button>
     </div>
 
     <!-- ==================== TAB 1: REVIEW APPLICATIONS ==================== -->
     <div id="pane-review" class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-      <!-- Sticky Sub-Bar: Search, Role Filter, Status Filter & Export -->
+      <!-- Sticky Sub-Bar -->
       <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
         <div class="flex items-center gap-4 flex-1">
-          <!-- Search Bar -->
           <div class="relative w-72">
             <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
             <input type="text" 
                    id="app-search-input" 
-                   placeholder="Search applicant name, ID or reason..." 
+                   placeholder="Search applicant name, ID, category or reason..." 
                    class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
           </div>
 
-          <!-- Target Applicant Role Filter -->
           <div class="flex items-center gap-1.5 text-xs text-neutral-500">
             <i data-lucide="users" class="w-3.5 h-3.5"></i>
             <span class="font-medium">Applicant:</span>
@@ -72,7 +80,6 @@
             </select>
           </div>
 
-          <!-- Status Filter -->
           <div class="flex items-center gap-1.5 text-xs text-neutral-500">
             <i data-lucide="filter" class="w-3.5 h-3.5"></i>
             <span class="font-medium">Status:</span>
@@ -85,34 +92,29 @@
           </div>
         </div>
 
-        <!-- Export Excel -->
-        <div class="flex items-center gap-3 shrink-0">
-          <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
-            <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
-            <span>Export Excel</span>
-          </button>
-        </div>
+        <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
+          <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
+          <span>Export Excel</span>
+        </button>
       </section>
 
       <!-- Table Header (100% Full Width Grid) -->
       <div class="grid grid-cols-12 px-8 py-3 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
         <div class="col-span-2 text-left pl-2">Staff ID</div>
-        <div class="col-span-3 text-left">Applicant</div>
+        <div class="col-span-3 text-left">Applicant & Leave Category</div>
         <div class="col-span-2 text-left">Requested Period</div>
-        <div class="col-span-2 text-left">Reason</div>
+        <div class="col-span-2 text-left">Reason & Proof</div>
         <div class="col-span-1 text-center">Status</div>
         <div class="col-span-2 text-center">Actions</div>
       </div>
 
       <!-- Applications Stream Container -->
       <main class="flex-1 overflow-y-auto custom-scrollbar bg-white">
-        <div id="applications-list-container" class="divide-y divide-neutral-100 w-full pb-8">
-          <!-- Dynamic Applications -->
-        </div>
+        <div id="applications-list-container" class="divide-y divide-neutral-100 w-full pb-8"></div>
       </main>
     </div>
 
-    <!-- ==================== TAB 2: MY APPLICATIONS (LEFT-RIGHT DUAL LAYOUT) ==================== -->
+    <!-- ==================== TAB 2: MY APPLICATIONS ==================== -->
     <div id="pane-myapp" class="flex-1 flex flex-col min-w-0 h-full overflow-hidden hidden bg-white">
       <div class="flex-1 grid grid-cols-12 divide-x divide-neutral-200 overflow-hidden">
         
@@ -125,13 +127,23 @@
             </div>
 
             <form id="apply-staff-form" class="space-y-4">
+              <!-- Leave Category Dropdown & Balance Preview -->
+              <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50 space-y-2">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500">Application Category</label>
+                <select id="apply-leave-type" class="w-full px-3.5 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none">
+                  <!-- Populated from leave_types -->
+                </select>
+                <!-- Dynamic Quota Balance Capsule -->
+                <div id="quota-preview-container"></div>
+              </div>
+
               <!-- Target Date -->
               <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Target Date</label>
                 <input type="date" id="apply-date" required class="w-full px-3.5 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none" />
               </div>
 
-              <!-- Time Range (2 Columns) -->
+              <!-- Time Range -->
               <div class="grid grid-cols-2 gap-3">
                 <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
                   <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Start Time</label>
@@ -146,7 +158,36 @@
               <!-- Reason / Purpose -->
               <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Request Details / Reason</label>
-                <textarea id="apply-reason" rows="4" required placeholder="Specify your request rationale or purpose..." class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none resize-none"></textarea>
+                <textarea id="apply-reason" rows="3" required placeholder="Specify your request rationale or purpose..." class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-[#3C52C3] focus:outline-none resize-none"></textarea>
+              </div>
+
+              <!-- Proof Document Upload Widget -->
+              <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50 space-y-2">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                  Supporting Document <span class="text-neutral-400 font-normal">(Optional: MC, Medical Slip, PDF)</span>
+                </label>
+                <div class="relative border-2 border-dashed border-neutral-200 rounded-xl p-4 text-center hover:border-[#3C52C3] transition cursor-pointer bg-white" onclick="document.getElementById('apply-proof-input').click()">
+                  <input type="file" id="apply-proof-input" accept=".jpg,.jpeg,.png,.webp,.pdf" class="hidden" />
+                  <div id="upload-idle-state" class="flex flex-col items-center justify-center gap-1.5">
+                    <i data-lucide="upload-cloud" class="w-6 h-6 text-neutral-400"></i>
+                    <p class="text-xs font-semibold text-neutral-700">Click to upload document</p>
+                    <p class="text-[10px] text-neutral-400">PDF, JPG, PNG or WEBP (Max 5MB)</p>
+                  </div>
+                  <div id="upload-selected-state" class="hidden items-center justify-between text-left">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="w-8 h-8 rounded-lg bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <p id="selected-file-name" class="text-xs font-bold text-neutral-900 truncate">document.pdf</p>
+                        <p id="selected-file-size" class="text-[10px] text-neutral-400 font-mono">0 KB</p>
+                      </div>
+                    </div>
+                    <button type="button" id="btn-remove-file" class="text-neutral-400 hover:text-rose-600 p-1 rounded-lg hover:bg-neutral-100 transition">
+                      <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div class="pt-2">
@@ -159,28 +200,52 @@
           </div>
         </div>
 
-        <!-- Right Column: My Application History Stream (7 Cols) -->
+        <!-- Right Column: My History Stream (7 Cols) -->
         <div class="col-span-7 flex flex-col h-full overflow-hidden bg-neutral-50/30">
           <div class="px-8 py-4 border-b border-neutral-200 bg-white flex items-center justify-between shrink-0">
             <div>
               <h4 class="text-xs font-bold text-neutral-800 uppercase tracking-wider">Application History</h4>
               <p class="text-[11px] text-neutral-400">Track and review the status of your past requests</p>
             </div>
-            <button type="button" onclick="window.loadMyApplications()" class="text-xs text-neutral-400 hover:text-neutral-700 flex items-center gap-1 font-semibold transition">
+            <button type="button" onclick="window.loadMyApplications()" class="text-xs text-neutral-400 hover:text-neutral-700 flex items-center gap-1 font-semibold transition cursor-pointer">
               <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
               <span>Refresh</span>
             </button>
           </div>
 
           <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
-            <div id="my-applications-container" class="space-y-3">
-              <!-- Rendered dynamic cards -->
-            </div>
+            <div id="my-applications-container" class="space-y-3"></div>
           </div>
         </div>
 
       </div>
     </div>
+
+    <!-- ==================== TAB 3: SUPER ADMIN LEAVE POLICY (FULL WIDTH TABLE) ==================== -->
+    <div id="pane-policy" class="flex-1 flex flex-col min-w-0 h-full overflow-hidden hidden bg-white">
+      <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-900">Corporate Leave Policies & Entitlements</h3>
+          <p class="text-[11px] text-neutral-400">Configure global annual quotas or add specialized company policies</p>
+        </div>
+        <button type="button" onclick="window.openPolicyModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Custom Policy</span>
+        </button>
+      </section>
+
+      <div class="grid grid-cols-12 px-8 py-3 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+        <div class="col-span-4 text-left pl-2">Policy / Leave Name</div>
+        <div class="col-span-3 text-center">Applicable Target Role</div>
+        <div class="col-span-3 text-center">Annual Entitlement</div>
+        <div class="col-span-2 text-center">Actions</div>
+      </div>
+
+      <main class="flex-1 overflow-y-auto custom-scrollbar bg-white">
+        <div id="policy-list-container" class="divide-y divide-neutral-100 w-full pb-8"></div>
+      </main>
+    </div>
+
   </div>
 
   <!-- Review Modal (Approve / Reject) -->
@@ -195,9 +260,21 @@
       <!-- Applicant Info Card -->
       <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-2 text-left mb-6 text-xs">
         <div class="flex justify-between"><span class="text-neutral-400">Applicant:</span><span id="modal-staff-name" class="font-bold text-neutral-800"></span></div>
-        <div class="flex justify-between"><span class="text-neutral-400">Target Date:</span><span id="modal-target-date" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between"><span class="text-neutral-400">Category:</span><span id="modal-leave-name" class="font-bold text-[#3C52C3]"></span></div>
+        <div id="modal-balance-row" class="flex justify-between border-t border-neutral-200/60 pt-2 hidden">
+          <span class="text-neutral-400">Remaining Quota:</span>
+          <span id="modal-balance-text" class="font-bold text-emerald-600 font-mono"></span>
+        </div>
+        <div class="flex justify-between border-t border-neutral-200/60 pt-2"><span class="text-neutral-400">Target Date:</span><span id="modal-target-date" class="font-bold text-neutral-800"></span></div>
         <div class="flex justify-between"><span class="text-neutral-400">Time Range:</span><span id="modal-time-range" class="font-bold text-neutral-800"></span></div>
         <div class="flex justify-between border-t border-neutral-200/60 pt-2"><span class="text-neutral-400">Staff Note:</span><span id="modal-staff-reason" class="text-neutral-700 italic max-w-xs truncate"></span></div>
+        <div id="modal-proof-row" class="flex justify-between border-t border-neutral-200/60 pt-2 hidden">
+          <span class="text-neutral-400">Attached Proof:</span>
+          <a id="modal-proof-link" href="#" target="_blank" class="text-[#3C52C3] hover:underline font-bold flex items-center gap-1">
+            <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+            <span>Open Attachment</span>
+          </a>
+        </div>
       </div>
 
       <!-- Rejection Reason Section -->
@@ -209,13 +286,6 @@
                   rows="3" 
                   placeholder="Specify operational reasons for decline..." 
                   class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500 font-medium transition resize-none"></textarea>
-        
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-[11px] font-bold text-neutral-400">Presets:</span>
-          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Staff Shortage</button>
-          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">High Booking Volume</button>
-          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Notice Too Short</button>
-        </div>
       </div>
 
       <div class="flex justify-end gap-3 pt-2">
@@ -225,454 +295,46 @@
     </div>
   </div>
 
-  <script>
-    // English comments only
-    (function () {
-      'use strict';
+  <!-- Create/Edit Leave Policy Modal -->
+  <div id="policy-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-neutral-200">
+      <div class="flex items-center justify-between pb-4 mb-6 border-b border-neutral-100">
+        <h3 id="policy-modal-title" class="text-base font-bold text-neutral-900">Custom Leave Policy</h3>
+        <button type="button" onclick="document.getElementById('policy-modal').classList.add('hidden')" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
-      let applicationsList = [];
-      let isSuperAdmin = false;
-      let pendingAction = null;
+      <form id="policy-form" class="space-y-4">
+        <input type="hidden" id="policy-id" value="0" />
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Policy / Leave Name</label>
+          <input type="text" id="policy-name" required placeholder="e.g. Owner Birthday Leave, Exam Leave" class="w-full px-3.5 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-purple-600 focus:outline-none" />
+        </div>
 
-      // Component injector
-      function injectComponent(containerId, html) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = html;
-        const scripts = container.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-          const newScript = document.createElement("script");
-          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-          oldScript.parentNode.replaceChild(newScript, oldScript);
-        });
-        if (window.lucide) lucide.createIcons();
-      }
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Applicable Target Role</label>
+          <select id="policy-role" class="w-full px-3.5 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-purple-600 focus:outline-none">
+            <option value="all">All Personnel (Nurses & Admins)</option>
+            <option value="nurse">Nurse Only</option>
+            <option value="admin">Admin Only</option>
+          </select>
+        </div>
 
-      document.addEventListener('DOMContentLoaded', () => {
-        // 1. Mount sidebar
-        fetch('/StepCare/components/sidebar-admin.html')
-          .then(res => res.text())
-          .then(html => injectComponent('sidebar-container', html));
+        <div class="p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Annual Days Quota</label>
+          <input type="number" id="policy-days" min="1" max="365" value="14" required class="w-full px-3.5 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-semibold focus:border-purple-600 focus:outline-none" />
+        </div>
 
-        // 2. Mount topbar
-        fetch('/StepCare/components/topbar.html')
-          .then(res => res.text())
-          .then(html => {
-            injectComponent('topbar-container', html);
-            const title = document.getElementById('topbar-page-title');
-            if (title) title.textContent = 'Applications';
-          });
+        <div class="flex justify-end gap-3 pt-3">
+          <button type="button" onclick="document.getElementById('policy-modal').classList.add('hidden')" class="px-5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer">Save Policy</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        // 3. Load applications
-        loadApplications();
-
-        // 4. Bind event handlers
-        initEventHandlers();
-      });
-
-      // Switch Edge Tabs with Top Border and Light Blue Hover
-      window.switchTab = function (tab) {
-        const btnReview = document.getElementById('tab-btn-review');
-        const btnMyApp = document.getElementById('tab-btn-my-app');
-        const paneReview = document.getElementById('pane-review');
-        const paneMyApp = document.getElementById('pane-myapp');
-
-        if (tab === 'review') {
-          btnReview.className = "relative py-4 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border-t-2 border-[#3C52C3] bg-white text-[#3C52C3]";
-          btnMyApp.className = "relative py-4 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border-t-2 border-transparent bg-transparent text-neutral-500 hover:bg-blue-50/60 hover:text-[#3C52C3]";
-          paneReview.classList.remove('hidden');
-          paneMyApp.classList.add('hidden');
-          loadApplications();
-        } else {
-          btnMyApp.className = "relative py-4 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border-t-2 border-[#3C52C3] bg-white text-[#3C52C3]";
-          btnReview.className = "relative py-4 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border-t-2 border-transparent bg-transparent text-neutral-500 hover:bg-blue-50/60 hover:text-[#3C52C3]";
-          paneMyApp.classList.remove('hidden');
-          paneReview.classList.add('hidden');
-          window.loadMyApplications();
-        }
-        if (window.lucide) lucide.createIcons();
-      };
-
-      // Fetch Applications Review Stream
-      async function loadApplications() {
-        try {
-          const filterStatus = document.getElementById('filter-status').value;
-          const targetRole = document.getElementById('filter-target-role').value;
-
-          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${filterStatus}&target_role=${targetRole}`);
-          const result = await res.json();
-          if (result.status === 'success') {
-            applicationsList = result.data || [];
-            if (result.is_super_admin !== undefined) {
-              isSuperAdmin = Boolean(result.is_super_admin);
-            }
-            renderTable();
-          }
-        } catch (err) {
-          console.error('Fetch applications error:', err);
-        }
-      }
-
-      // Generate avatar fallback bubble
-      function getAvatarBubble(name, role) {
-        const clean = (name || 'Staff').trim();
-        const initials = clean ? clean.split(/\s+/).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'SC';
-        const bgClass = (role === 'Nurse') ? 'bg-sky-50 text-sky-700' : 'bg-emerald-50 text-emerald-700';
-        return `
-          <div class="w-8 h-8 rounded-full ${bgClass} font-bold text-[11px] flex items-center justify-center border border-black/5 shrink-0 select-none">
-            ${initials}
-          </div>
-        `;
-      }
-
-      // Render applications table rows
-      function renderTable() {
-        const container = document.getElementById('applications-list-container');
-        const searchInput = document.getElementById('app-search-input');
-        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-        const filtered = applicationsList.filter(item => {
-          return item.staffName.toLowerCase().includes(searchTerm) || 
-                 item.staffId.toLowerCase().includes(searchTerm) ||
-                 item.reason.toLowerCase().includes(searchTerm);
-        });
-
-        if (filtered.length === 0) {
-          container.innerHTML = `
-            <div class="py-24 text-center">
-              <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
-                <i data-lucide="file-check-2" class="w-6 h-6"></i>
-              </div>
-              <p class="text-sm font-semibold text-neutral-600">No applications found</p>
-              <p class="text-xs text-neutral-400 mt-1">There are no requests matching your current filter.</p>
-            </div>
-          `;
-          if (window.lucide) lucide.createIcons();
-          return;
-        }
-
-        container.innerHTML = filtered.map(item => {
-          let statusBadge = '';
-          if (item.status === 'pending') {
-            statusBadge = '<span class="inline-block px-3.5 py-1 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
-          } else if (item.status === 'approved') {
-            statusBadge = '<span class="inline-block px-3.5 py-1 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
-          } else {
-            const tooltip = item.rejectionReason ? `title="Reason: ${item.rejectionReason.replace(/"/g, '&quot;')}"` : '';
-            statusBadge = `<span ${tooltip} class="inline-block px-3.5 py-1 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200 cursor-help">Rejected</span>`;
-          }
-
-          const roleBadge = (item.applicantType === 'Nurse')
-            ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-sky-50 text-sky-700 border-sky-200">Nurse</span>'
-            : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">Admin</span>';
-
-          const fallbackBadge = getAvatarBubble(item.staffName, item.applicantType);
-          const avatarHtml = item.photo
-            ? `<div class="relative w-8 h-8 shrink-0">
-                 <img src="${item.photo}" alt="${item.staffName}" class="w-8 h-8 rounded-full object-cover border border-neutral-200" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                 <div style="display:none;" class="absolute inset-0">${fallbackBadge}</div>
-               </div>`
-            : fallbackBadge;
-
-          let actionCell = '';
-          if (item.status === 'pending') {
-            if (item.applicantType === 'Admin' && !isSuperAdmin) {
-              actionCell = `
-                <span title="Only Super Administrators can review Admin applications" class="text-xs font-medium text-neutral-400 cursor-help flex items-center justify-center gap-1">
-                  <i data-lucide="shield" class="w-3.5 h-3.5 text-purple-400"></i>
-                  <span>Super Admin Only</span>
-                </span>
-              `;
-            } else {
-              actionCell = `
-                <div class="flex items-center justify-center gap-2">
-                  <button type="button" 
-                          onclick="window.promptAction('${item.applicantType}', ${item.requestId}, 'approved')" 
-                          class="w-[76px] inline-flex items-center justify-center gap-1.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 hover:border-emerald-300 shadow-2xs transition cursor-pointer">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    <span>Approve</span>
-                  </button>
-                  <button type="button" 
-                          onclick="window.promptAction('${item.applicantType}', ${item.requestId}, 'rejected')" 
-                          class="w-[76px] inline-flex items-center justify-center gap-1.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:border-rose-300 shadow-2xs transition cursor-pointer">
-                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                    <span>Reject</span>
-                  </button>
-                </div>
-              `;
-            }
-          } else {
-            actionCell = `
-              <span class="text-xs font-medium text-neutral-400">
-                ${item.reviewedBy ? 'By ' + item.reviewedBy : 'Resolved'}
-              </span>
-            `;
-          }
-
-          return `
-            <div class="app-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100">
-              <div class="col-span-2 text-xs font-mono font-bold text-neutral-500 pl-2">
-                ${item.staffId}
-              </div>
-
-              <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
-                ${avatarHtml}
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-neutral-900 truncate">${item.staffName}</span>
-                    ${roleBadge}
-                  </div>
-                  <div class="text-[10px] text-neutral-400 truncate">${item.email}</div>
-                </div>
-              </div>
-
-              <div class="col-span-2 text-xs pr-4">
-                <div class="font-semibold text-neutral-800">${item.requestDate}</div>
-                <div class="text-[11px] font-mono text-neutral-400">${item.startTime} - ${item.endTime}</div>
-              </div>
-
-              <div class="col-span-2 text-xs text-neutral-600 truncate pr-4" title="${item.reason}">
-                ${item.reason}
-              </div>
-
-              <div class="col-span-1 text-center">
-                ${statusBadge}
-              </div>
-
-              <div class="col-span-2 flex items-center justify-center">
-                ${actionCell}
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        if (window.lucide) lucide.createIcons();
-      }
-
-      // Fetch My Applications Stream for Right Column
-      window.loadMyApplications = async function () {
-        const container = document.getElementById('my-applications-container');
-        try {
-          const res = await fetch('./application_actions.php?action=fetch_my_leaves');
-          const result = await res.json();
-
-          if (!result.data || result.data.length === 0) {
-            container.innerHTML = `
-              <div class="py-16 text-center">
-                <div class="w-10 h-10 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-2">
-                  <i data-lucide="inbox" class="w-5 h-5"></i>
-                </div>
-                <p class="text-xs font-semibold text-neutral-600">No applications found</p>
-                <p class="text-[11px] text-neutral-400 mt-0.5">Submit a request using the form on the left.</p>
-              </div>
-            `;
-            if (window.lucide) lucide.createIcons();
-            return;
-          }
-
-          container.innerHTML = result.data.map(l => {
-            let statusBadge = '';
-            if (l.status === 'pending') {
-              statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
-            } else if (l.status === 'approved') {
-              statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
-            } else {
-              statusBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-rose-50 text-rose-700 border-rose-200">Declined</span>`;
-            }
-
-            return `
-              <div class="bg-white p-5 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-neutral-900">${l.requestDate}</span>
-                    <span class="text-[11px] font-mono text-neutral-400">(${l.startTime} - ${l.endTime})</span>
-                  </div>
-                  ${statusBadge}
-                </div>
-                
-                <p class="text-xs text-neutral-600 leading-relaxed">${l.reason}</p>
-                
-                ${l.rejectionReason ? `
-                  <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 text-[11px] text-rose-700 leading-normal">
-                    <strong>Decline Reason:</strong> ${l.rejectionReason}
-                  </div>
-                ` : ''}
-
-                <div class="flex items-center justify-between pt-2 border-t border-neutral-100 text-[11px] text-neutral-400">
-                  <span>Submitted on ${l.submittedAt}</span>
-                  ${l.reviewedBy ? `<span class="text-neutral-500 font-medium">Reviewed by ${l.reviewedBy}</span>` : ''}
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          if (window.lucide) lucide.createIcons();
-        } catch (e) {
-          container.innerHTML = `<div class="p-8 text-center text-xs text-red-500">Failed to load applications.</div>`;
-        }
-      };
-
-      // Prompt Review Modal
-      window.promptAction = function(applicantType, requestId, targetStatus) {
-        const item = applicationsList.find(a => a.requestId === requestId && a.applicantType === applicantType);
-        if (!item) return;
-
-        pendingAction = { applicantType, requestId, targetStatus };
-
-        const modal = document.getElementById('action-modal');
-        const iconContainer = document.getElementById('modal-icon-container');
-        const titleEl = document.getElementById('modal-title');
-        const descEl = document.getElementById('modal-desc');
-        const rejectWrapper = document.getElementById('reject-reason-wrapper');
-        const rejectInput = document.getElementById('reject-reason-input');
-        const confirmBtn = document.getElementById('modal-confirm-btn');
-
-        document.getElementById('modal-staff-name').textContent = `${item.staffName} (${item.applicantType})`;
-        document.getElementById('modal-target-date').textContent = item.requestDate;
-        document.getElementById('modal-time-range').textContent = `${item.startTime} - ${item.endTime}`;
-        document.getElementById('modal-staff-reason').textContent = item.reason;
-
-        rejectInput.value = '';
-
-        if (targetStatus === 'approved') {
-          rejectWrapper.classList.add('hidden');
-          iconContainer.className = 'w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-emerald-50 text-emerald-600';
-          iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-8 h-8"></i>';
-          titleEl.textContent = 'Approve Application';
-          descEl.textContent = `Are you sure you want to approve this request for ${item.staffName}?`;
-          confirmBtn.className = 'px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
-          confirmBtn.textContent = 'Yes, Approve';
-        } else {
-          rejectWrapper.classList.remove('hidden');
-          iconContainer.className = 'w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 text-rose-600';
-          iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8"></i>';
-          titleEl.textContent = 'Reject Application';
-          descEl.textContent = 'Please provide an explanation. The applicant will receive this in their audit record.';
-          confirmBtn.className = 'px-7 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
-          confirmBtn.textContent = 'Yes, Reject Request';
-        }
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        if (window.lucide) lucide.createIcons();
-      };
-
-      // Events initialization
-      function initEventHandlers() {
-        const searchInput = document.getElementById('app-search-input');
-        if (searchInput) searchInput.addEventListener('input', renderTable);
-
-        const filterStatus = document.getElementById('filter-status');
-        if (filterStatus) filterStatus.addEventListener('change', loadApplications);
-
-        const filterRole = document.getElementById('filter-target-role');
-        if (filterRole) filterRole.addEventListener('change', loadApplications);
-
-        // Export Excel
-        const exportBtn = document.getElementById('export-excel-btn');
-        if (exportBtn) {
-          exportBtn.addEventListener('click', () => {
-            const currentStatus = filterStatus ? filterStatus.value : 'all';
-            window.location.href = `./application_actions.php?action=export_excel&status=${encodeURIComponent(currentStatus)}`;
-          });
-        }
-
-        // Preset Rejection Reasons
-        document.querySelectorAll('.preset-reason-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const input = document.getElementById('reject-reason-input');
-            if (input) input.value = e.target.textContent;
-          });
-        });
-
-        // Submit Application Form (Left Column)
-        const applyForm = document.getElementById('apply-staff-form');
-        applyForm.onsubmit = async (e) => {
-          e.preventDefault();
-          const submitBtn = document.getElementById('submit-apply-btn');
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Submitting...';
-
-          const payload = {
-            requestDate: document.getElementById('apply-date').value,
-            startTime: document.getElementById('apply-start-time').value,
-            endTime: document.getElementById('apply-end-time').value,
-            reason: document.getElementById('apply-reason').value.trim()
-          };
-
-          try {
-            const res = await fetch('./application_actions.php?action=submit_admin_leave', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-            if (result.status === 'success') {
-              alert(result.message);
-              applyForm.reset();
-              window.loadMyApplications();
-            } else {
-              alert(result.message || 'Submission failed');
-            }
-          } catch (err) {
-            alert('Request error: ' + err.message);
-          } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i><span>Submit Application</span>';
-            if (window.lucide) lucide.createIcons();
-          }
-        };
-
-        // Modal Controls
-        const modal = document.getElementById('action-modal');
-        const cancelBtn = document.getElementById('modal-cancel-btn');
-        const confirmBtn = document.getElementById('modal-confirm-btn');
-
-        const closeModal = () => {
-          modal.classList.add('hidden');
-          modal.classList.remove('flex');
-          pendingAction = null;
-        };
-
-        if (cancelBtn) cancelBtn.onclick = closeModal;
-
-        if (confirmBtn) {
-          confirmBtn.onclick = async () => {
-            if (!pendingAction) return;
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Processing...';
-
-            const rejectReasonText = document.getElementById('reject-reason-input').value.trim();
-
-            try {
-              const res = await fetch('./application_actions.php?action=update_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  applicantType: pendingAction.applicantType,
-                  requestId: pendingAction.requestId,
-                  status: pendingAction.targetStatus,
-                  rejectionReason: rejectReasonText
-                })
-              });
-              const result = await res.json();
-
-              if (result.status === 'success') {
-                closeModal();
-                await loadApplications();
-              } else {
-                alert(result.message || 'Operation failed');
-              }
-            } catch (err) {
-              alert('Request failed: ' + err.message);
-            } finally {
-              confirmBtn.disabled = false;
-            }
-          };
-        }
-      }
-    })();
-  </script>
+  <!-- External Clean Script -->
+  <script src="./admin-applications.js"></script>
 </body>
 </html>
