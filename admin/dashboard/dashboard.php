@@ -2,8 +2,8 @@
 session_start();
 
 // 1. Admin Authentication Check (FIXED)
-// Check for 'userID' and ensure the role is 'admin'
-if (empty($_SESSION['userID']) || ($_SESSION['role'] ?? '') !== 'admin') {
+// Check for 'adminID' and ensure the role is 'admin'
+if (empty($_SESSION['adminID']) || ($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: ../../loginNsignup/login/login.html');
     exit;
 }
