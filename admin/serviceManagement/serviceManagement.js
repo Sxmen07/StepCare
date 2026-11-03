@@ -1,144 +1,271 @@
-// admin/services/serviceManagement.js
-document.addEventListener("DOMContentLoaded", () => {
-  if (window.lucide) lucide.createIcons();
+// StepCare - Service Management Controller Logic
 
-  const services = window.servicesData || [];
-  const servicesList = document.getElementById('servicesList');
-  const searchInput = document.getElementById('searchInput');
-  const categoryChips = document.querySelectorAll('.filter-chip');
-  const resultCount = document.getElementById('resultCount');
+let servicesData = [];
+let currentCategory = 'all';
+let searchQuery = '';
 
-  let activeCategory = 'all';
-  let activeSearch = '';
+document.addEventListener('DOMContentLoaded', () => {
+  loadComponents();
+  fetchServices();
+  setupSearchAndFilters();
+});
 
-  // ==========================================
-  // 1. Render Service List
-  // ==========================================
-  function renderServices() {
-    const filtered = services.filter(svc => {
-      // Category match
-      const matchesCategory = activeCategory === 'all' || (svc.category && svc.category.toLowerCase() === activeCategory);
-      
-      // Search match
-      const searchStr = `${svc.serviceName} ${svc.category} ${svc.description}`.toLowerCase();
-      const matchesSearch = searchStr.includes(activeSearch);
+// 1. Dynamically Load Shared UI Components with fallback paths
+function loadComponents() {
+  // Sidebar
+  fetch('../../../components/sidebar-admin.html')
+    .then(res => res.ok ? res.text() : fetch('/StepCare/components/sidebar-admin.html').then(r => r.text()))
+    .then(html => {
+      const container = document.getElementById('sidebar-container');
+      if (container) container.innerHTML = html;
+    })
+    .catch(err => console.error("Sidebar load error:", err));
 
-      return matchesCategory && matchesSearch;
-    });
+  // Topbar
+  fetch('../../../components/topbar.html')
+    .then(res => res.ok ? res.text() : fetch('/StepCare/components/topbar.html').then(r => r.text()))
+    .then(html => {
+      const container = document.getElementById('topbar-container');
+      if (container) {
+        container.innerHTML = html;
+        setTimeout(() => {
+          const pageTitle = document.getElementById('topbar-page-title');
+          if (pageTitle) pageTitle.textContent = "Service Management";
+        }, 50);
+      }
+    })
+    .catch(err => console.error("Topbar load error:", err));
+}
 
-    resultCount.textContent = `Showing ${filtered.length} service${filtered.length === 1 ? '' : 's'}`;
+// 2. Fetch Service Records from Backend
+async function fetchServices() {
+  try {
+    const response = await fetch('serviceManagement.php?action=fetch_services');
+    const result = await response.json();
 
-    if (filtered.length === 0) {
-      servicesList.innerHTML = `
-        <div class="py-20 text-center flex flex-col items-center justify-center">
-          <div class="w-20 h-20 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mb-4 shadow-sm animate-float">
-            <i data-lucide="package-search" class="w-10 h-10 text-slate-300"></i>
-          </div>
-          <h3 class="text-base font-bold text-slate-800">No services found</h3>
-          <p class="text-sm text-slate-500 mt-1">Try adjusting your search or category filters.</p>
-        </div>
-      `;
-      if (window.lucide) lucide.createIcons();
-      return;
+    if (result.status === 'success') {
+      servicesData = result.data;
+      renderServices();
+    } else {
+      console.error("Failed to load services:", result.message);
+      document.getElementById('service-count-text').textContent = "Failed to load services.";
     }
+  } catch (error) {
+    console.error("Error connecting to services API:", error);
+    document.getElementById('service-count-text').textContent = "Error loading services.";
+  }
+}
 
-    servicesList.innerHTML = filtered.map(svc => {
-      const img = svc.serviceImageURL || '/StepCare/images/services/placeholder.jpg';
-      const rating = Number(svc.average_rating).toFixed(2);
-      const duration = svc.durationMin && svc.durationMax ? `${svc.durationMin}–${svc.durationMax} mins` : 'N/A';
+// 3. Render Service Cards Grid
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  const emptyState = document.getElementById('empty-state');
+  const countText = document.getElementById('service-count-text');
 
-      return `
-        <div class="flex flex-col md:flex-row md:items-center gap-6 p-6 hover:bg-slate-50/80 transition-colors group">
+  if (!grid) return;
+
+  // Filter Services by Search & Category
+  const filtered = servicesData.filter(service => {
+    const matchesCategory = (currentCategory === 'all') || 
+      (service.category && service.category.toLowerCase() === currentCategory.toLowerCase());
+
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q || 
+      service.serviceName.toLowerCase().includes(q) || 
+      (service.description && service.description.toLowerCase().includes(q)) ||
+      (service.category && service.category.toLowerCase().includes(q));
+
+    return matchesCategory && matchesSearch;
+  });
+
+  // Update Result Counter
+  countText.textContent = `Showing ${filtered.length} of ${servicesData.length} service${servicesData.length === 1 ? '' : 's'}`;
+
+  // Handle Empty Result View
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    emptyState.classList.add('flex');
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+  emptyState.classList.remove('flex');
+
+  // Build Service Cards Grid HTML
+  grid.innerHTML = filtered.map(service => {
+    const durationText = (service.durationMin && service.durationMax) 
+      ? `${service.durationMin}-${service.durationMax} min` 
+      : 'Flexible duration';
+
+    const imagePath = service.serviceImageURL 
+      ? service.serviceImageURL.replace('../..', '/StepCare') 
+      : '/StepCare/images/services/elderly.png';
+
+    const featuresList = (service.features || []).map(f => `
+      <li class="flex items-start gap-2 text-xs text-neutral-600">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+        <span class="line-clamp-1">${f}</span>
+      </li>
+    `).join('');
+
+    const badgesList = (service.badges || []).map(b => `
+      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-[#3C52C3] border border-indigo-100">
+        ${b}
+      </span>
+    `).join('');
+
+    return `
+      <div class="bg-white rounded-3xl border border-neutral-200/90 shadow-sm hover:shadow-md transition duration-200 flex flex-col overflow-hidden">
+        
+        <!-- Card Header / Image Container -->
+        <div class="relative h-44 bg-neutral-100 overflow-hidden">
+          <img src="${imagePath}" 
+               alt="${service.serviceName}" 
+               class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+               onerror="this.src='/StepCare/images/services/elderly.png'">
           
-          <!-- Image -->
-          <div class="w-full md:w-32 h-24 shrink-0 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
-            <img src="${img}" alt="${svc.serviceName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='/StepCare/images/services/placeholder.jpg'">
-          </div>
-
-          <!-- Main Info -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-3 mb-1.5">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-[#3C52C3] bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-100">
-                ${svc.category || 'General'}
-              </span>
-              ${svc.isTopRecommendation == 1 ? `<span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1"><i data-lucide="star" class="w-3 h-3"></i> Top Pick</span>` : ''}
+          ${service.isTopRecommendation == 1 ? `
+            <div class="absolute top-3 left-3 bg-amber-400 text-amber-950 font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3 h-3"></i> Top Pick
             </div>
-            <h3 class="text-lg font-bold text-slate-900 truncate">${svc.serviceName}</h3>
-            <p class="text-sm text-slate-500 mt-1 line-clamp-2 leading-relaxed">${svc.description}</p>
-          </div>
+          ` : ''}
 
-          <!-- Stats (Rating, Duration) -->
-          <div class="flex items-center gap-8 shrink-0 md:w-64">
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rating</p>
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
-                <span class="text-sm font-bold text-slate-800">${rating}</span>
-                <span class="text-xs text-slate-400">(${svc.review_count})</span>
+          <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-lg">
+            ${service.category || 'General'}
+          </div>
+        </div>
+
+        <!-- Card Content Body -->
+        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between text-xs text-neutral-500 mb-2">
+              <div class="flex items-center gap-1 text-amber-500 font-bold">
+                <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                <span>${parseFloat(service.average_rating || 0).toFixed(1)}</span>
+                <span class="text-neutral-400 font-normal">(${service.review_count || 0})</span>
+              </div>
+              
+              <div class="flex items-center gap-1 font-semibold text-neutral-500">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-neutral-400"></i>
+                <span>${durationText}</span>
               </div>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Duration</p>
-              <p class="text-sm font-semibold text-slate-700">${duration}</p>
-            </div>
+
+            <h3 class="text-base font-bold text-neutral-900 leading-snug line-clamp-1">
+              ${service.serviceName}
+            </h3>
+
+            <p class="text-xs text-neutral-500 mt-1.5 leading-relaxed line-clamp-2">
+              ${service.description}
+            </p>
+
+            ${service.badges && service.badges.length > 0 ? `
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                ${badgesList}
+              </div>
+            ` : ''}
+
+            ${service.features && service.features.length > 0 ? `
+              <ul class="mt-4 space-y-1.5 border-t border-neutral-100 pt-3">
+                ${featuresList}
+              </ul>
+            ` : ''}
           </div>
 
-          <!-- Price & Actions -->
-          <div class="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 shrink-0 md:w-40">
-            <p class="text-xl font-black text-[#3C52C3]">
-              RM${Number(svc.price).toFixed(2)} <span class="text-xs font-semibold text-slate-400">/${svc.price_unit}</span>
-            </p>
-            
-            <div class="flex items-center gap-2">
-              <button type="button" class="w-9 h-9 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-slate-600 hover:text-[#3C52C3] hover:border-[#3C52C3] hover:bg-blue-50 transition" title="Edit Service">
-                <i data-lucide="edit-2" class="w-4 h-4"></i>
-              </button>
-              <button type="button" class="w-9 h-9 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition" title="Delete Service">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
+          <!-- Card Footer Pricing -->
+          <div class="pt-3 border-t border-neutral-100 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-neutral-400 font-medium">From</span>
+              <div class="text-lg font-black text-neutral-900 leading-none">
+                RM ${parseFloat(service.price).toFixed(2)}
+                <span class="text-xs font-normal text-neutral-400">/${service.price_unit}</span>
+              </div>
             </div>
+
+            <span class="text-xs font-bold text-[#3C52C3] flex items-center gap-1">
+              Active
+            </span>
           </div>
 
         </div>
-      `;
-    }).join('');
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// 4. Sliding Pill & Search Event Controllers
+function setupSearchAndFilters() {
+  const pillsWrapper = document.getElementById('category-pills-wrapper');
+  const highlight = document.getElementById('pill-highlight');
+  const pills = document.querySelectorAll('.category-pill');
+  const searchInput = document.getElementById('service-search-input');
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+
+  // Calculates exact dimensions and moves sliding background pill
+  function updateHighlight(activeButton) {
+    if (!activeButton || !highlight || !pillsWrapper) return;
     
-    if (window.lucide) lucide.createIcons();
+    const wrapperRect = pillsWrapper.getBoundingClientRect();
+    const btnRect = activeButton.getBoundingClientRect();
+
+    highlight.style.width = `${btnRect.width}px`;
+    highlight.style.height = `${btnRect.height}px`;
+    highlight.style.left = `${btnRect.left - wrapperRect.left + pillsWrapper.scrollLeft}px`;
+    highlight.style.top = `${btnRect.top - wrapperRect.top}px`;
   }
 
-  // ==========================================
-  // 2. Event Listeners
-  // ==========================================
-  
-  // Search Input
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      activeSearch = e.target.value.toLowerCase().trim();
-      renderServices();
-    });
-  }
+  // Set default highlight state
+  const initialActive = document.querySelector('.category-pill[data-category="all"]');
+  setTimeout(() => updateHighlight(initialActive), 50);
 
-  // Category Filtering
-  categoryChips.forEach(chip => {
-    chip.addEventListener('click', function() {
-      // Update active state visually
-      categoryChips.forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
+  // Pill click handler
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => {
+        p.classList.remove('text-[#3C52C3]', 'font-bold');
+        p.classList.add('text-neutral-600', 'font-semibold');
+      });
 
-      // Update state and re-render
-      activeCategory = this.dataset.filter;
+      pill.classList.remove('text-neutral-600', 'font-semibold');
+      pill.classList.add('text-[#3C52C3]', 'font-bold');
+
+      updateHighlight(pill);
+
+      currentCategory = pill.getAttribute('data-category');
       renderServices();
     });
   });
 
-  // Dummy Add Button Action
-  const addBtn = document.getElementById('addServiceBtn');
-  if (addBtn) {
-    addBtn.addEventListener('click', () => {
-      alert('Add Service Modal will open here.');
+  // Window resize highlight adjustment
+  window.addEventListener('resize', () => {
+    const activePill = document.querySelector('.category-pill.font-bold');
+    updateHighlight(activePill);
+  });
+
+  // Search input listeners
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      if (clearSearchBtn) {
+        if (searchQuery.length > 0) {
+          clearSearchBtn.classList.remove('hidden');
+        } else {
+          clearSearchBtn.classList.add('hidden');
+        }
+      }
+      renderServices();
     });
   }
 
-  // Initial Render
-  renderServices();
-});
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      searchQuery = '';
+      clearSearchBtn.classList.add('hidden');
+      renderServices();
+    });
+  }
+}

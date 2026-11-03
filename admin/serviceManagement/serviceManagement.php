@@ -1,33 +1,45 @@
 <?php
-// admin/services/serviceManagement.php
-session_start();
-require __DIR__ . '/../../config/db_connect.php';
+// StepCare - Service Management Entry & Backend Controller
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
-// Optional: Check if admin is logged in
-// if (empty($_SESSION['adminID'])) {
-//     header('Location: /StepCare/loginNsignup/login/login.html');
-//     exit;
-// }
+// Handle AJAX Request to fetch service data from database
+if (isset($_GET['action']) && $_GET['action'] === 'fetch_services') {
+    header('Content-Type: application/json; charset=utf-8');
+    require_once __DIR__ . '/../../config/db_connect.php';
 
-// Fetch all services
-$stmt = $pdo->query("
-    SELECT serviceID, serviceName, category, description, serviceImageURL, 
-           price, price_unit, durationMin, durationMax, average_rating, review_count, isTopRecommendation
-    FROM services 
-    ORDER BY isTopRecommendation DESC, serviceName ASC
-");
-$services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        // 1. Query all services sorted by top recommendation and ID
+        $stmt = $pdo->query("SELECT * FROM services ORDER BY isTopRecommendation DESC, serviceID ASC");
+        $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch distinct categories for the pills
-$categories = $pdo->query("
-    SELECT DISTINCT category FROM services 
-    WHERE category IS NOT NULL AND category <> '' 
-    ORDER BY category
-")->fetchAll(PDO::FETCH_COLUMN);
+        // 2. Fetch associated features and badges for each service
+        foreach ($services as &$service) {
+            $serviceId = (int)$service['serviceID'];
 
-// Prepare JSON
-$servicesJson = json_encode($services, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$categoriesJson = json_encode($categories);
+            // Features list
+            $featStmt = $pdo->prepare("SELECT featureText FROM serviceFeatures WHERE serviceID = ? ORDER BY serviceFeatureID ASC");
+            $featStmt->execute([$serviceId]);
+            $service['features'] = $featStmt->fetchAll(PDO::FETCH_COLUMN);
 
-include __DIR__ . '/serviceManagement.html';
-?>
+            // Badges list
+            $badgeStmt = $pdo->prepare("SELECT badgeText FROM serviceBadges WHERE serviceID = ? ORDER BY serviceBadgeID ASC");
+            $badgeStmt->execute([$serviceId]);
+            $service['badges'] = $badgeStmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'data'   => $services
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'status'  => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+// Render the HTML view template
+require_once __DIR__ . '/serviceManagement.html';

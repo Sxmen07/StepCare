@@ -1,92 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Service Management - StepCare Admin</title>
   
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="serviceManagement.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/StepCare/admin/serviceManagement/serviceManagement.css">
 </head>
-<body class="bg-[#fafafa] min-h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
+<body class="bg-slate-50 text-neutral-800 font-sans flex h-screen overflow-hidden antialiased">
 
-  <!-- Sidebar Include -->
-  <?php include __DIR__ . '/../../components/sidebar-admin.html'; ?>
+  <!-- Admin Sidebar Component -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
 
-  <!-- Main Layout Area -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden">
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
     
-    <!-- Topbar Include -->
-    <?php include __DIR__ . '/../../components/topbar.html'; ?>
+    <!-- Topbar Component -->
+    <div id="topbar-container" class="shrink-0"></div>
 
-    <!-- Scrollable Content -->
-    <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-      <div class="w-full max-w-[1500px] mx-auto space-y-8">
+    <!-- Scrollable Main Content -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+      
+      <!-- Center Search & Filter Section with Add Button Next to Categories -->
+      <section class="max-w-4xl mx-auto space-y-5 pt-2">
         
-        <!-- ========================================== -->
-        <!-- TOP CONTROLS (Search, Categories, Add Btn) -->
-        <!-- ========================================== -->
-        <div class="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200/80">
+        <!-- Center Search Bar Component -->
+        <div class="relative w-full shadow-sm rounded-2xl group">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#3C52C3] transition-colors">
+            <i data-lucide="search" class="w-5 h-5"></i>
+          </div>
+          <input type="text" 
+                 id="service-search-input" 
+                 placeholder="Search by service title, description, or category..." 
+                 class="w-full pl-11 pr-10 py-3.5 bg-white border border-neutral-200 rounded-2xl text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] transition-all">
+          <button type="button" 
+                  id="clear-search-btn" 
+                  class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 transition">
+            <i data-lucide="x-circle" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Categories Pill & Add Button Row -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
           
-          <!-- Centered Search Bar -->
-          <div class="max-w-2xl mx-auto">
-            <div class="relative">
-              <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
-              <input type="text" id="searchInput" placeholder="Search services by name, category, or description..." 
-                     class="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm font-medium focus:bg-white focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none transition-all placeholder:font-normal placeholder:text-slate-400">
+          <!-- Sliding Pill Category Selector Container -->
+          <div class="relative flex items-center flex-1 justify-center sm:justify-start overflow-hidden w-full sm:w-auto">
+            <div id="category-pills-wrapper" class="relative inline-flex items-center gap-1.5 p-1.5 bg-neutral-200/60 rounded-2xl overflow-x-auto max-w-full no-scrollbar select-none">
+              
+              <!-- Sliding Background Indicator Pill -->
+              <div id="pill-highlight" class="absolute bg-white rounded-xl shadow-sm border border-neutral-200/80 transition-all duration-300 ease-out z-0 pointer-events-none"></div>
+
+              <!-- Dynamic Category Buttons -->
+              <button data-category="all" class="category-pill relative z-10 px-4 py-2 text-xs font-bold rounded-xl transition-colors duration-200 text-[#3C52C3]">
+                All Services
+              </button>
+              <button data-category="Elderly" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Elderly Care
+              </button>
+              <button data-category="Post-op" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Post-Op
+              </button>
+              <button data-category="Neuro" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Neuro Care
+              </button>
+              <button data-category="Postnatal" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Postnatal
+              </button>
+              <button data-category="Hospice" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Hospice
+              </button>
+              <button data-category="Chronic" class="category-pill relative z-10 px-4 py-2 text-xs font-semibold rounded-xl transition-colors duration-200 text-neutral-600 hover:text-neutral-900">
+                Chronic Care
+              </button>
             </div>
           </div>
 
-          <!-- Bottom Row: Categories (Left) & Add Button (Right) -->
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-8 pt-6 border-t border-neutral-100">
-            
-            <!-- Category Pills -->
-            <div class="relative inline-flex flex-wrap items-center gap-2" id="categoryContainer">
-              <button type="button" class="filter-chip active" data-filter="all">All Services</button>
-              <?php foreach ($categories as $cat): ?>
-                <button type="button" class="filter-chip" data-filter="<?= htmlspecialchars(strtolower($cat)) ?>">
-                  <?= htmlspecialchars($cat) ?>
-                </button>
-              <?php endforeach; ?>
-            </div>
-
-            <!-- Add Service Button -->
-            <button type="button" id="addServiceBtn" 
-                    class="shrink-0 inline-flex items-center justify-center gap-2 bg-[#3C52C3] hover:bg-[#2f41a0] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95">
-              <i data-lucide="plus" class="w-4 h-4"></i> Add Service
+          <!-- Add Service Button (Placed on the right of categories pill) -->
+          <div class="shrink-0">
+            <button type="button" 
+                    id="btn-add-service-placeholder"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3C52C3] hover:bg-[#3244a8] text-white text-xs font-bold rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer whitespace-nowrap">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Add Service</span>
             </button>
           </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- SERVICE LIST                               -->
-        <!-- ========================================== -->
-        <div class="bg-white rounded-3xl shadow-sm border border-neutral-200/80 overflow-hidden flex flex-col">
-          
-          <!-- Header -->
-          <div class="px-6 py-5 border-b border-neutral-100 flex items-center justify-between">
-            <h2 class="text-lg font-bold text-slate-800">All Services</h2>
-            <span id="resultCount" class="text-xs font-bold text-[#3C52C3] bg-blue-50 px-3 py-1 rounded-full border border-blue-100"></span>
-          </div>
-
-          <!-- List Container -->
-          <div id="servicesList" class="divide-y divide-neutral-100">
-            <!-- Rendered by JS -->
-          </div>
 
         </div>
+      </section>
 
-      </div>
+      <!-- Services Display Grid Section -->
+      <section class="pt-2">
+        <div class="flex items-center justify-between mb-4 px-1">
+          <p id="service-count-text" class="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+            Loading services...
+          </p>
+        </div>
+
+        <!-- Dynamic Service Cards Grid -->
+        <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <!-- Empty State View -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
+          <div class="w-16 h-16 bg-neutral-100 text-neutral-400 rounded-3xl flex items-center justify-center mb-4">
+            <i data-lucide="layers-slash" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-base font-bold text-neutral-800">No Services Found</h3>
+          <p class="text-xs text-neutral-500 mt-1 max-w-sm">We couldn't find any services matching your current filter parameters or search keyword.</p>
+        </div>
+      </section>
+
     </main>
   </div>
 
-  <!-- Pass PHP data to JS -->
-  <script>
-    window.servicesData = <?= $servicesJson ?>;
-    window.categoriesData = <?= $categoriesJson ?>;
-  </script>
-  
-  <script src="serviceManagement.js"></script>
+  <!-- Page Logic JavaScript -->
+  <script src="/StepCare/admin/serviceManagement/serviceManagement.js"></script>
 </body>
 </html>
