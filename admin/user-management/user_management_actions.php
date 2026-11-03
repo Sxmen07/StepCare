@@ -9,6 +9,40 @@ require_once __DIR__ . '/../../config/db_connect.php';
 
 $action = $_GET['action'] ?? '';
 
+// Check if current logged-in admin is a super admin
+// Evaluates both the `adminRole` column from database and the fallback `adminID === 1` rule
+function isCurrentSuperAdmin($pdo) {
+    // 1. Retrieve current admin ID from session (default to 1 in local development context)
+    $adminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
+
+    // 2. Fundamental rule: adminID 1 is always Super Admin
+    if ($adminId === 1) {
+        return true;
+    }
+
+    // 3. Query the `adminRole` column from admins table if it exists
+    try {
+        $stmt = $pdo->prepare("SELECT adminRole FROM admins WHERE adminID = ?");
+        $stmt->execute([$adminId]);
+        $role = $stmt->fetchColumn();
+
+        if ($role && strtolower(trim($role)) === 'super admin') {
+            return true;
+        }
+    } catch (Exception $e) {
+        // Fallback silently if table column has not been updated yet
+    }
+
+    // 4. Session compatibility checks
+    $role = strtolower($_SESSION['role'] ?? $_SESSION['user_role'] ?? '');
+    $roleLevel = strtolower($_SESSION['role_level'] ?? $_SESSION['admin_level'] ?? '');
+    if ($role === 'super admin' || $role === 'superadmin' || $roleLevel === 'super' || !empty($_SESSION['is_super_admin'])) {
+        return true;
+    }
+
+    return false;
+}
+
 switch ($action) {
     case 'fetch_users':
         header('Content-Type: application/json; charset=utf-8');
@@ -35,7 +69,7 @@ switch ($action) {
         break;
 }
 
-// 1. Fetch user accounts including IC & banReason
+// 1. Fetch user accounts including IC & banReason + Super Admin status
 function fetchUsersList($pdo) {
     try {
         $stmt = $pdo->query("
@@ -71,15 +105,24 @@ function fetchUsersList($pdo) {
             }
         }
 
-        echo json_encode(['status' => 'success', 'data' => $users]);
+        echo json_encode([
+            'status' => 'success',
+            'is_super_admin' => isCurrentSuperAdmin($pdo),
+            'data' => $users
+        ]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }
 
-// 2. Toggle Ban / Unban with Reason support
+// 2. Toggle Ban / Unban with Reason support (Protected: Super Admin Only)
 function toggleUserBanByIC($pdo) {
     try {
+        if (!isCurrentSuperAdmin($pdo)) {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only Super Administrators can ban or unban users.']);
+            return;
+        }
+
         $input = json_decode(file_get_contents('php://input'), true);
         $ic = trim($input['ic'] ?? '');
         $targetStatus = trim($input['status'] ?? '');
@@ -109,9 +152,14 @@ function toggleUserBanByIC($pdo) {
     }
 }
 
-// 3. Batch Ban multiple users with a unified Reason
+// 3. Batch Ban multiple users (Protected: Super Admin Only)
 function batchBanUsersByIC($pdo) {
     try {
+        if (!isCurrentSuperAdmin($pdo)) {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only Super Administrators can perform batch ban.']);
+            return;
+        }
+
         $input = json_decode(file_get_contents('php://input'), true);
         $ics = $input['ics'] ?? [];
         $reason = trim($input['reason'] ?? 'Batch administrative sanction');
