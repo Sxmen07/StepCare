@@ -3,11 +3,13 @@
 let servicesData = [];
 let currentCategory = 'all';
 let searchQuery = '';
+let viewMode = 'card'; // 'card' or 'list'
 
 document.addEventListener('DOMContentLoaded', () => {
   loadComponents();
   fetchServices();
   setupSearchAndFilters();
+  setupViewModeToggle();
 });
 
 // 1. Dynamically Load Shared UI Components with fallback paths
@@ -56,13 +58,20 @@ async function fetchServices() {
   }
 }
 
-// 3. Render Merged Service Cards Grid (Background Image + Features + Pricing Footer)
+// 3. Render Service Cards / List View
 function renderServices() {
   const grid = document.getElementById('services-grid');
   const emptyState = document.getElementById('empty-state');
   const countText = document.getElementById('service-count-text');
 
   if (!grid) return;
+
+  // Adjust grid layout classes based on viewMode
+  if (viewMode === 'list') {
+    grid.className = "flex flex-col space-y-3";
+  } else {
+    grid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
+  }
 
   // Filter Services by Search & Category
   const filtered = servicesData.filter(service => {
@@ -92,7 +101,7 @@ function renderServices() {
   emptyState.classList.add('hidden');
   emptyState.classList.remove('flex');
 
-  // Build Merged Cards HTML Layout
+  // Build Cards or List View HTML
   grid.innerHTML = filtered.map(service => {
     const imagePath = service.serviceImageURL 
       ? service.serviceImageURL.replace('../..', '/StepCare') 
@@ -106,7 +115,6 @@ function renderServices() {
     const reviewCount = service.review_count || 0;
     const categoryName = (service.category || 'General').toUpperCase();
 
-    // Render up to 2 key feature checkmarks (from user card layout) to keep card clean in admin grid
     const topFeatures = (service.features || []).slice(0, 2).map(f => `
       <li class="flex items-start gap-1.5 text-[11px] text-neutral-300">
         <span class="text-[#34D399] font-bold">✓</span>
@@ -114,10 +122,32 @@ function renderServices() {
       </li>
     `).join('');
 
+    // List View Layout
+    if (viewMode === 'list') {
+      return `
+        <div class="relative group bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition flex items-center justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <img src="${imagePath}" alt="${service.serviceName}" class="w-16 h-16 rounded-xl object-cover shrink-0" onerror="this.src='/StepCare/images/services/elderly.png'">
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold text-[#3C52C3] uppercase tracking-wider">${categoryName}</span>
+              <h4 class="text-sm font-bold text-neutral-900 truncate">${service.serviceName}</h4>
+              <p class="text-xs text-neutral-500">RM ${parseFloat(service.price).toFixed(2)} /visit • ${durationText}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Active</span>
+            <button type="button" onclick="editService(${service.serviceID})" class="p-2 text-neutral-400 hover:text-[#3C52C3] transition cursor-pointer" title="Edit Service">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Card View Layout
     return `
       <div class="relative group rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-end h-[460px] bg-neutral-900 border border-neutral-200/50 select-none">
         
-        <!-- Full Background Image with Zoom on Hover -->
         <div class="absolute inset-0 z-0 overflow-hidden">
           <img src="${imagePath}" 
                alt="${service.serviceName}" 
@@ -125,32 +155,36 @@ function renderServices() {
                onerror="this.src='/StepCare/images/services/elderly.png'">
         </div>
 
-        <!-- Dark Gradient Overlay -->
         <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20 z-10 pointer-events-none"></div>
 
-        <!-- Top Badges if Top Pick -->
-        ${service.isTopRecommendation == 1 ? `
-          <div class="absolute top-3 left-3 z-20 bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
-            ★ Top Pick
+        <div class="absolute top-3 inset-x-3 z-30 flex items-center justify-between">
+          <div>
+            ${service.isTopRecommendation == 1 ? `
+              <span class="bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
+                ★ Top Pick
+              </span>
+            ` : ''}
           </div>
-        ` : ''}
 
-        <!-- Card Content Container -->
+          <button type="button" 
+                  onclick="editService(${service.serviceID})" 
+                  class="p-1.5 text-white/80 hover:text-white transition cursor-pointer focus:outline-none" 
+                  title="Edit Service">
+            <i data-lucide="pencil" class="w-4 h-4 drop-shadow-md"></i>
+          </button>
+        </div>
+
         <div class="relative z-20 p-5 flex flex-col justify-end space-y-2.5">
-          
-          <!-- Category Tag -->
           <div>
             <span class="text-[10px] font-black tracking-widest text-[#34D399] uppercase">
               ${categoryName}
             </span>
           </div>
 
-          <!-- Service Title -->
           <h3 class="text-lg font-black text-white leading-snug tracking-tight line-clamp-2">
             ${service.serviceName}
           </h3>
 
-          <!-- Ratings & Duration Row -->
           <div class="flex items-center gap-2 text-[11px] text-neutral-300 font-medium">
             <div class="flex items-center gap-1 text-amber-400 font-bold">
               <span>★</span>
@@ -161,17 +195,14 @@ function renderServices() {
             <span class="text-neutral-300">${durationText}</span>
           </div>
 
-          <!-- Feature Bullets Preview (From User Card Layout) -->
           ${topFeatures ? `
             <ul class="space-y-1 pt-1">
               ${topFeatures}
             </ul>
           ` : ''}
 
-          <!-- Thin Separator Line -->
           <div class="w-full h-px bg-white/15 my-1"></div>
 
-          <!-- Price Footer Section -->
           <div class="flex items-end justify-between pt-0.5">
             <div>
               <p class="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">Service fee</p>
@@ -181,7 +212,6 @@ function renderServices() {
               </div>
             </div>
 
-            <!-- Active Status Badge -->
             <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 backdrop-blur-md text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
               Active
             </span>
@@ -195,7 +225,74 @@ function renderServices() {
   if (window.lucide) lucide.createIcons();
 }
 
-// 4. Sliding Pill & Search Event Controllers
+// 4. View Mode Sliding Pill Toggle & Fade Animation Controller
+function setupViewModeToggle() {
+  const viewHighlight = document.getElementById('view-pill-highlight');
+  const viewPills = document.querySelectorAll('.view-pill');
+  const servicesWrapper = document.getElementById('services-wrapper');
+
+  if (!viewHighlight || viewPills.length === 0) return;
+
+  function updateViewHighlight(activeBtn) {
+    const parentContainer = activeBtn.parentElement;
+    const containerRect = parentContainer.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+
+    viewHighlight.style.width = `${btnRect.width}px`;
+    viewHighlight.style.height = `${btnRect.height}px`;
+    viewHighlight.style.left = `${btnRect.left - containerRect.left + parentContainer.scrollLeft}px`;
+    viewHighlight.style.top = `${btnRect.top - containerRect.top}px`;
+  }
+
+  // Initial highlight setup for Card view
+  const initialActiveView = document.querySelector('.view-pill[data-view="card"]');
+  setTimeout(() => updateViewHighlight(initialActiveView), 50);
+
+  viewPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const targetMode = pill.getAttribute('data-view');
+      if (viewMode === targetMode) return;
+
+      // Update button styling states
+      viewPills.forEach(p => {
+        p.classList.remove('text-[#3C52C3]', 'font-bold');
+        p.classList.add('text-neutral-500', 'font-semibold');
+      });
+      pill.classList.remove('text-neutral-500', 'font-semibold');
+      pill.classList.add('text-[#3C52C3]', 'font-bold');
+
+      updateViewHighlight(pill);
+
+      // Smooth Fade & Slide Transition Effect
+      if (servicesWrapper) {
+        servicesWrapper.style.opacity = '0';
+        servicesWrapper.style.transform = 'translateY(10px)';
+
+        setTimeout(() => {
+          viewMode = targetMode;
+          renderServices();
+          servicesWrapper.style.opacity = '1';
+          servicesWrapper.style.transform = 'translateY(0)';
+        }, 150);
+      } else {
+        viewMode = targetMode;
+        renderServices();
+      }
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    const activeBtn = document.querySelector('.view-pill.font-bold');
+    if (activeBtn) updateViewHighlight(activeBtn);
+  });
+}
+
+// Placeholder function for edit action
+function editService(serviceID) {
+  alert(`Edit service ID: ${serviceID}`);
+}
+
+// 5. Sliding Pill & Search Event Controllers
 function setupSearchAndFilters() {
   const pillsWrapper = document.getElementById('category-pills-wrapper');
   const highlight = document.getElementById('pill-highlight');
@@ -203,7 +300,6 @@ function setupSearchAndFilters() {
   const searchInput = document.getElementById('service-search-input');
   const clearSearchBtn = document.getElementById('clear-search-btn');
 
-  // Move sliding background pill
   function updateHighlight(activeButton) {
     if (!activeButton || !highlight || !pillsWrapper) return;
     
@@ -216,11 +312,9 @@ function setupSearchAndFilters() {
     highlight.style.top = `${btnRect.top - wrapperRect.top}px`;
   }
 
-  // Set default highlight state
   const initialActive = document.querySelector('.category-pill[data-category="all"]');
   setTimeout(() => updateHighlight(initialActive), 50);
 
-  // Pill click handler
   pills.forEach(pill => {
     pill.addEventListener('click', () => {
       pills.forEach(p => {
@@ -238,13 +332,11 @@ function setupSearchAndFilters() {
     });
   });
 
-  // Window resize highlight adjustment
   window.addEventListener('resize', () => {
     const activePill = document.querySelector('.category-pill.font-bold');
     updateHighlight(activePill);
   });
 
-  // Search input listeners
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim();
