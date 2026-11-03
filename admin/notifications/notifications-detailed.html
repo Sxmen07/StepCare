@@ -9,12 +9,12 @@
 </head>
 <body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
 
-  <!-- Sidebar -->
-  <div id="sidebar-container" class="shrink-0 h-full"></div>
+  <!-- Sidebar Mount Point -->
+  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
 
   <!-- Workspace -->
-  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-    <!-- Topbar -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    <!-- Topbar Mount Point -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
     <!-- Main Content Area -->
@@ -44,8 +44,9 @@
         <!-- Sender & Recipients Profile -->
         <div class="flex items-center justify-between pb-2">
           <div class="flex items-center gap-4">
-            <div id="sender-avatar" class="w-12 h-12 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-base overflow-hidden border border-neutral-200 shrink-0">
-              S
+            <!-- Modern Avatar Box (No Black Background) -->
+            <div id="sender-avatar-container" class="w-12 h-12 rounded-full overflow-hidden shrink-0 flex items-center justify-center">
+              <!-- Rendered dynamically -->
             </div>
             <div>
               <div class="flex items-center gap-2.5">
@@ -122,17 +123,57 @@
   </div>
 
   <script>
+    // System Initial Capsule Generator (1:1 with Staff Management)
+    function renderInitialsAvatar(name) {
+      const clean = (name || 'StepCare').trim();
+      const parts = clean.split(/\s+/).filter(Boolean);
+      let initials = '';
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      } else {
+        initials = clean.substring(0, 2).toUpperCase();
+      }
+
+      const palette = [
+        { bg: 'bg-[#EEF2FF]', text: 'text-[#3C52C3]', border: 'border-indigo-100' },
+        { bg: 'bg-[#E6F4EA]', text: 'text-[#0D652D]', border: 'border-emerald-100' }
+      ];
+      let hash = 0;
+      for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+      const c = palette[Math.abs(hash) % palette.length];
+
+      return `<div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm ${c.bg} ${c.text} border ${c.border} shrink-0 select-none">${initials}</div>`;
+    }
+
+    // Helper: Safely inject HTML and execute scripts within
+    function injectComponent(containerId, html) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = html;
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+      if (window.lucide) lucide.createIcons();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-      fetch('/StepCare/components/sidebar-admin.html').then(r => r.text()).then(h => {
-        document.getElementById('sidebar-container').innerHTML = h;
-        lucide.createIcons();
-      });
-      fetch('/StepCare/components/topbar.html').then(r => r.text()).then(h => {
-        const c = document.getElementById('topbar-container');
-        c.innerHTML = h;
-        document.getElementById('topbar-page-title').textContent = "Notifications";
-        lucide.createIcons();
-      });
+      // 1. Mount sidebar with active script evaluation
+      fetch('/StepCare/components/sidebar-admin.html')
+        .then(r => r.text())
+        .then(h => injectComponent('sidebar-container', h));
+
+      // 2. Mount topbar with active script evaluation
+      fetch('/StepCare/components/topbar.html')
+        .then(r => r.text())
+        .then(h => {
+          injectComponent('topbar-container', h);
+          const title = document.getElementById('topbar-page-title');
+          if (title) title.textContent = "Notifications";
+        });
 
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -141,7 +182,7 @@
         return;
       }
 
-      // Fetch Detail Record
+      // 3. Fetch Detail Record
       fetch(`/StepCare/auth/notification-actions.php?action=get_detail&id=${id}&role=admin&user_id=1`)
         .then(r => r.json())
         .then(res => {
@@ -170,19 +211,36 @@
             badge.textContent = 'System';
           }
 
-          // Recipients Badges
+          // Target Recipients Badges (Orange for user)
           const badgeBox = document.getElementById('recipients-badges');
           const roles = d.recipients_list && d.recipients_list.length > 0 ? d.recipients_list : [d.recipientType];
-          badgeBox.innerHTML = roles.map(r => `
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border capitalize bg-neutral-100 text-neutral-700 border-neutral-200">${r}</span>
-          `).join('');
+          badgeBox.innerHTML = roles.map(r => {
+            const roleStyles = {
+              admin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              nurse: 'bg-sky-50 text-sky-700 border-sky-200',
+              user:  'bg-orange-50 text-orange-700 border-orange-200'
+            };
+            return `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border capitalize ${roleStyles[r] || 'bg-neutral-100 text-neutral-700 border-neutral-200'}">${r}</span>`;
+          }).join('');
 
-          // Avatar
-          const avatar = document.getElementById('sender-avatar');
+          // Precise Avatar resolution matching images/avatars/{role}/ structure
+          const avatarContainer = document.getElementById('sender-avatar-container');
           if (d.senderPhoto) {
-            avatar.innerHTML = `<img src="${d.senderPhoto}" class="w-full h-full object-cover">`;
+            let photoSrc = d.senderPhoto.trim();
+            // If senderPhoto only stores the bare filename, prepend the folder path
+            if (!photoSrc.startsWith('/') && !photoSrc.startsWith('http')) {
+              const subFolder = (d.senderType === 'nurse') ? 'nurse' : (d.senderType === 'admin' ? 'admin' : 'user');
+              const filename = photoSrc.split('/').pop().split('\\').pop();
+              photoSrc = `/StepCare/images/avatars/${subFolder}/${filename}`;
+            }
+
+            avatarContainer.innerHTML = `
+              <img src="${photoSrc}" 
+                   class="w-12 h-12 rounded-full object-cover border border-neutral-200" 
+                   onerror="this.outerHTML='${renderInitialsAvatar(d.senderName).replace(/"/g, '&quot;')}'">
+            `;
           } else {
-            avatar.textContent = (d.senderName ? d.senderName.charAt(0).toUpperCase() : 'S');
+            avatarContainer.innerHTML = renderInitialsAvatar(d.senderName);
           }
 
           // Author Controls (Edit & Delete)

@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
   </style>
 </head>
@@ -22,140 +22,145 @@
     <!-- Topbar Mount Point -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
-    <!-- Scrollable Main Content -->
-    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
-      <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Edge-Style Full Width Dual Tab Bar (100% Width) -->
+    <div class="w-full bg-neutral-100/90 select-none flex">
+      <!-- Packages Tab -->
+      <button id="tab-service" 
+              type="button" 
+              class="w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer bg-white text-[#3C52C3] border-t-2 border-t-[#3C52C3] relative">
+        <i data-lucide="briefcase-medical" class="w-4 h-4"></i>
+        <span>Packages</span>
+      </button>
+
+      <!-- Nurse Tab -->
+      <button id="tab-nurse" 
+              type="button" 
+              class="w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-neutral-500 border-t-2 border-t-transparent hover:border-t-[#0D652D] hover:bg-[#E6F4EA]/70 hover:text-[#0D652D]">
+        <i data-lucide="stethoscope" class="w-4 h-4"></i>
+        <span>Nurse</span>
+      </button>
+    </div>
+
+    <!-- Scrollable Main Content (True Full Screen 100% Width) -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar bg-white">
+      <div class="w-full space-y-6">
         
-        <!-- Controls Bar: Left-aligned Channel Switcher & Entity Select -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-3 flex-wrap">
-            <!-- Channel Switcher -->
-            <div class="flex items-center bg-neutral-100 p-1.5 rounded-2xl shrink-0 gap-1 border border-neutral-200/60 select-none">
-              <button id="tab-service" 
-                      type="button" 
-                      class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer bg-white text-[#3C52C3] shadow-xs border border-neutral-200/40">
-                <i data-lucide="package" class="w-4 h-4 pointer-events-none text-[#3C52C3]"></i>
-                <span class="pointer-events-none">Packages</span>
-              </button>
-              <button id="tab-nurse" 
-                      type="button" 
-                      class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-neutral-500 hover:text-black">
-                <i data-lucide="stethoscope" class="w-4 h-4 pointer-events-none text-neutral-400"></i>
-                <span class="pointer-events-none">Nurses</span>
-              </button>
-            </div>
-
-            <!-- Dynamic Dropdown to Select Specific Package / Nurse -->
-            <div class="relative min-w-[240px]">
-              <span id="select-icon-box" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-                <i data-lucide="package" class="w-4 h-4"></i>
-              </span>
-              <select id="entity-select" class="w-full pl-10 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-bold text-neutral-800 appearance-none focus:outline-none focus:border-[#3C52C3] cursor-pointer">
-                <option value="0">All Care Packages (Overall)</option>
-              </select>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dynamic Quantifiable Analytics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Card 1: Average Rating -->
-          <div class="p-6 rounded-[2rem] border border-neutral-200/90 bg-white shadow-xs flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span id="metric-scope-label" class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Average Rating</span>
-              <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
-                <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+        <!-- Controls & Metrics Section (Padded with standard 8 units matching Staff top) -->
+        <div class="px-8 pt-5 space-y-5">
+          <!-- Selection Ribbon (Restored to compact position) -->
+          <div class="relative w-full sm:w-80 select-none">
+            <button id="custom-dropdown-btn" 
+                    type="button" 
+                    class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-neutral-200 hover:border-neutral-300 rounded-xl transition cursor-pointer text-left shadow-2xs">
+              <div id="selected-entity-display" class="flex items-center gap-2.5 truncate">
+                <!-- Rendered preview -->
               </div>
-            </div>
-            <div class="mt-4 flex items-baseline gap-2">
-              <span id="metric-avg-rating" class="text-3xl font-black text-neutral-900">0.0</span>
-              <span class="text-xs font-bold text-neutral-400">/ 5.0</span>
-            </div>
-            <p id="metric-selected-name" class="text-[11px] text-neutral-500 font-semibold mt-1 truncate">All Care Packages</p>
-          </div>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-neutral-400 shrink-0 ml-2"></i>
+            </button>
 
-          <!-- Card 2: Rating Distribution Breakdown Bar -->
-          <div class="p-6 rounded-[2rem] border border-neutral-200/90 bg-white shadow-xs md:col-span-2 flex flex-col justify-between">
-            <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Rating Distribution (Selected Scope)</span>
-            <div id="star-bars-container" class="space-y-1.5 text-xs">
+            <!-- Custom Dropdown Menu with Nurse Avatars -->
+            <div id="custom-dropdown-menu" 
+                 class="hidden absolute left-0 top-full mt-2 w-full sm:w-96 bg-white border border-neutral-200 rounded-2xl shadow-xl z-40 p-1.5 max-h-80 overflow-y-auto custom-scrollbar">
               <!-- Populated dynamically -->
             </div>
           </div>
 
-          <!-- Card 3: Feedback Summary -->
-          <div class="p-6 rounded-[2rem] border border-neutral-200/90 bg-white shadow-xs flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Audit Summary</span>
-              <div class="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
-                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          <!-- 3 Dynamic Analytics Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Average Rating -->
+            <div class="p-6 rounded-2xl border border-neutral-200 bg-white flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Average Rating</span>
+                <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+                </div>
+              </div>
+              <div class="mt-4 flex items-baseline gap-2">
+                <span id="metric-avg-rating" class="text-3xl font-black text-neutral-900">0.0</span>
+                <span class="text-xs font-bold text-neutral-400">/ 5.0</span>
+              </div>
+              <p id="metric-selected-name" class="text-[11px] text-neutral-500 font-medium mt-1 truncate">All Care Packages</p>
+            </div>
+
+            <!-- Rating Distribution Breakdown -->
+            <div class="p-6 rounded-2xl border border-neutral-200 bg-white md:col-span-2 flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Rating Distribution</span>
+              <div id="star-bars-container" class="space-y-1.5 text-xs">
+                <!-- Populated dynamically -->
               </div>
             </div>
-            <div class="mt-3 space-y-1">
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-neutral-500 font-semibold">Total Reviews:</span>
-                <span id="metric-total-count" class="font-bold text-neutral-900">0</span>
+
+            <!-- Moderation Audit Summary -->
+            <div class="p-6 rounded-2xl border border-neutral-200 bg-white flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Audit Summary</span>
+                <div class="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
+                  <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                </div>
               </div>
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-neutral-500 font-semibold">Taken Down:</span>
-                <span id="metric-hidden-count" class="font-bold text-rose-600">0</span>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-neutral-500 font-medium">Total Reviews:</span>
+                  <span id="metric-total-count" class="font-bold text-neutral-900">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-neutral-500 font-medium">Taken Down:</span>
+                  <span id="metric-hidden-count" class="font-bold text-rose-600">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-neutral-500 font-medium">Low Ratings (1-2★):</span>
+                  <span id="metric-low-count" class="font-bold text-amber-600">0</span>
+                </div>
               </div>
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-neutral-500 font-semibold">Low Ratings (1-2★):</span>
-                <span id="metric-low-count" class="font-bold text-amber-600">0</span>
-              </div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+              <input type="text" 
+                     id="review-search-input" 
+                     placeholder="Search reviewer, target or comment..." 
+                     class="w-full pl-10 pr-4 py-2.5 bg-neutral-50/70 border border-neutral-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#3C52C3] transition" />
+            </div>
+
+            <!-- Status Filters (Active: Blue #3C52C3) -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Status:</span>
+              <button type="button" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-[#3C52C3] text-white border-[#3C52C3]" data-filter="all">All</button>
+              <button type="button" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="visible">Visible</button>
+              <button type="button" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="hidden">Taken Down</button>
+              <button type="button" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="low">Low Ratings (1-2★)</button>
             </div>
           </div>
         </div>
 
-        <!-- Filter & Search Ribbon -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <!-- Search Bar -->
-          <div class="relative flex-1 max-w-lg">
-            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-            <input type="text" 
-                   id="review-search-input" 
-                   placeholder="Search reviewer name or comments..." 
-                   class="w-full pl-11 pr-4 py-3 bg-neutral-50/70 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
-          </div>
-
-          <!-- Status Filter Tabs -->
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Status:</span>
-            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-filter="all">All</button>
-            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="visible">Visible</button>
-            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="hidden">Taken Down</button>
-            <button type="button" class="filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-filter="low">Low Ratings (1-2★)</button>
-          </div>
-        </div>
-
-        <!-- Moderation Table Container -->
-        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-center border-collapse table-fixed">
-              <thead>
-                <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/40">
-                  <th class="py-4 px-4 w-[18%] text-center align-middle">Patient Reviewer</th>
-                  <th class="py-4 px-4 w-[20%] text-center align-middle" id="col-target-header">Care Package</th>
-                  <th class="py-4 px-4 w-[12%] text-center align-middle">Rating</th>
-                  <th class="py-4 px-4 w-[26%] text-center align-middle">Patient Feedback</th>
-                  <th class="py-4 px-4 w-[12%] text-center align-middle">Visibility</th>
-                  <th class="py-4 px-4 w-[12%] text-center align-middle">Moderation</th>
-                </tr>
-              </thead>
-              <tbody id="reviews-table-body" class="divide-y divide-neutral-100 text-neutral-700">
-                <!-- Dynamically populated -->
-              </tbody>
-            </table>
-          </div>
+        <!-- 100% Full-Screen Edge-to-Edge Table (Staff Management Specification) -->
+        <div class="w-full overflow-x-auto pb-10">
+          <table class="w-full text-left border-collapse table-fixed">
+            <thead>
+              <tr class="bg-neutral-50/80 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-y border-neutral-200/70">
+                <th class="py-4 pl-8 pr-4 w-[20%]">PATIENT REVIEWER</th>
+                <th class="py-4 px-4 w-[22%]" id="col-target-header">CARE PACKAGE</th>
+                <th class="py-4 px-4 w-[12%]">RATING</th>
+                <th class="py-4 px-4 w-[26%]">FEEDBACK</th>
+                <th class="py-4 px-4 w-[10%]">STATUS</th>
+                <th class="py-4 pl-4 pr-8 w-[10%] text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="reviews-table-body" class="divide-y divide-neutral-100 text-neutral-700">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
 
           <!-- Empty State -->
           <div id="reviews-empty-state" class="hidden py-16 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
-              <i data-lucide="message-square-off" class="w-7 h-7"></i>
+            <div class="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mx-auto mb-2">
+              <i data-lucide="message-square-off" class="w-6 h-6"></i>
             </div>
             <h4 class="text-sm font-bold text-neutral-800">No reviews found</h4>
-            <p class="text-xs text-neutral-400 mt-1">There are currently no reviews matching your filter criteria.</p>
+            <p class="text-xs text-neutral-400 mt-0.5">There are no reviews matching your selected criteria.</p>
           </div>
         </div>
 
@@ -163,16 +168,16 @@
     </main>
   </div>
 
-  <!-- Page Logic Controller -->
   <script>
     // English comments only
     (function () {
       'use strict';
 
-      let currentChannel = 'service'; // 'service' or 'nurse'
-      let currentEntityId = 0; // 0 = all
+      let currentChannel = 'service';
+      let currentEntityId = 0;
       let currentFilter = 'all';
       let reviewsList = [];
+      let dropdownOptions = [];
 
       document.addEventListener('DOMContentLoaded', () => {
         // Mount sidebar
@@ -209,47 +214,156 @@
             }
           });
 
-        // Initial setup
         loadDropdownOptions();
         loadAnalytics();
         loadReviews();
         initEventHandlers();
       });
 
-      // Load options into selector
+      // Staff Management Initials Avatar Generator (1:1 soft capsule)
+      function getInitialsAvatar(name) {
+        const clean = (name || 'Nurse').trim();
+        const parts = clean.split(/\s+/).filter(Boolean);
+        let initials = '';
+        if (parts.length >= 2) {
+          initials = (parts[0][0] + parts[1][0]).toUpperCase();
+        } else {
+          initials = clean.substring(0, 2).toUpperCase();
+        }
+
+        const palette = [
+          { bg: 'bg-[#E6F4EA]', text: 'text-[#0D652D]', border: 'border-emerald-100/90' },
+          { bg: 'bg-[#EEF2FF]', text: 'text-[#3C52C3]', border: 'border-indigo-100/90' }
+        ];
+        let hash = 0;
+        for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+        const c = palette[Math.abs(hash) % palette.length];
+
+        return `<div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] ${c.bg} ${c.text} border ${c.border} shrink-0">${initials}</div>`;
+      }
+
+      // Load options and render custom dropdown items
       async function loadDropdownOptions() {
         try {
           const res = await fetch(`./review_actions.php?action=get_dropdown_options&type=${currentChannel}`);
           const json = await res.json();
-          const select = document.getElementById('entity-select');
-          select.innerHTML = '';
+          dropdownOptions = (json.status === 'success' && Array.isArray(json.data)) ? json.data : [];
 
-          const defaultLabel = (currentChannel === 'nurse') ? 'All Nurses (Overall)' : 'All Care Packages (Overall)';
-          const defaultOpt = document.createElement('option');
-          defaultOpt.value = '0';
-          defaultOpt.textContent = defaultLabel;
-          select.appendChild(defaultOpt);
-
-          if (json.status === 'success' && Array.isArray(json.data)) {
-            json.data.forEach(item => {
-              const opt = document.createElement('option');
-              opt.value = item.id;
-              opt.textContent = item.label;
-              select.appendChild(opt);
-            });
-          }
           currentEntityId = 0;
-          updateSelectedLabel();
+          renderCustomDropdown();
+          updateSelectedDisplay();
         } catch (err) {
           console.error('Failed to load dropdown options:', err);
         }
       }
 
-      function updateSelectedLabel() {
-        const select = document.getElementById('entity-select');
-        const selectedText = select.options[select.selectedIndex]?.text || '';
-        document.getElementById('metric-selected-name').textContent = selectedText;
+      // Render custom dropdown items
+      function renderCustomDropdown() {
+        const menu = document.getElementById('custom-dropdown-menu');
+        if (!menu) return;
+
+        const defaultLabel = (currentChannel === 'nurse') ? 'All Nurses (Overall)' : 'All Care Packages (Overall)';
+        const defaultIcon = (currentChannel === 'nurse') 
+          ? `<div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-4 h-4"></i></div>`
+          : `<div class="w-8 h-8 rounded-xl bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0"><i data-lucide="briefcase-medical" class="w-4 h-4"></i></div>`;
+
+        let html = `
+          <button type="button" 
+                  onclick="window.selectCustomOption(0, '${defaultLabel}')" 
+                  class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-neutral-50 transition cursor-pointer text-left ${currentEntityId === 0 ? 'bg-neutral-100/80 font-bold' : ''}">
+            ${defaultIcon}
+            <div class="truncate">
+              <p class="text-xs font-bold text-neutral-900 truncate">${defaultLabel}</p>
+              <p class="text-[10px] text-neutral-400">View overall aggregated ratings</p>
+            </div>
+          </button>
+        `;
+
+        dropdownOptions.forEach(item => {
+          let avatarSnippet = '';
+          let subText = item.specialization || item.category || 'General';
+
+          if (currentChannel === 'nurse') {
+            if (item.photoURL) {
+              const filename = item.photoURL.split('/').pop().split('\\').pop();
+              avatarSnippet = `<img src="/StepCare/images/avatars/nurse/${filename}" class="w-8 h-8 rounded-full object-cover shrink-0" onerror="this.outerHTML='${getInitialsAvatar(item.label).replace(/"/g, '&quot;')}'">`;
+            } else {
+              avatarSnippet = getInitialsAvatar(item.label);
+            }
+          } else {
+            avatarSnippet = `
+              <div class="w-8 h-8 rounded-xl bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0">
+                <i data-lucide="briefcase-medical" class="w-4 h-4"></i>
+              </div>
+            `;
+          }
+
+          const isSelected = (currentEntityId === parseInt(item.id, 10));
+          html += `
+            <button type="button" 
+                    onclick="window.selectCustomOption(${item.id}, '${item.label.replace(/'/g, "\\'")}')" 
+                    class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-neutral-50 transition cursor-pointer text-left ${isSelected ? 'bg-neutral-100/80 font-bold' : ''}">
+              ${avatarSnippet}
+              <div class="truncate">
+                <p class="text-xs font-bold text-neutral-900 truncate">${item.label}</p>
+                <p class="text-[10px] text-neutral-400 truncate">${subText}</p>
+              </div>
+            </button>
+          `;
+        });
+
+        menu.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
       }
+
+      // Update trigger button presentation
+      function updateSelectedDisplay() {
+        const display = document.getElementById('selected-entity-display');
+        const metricName = document.getElementById('metric-selected-name');
+
+        let selectedItem = dropdownOptions.find(o => parseInt(o.id, 10) === currentEntityId);
+        let title = selectedItem ? selectedItem.label : ((currentChannel === 'nurse') ? 'All Nurses (Overall)' : 'All Care Packages (Overall)');
+
+        if (metricName) metricName.textContent = title;
+
+        if (!selectedItem || currentEntityId === 0) {
+          const icon = (currentChannel === 'nurse')
+            ? `<div class="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i data-lucide="users" class="w-3.5 h-3.5"></i></div>`
+            : `<div class="w-6 h-6 rounded-lg bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0"><i data-lucide="briefcase-medical" class="w-3.5 h-3.5"></i></div>`;
+          display.innerHTML = `
+            ${icon}
+            <span class="text-xs font-bold text-neutral-800 truncate">${title}</span>
+          `;
+        } else {
+          if (currentChannel === 'nurse') {
+            const avatarHtml = selectedItem.photoURL 
+              ? `<img src="/StepCare/images/avatars/nurse/${selectedItem.photoURL.split('/').pop()}" class="w-6 h-6 rounded-full object-cover shrink-0" onerror="this.outerHTML='${getInitialsAvatar(selectedItem.label).replace(/"/g, '&quot;')}'">`
+              : getInitialsAvatar(selectedItem.label);
+            display.innerHTML = `
+              ${avatarHtml}
+              <span class="text-xs font-bold text-neutral-800 truncate">${title}</span>
+            `;
+          } else {
+            display.innerHTML = `
+              <div class="w-6 h-6 rounded-lg bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0">
+                <i data-lucide="briefcase-medical" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-xs font-bold text-neutral-800 truncate">${title}</span>
+            `;
+          }
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      // Dropdown option select handler
+      window.selectCustomOption = function (id, label) {
+        currentEntityId = parseInt(id, 10);
+        document.getElementById('custom-dropdown-menu').classList.add('hidden');
+        updateSelectedDisplay();
+        renderCustomDropdown();
+        loadAnalytics();
+        loadReviews();
+      };
 
       // Load analytics data
       async function loadAnalytics() {
@@ -291,16 +405,17 @@
             reviewsList = json.data || [];
             renderTable();
           } else {
-            console.error('Fetch error:', json.message);
+            reviewsList = [];
             renderTable();
           }
         } catch (err) {
           console.error('Request failed:', err);
+          reviewsList = [];
           renderTable();
         }
       }
 
-      // Render table
+      // Render table rows (Full Screen Staff Management Style)
       function renderTable() {
         const tbody = document.getElementById('reviews-table-body');
         const emptyState = document.getElementById('reviews-empty-state');
@@ -308,7 +423,7 @@
         const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
         const colHeader = document.getElementById('col-target-header');
-        colHeader.textContent = (currentChannel === 'nurse') ? 'Assigned Nurse' : 'Care Package';
+        colHeader.textContent = (currentChannel === 'nurse') ? 'ASSIGNED NURSE' : 'CARE PACKAGE';
 
         const filtered = reviewsList.filter(item => {
           return item.patientName.toLowerCase().includes(searchTerm) || 
@@ -330,36 +445,65 @@
               : '<i data-lucide="star" class="w-3.5 h-3.5 text-neutral-300 inline"></i>';
           }).join('');
 
+          // Staff Management Soft Pill Style Badges
           const visibilityBadge = item.isHidden
-            ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Taken Down</span>'
-            : '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Visible</span>';
+            ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">Taken Down</span>'
+            : '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#E6F4EA] text-[#0D652D] border border-emerald-100/80">Visible</span>';
 
           const actionBtn = item.isHidden
-            ? `<button type="button" onclick="window.toggleReview(${item.reviewId}, 0)" class="px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold transition cursor-pointer">Restore</button>`
-            : `<button type="button" onclick="window.toggleReview(${item.reviewId}, 1)" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition cursor-pointer">Take Down</button>`;
+            ? `<button type="button" onclick="window.toggleReview(${item.reviewId}, 0)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-semibold transition cursor-pointer shadow-2xs"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-neutral-500"></i><span>Restore</span></button>`
+            : `<button type="button" onclick="window.toggleReview(${item.reviewId}, 1)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold transition cursor-pointer"><i data-lucide="eye-off" class="w-3.5 h-3.5 text-rose-500"></i><span>Take Down</span></button>`;
+
+          let targetCellContent = '';
+          if (currentChannel === 'nurse') {
+            const avatarHtml = item.targetPhoto 
+              ? `<img src="/StepCare/images/avatars/nurse/${item.targetPhoto.split('/').pop()}" class="w-7 h-7 rounded-full object-cover shrink-0" onerror="this.outerHTML='${getInitialsAvatar(item.targetName).replace(/"/g, '&quot;')}'">`
+              : getInitialsAvatar(item.targetName);
+
+            targetCellContent = `
+              <div class="flex items-center gap-3">
+                ${avatarHtml}
+                <div class="truncate">
+                  <p class="text-xs font-bold text-neutral-900 truncate">${item.targetName}</p>
+                  <p class="text-[10px] text-neutral-400 truncate">${item.targetMeta}</p>
+                </div>
+              </div>
+            `;
+          } else {
+            targetCellContent = `
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-indigo-50 text-[#3C52C3] flex items-center justify-center shrink-0">
+                  <i data-lucide="briefcase-medical" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="truncate">
+                  <p class="text-xs font-bold text-neutral-900 truncate">${item.targetName}</p>
+                  <p class="text-[10px] text-neutral-400 truncate">${item.targetMeta}</p>
+                </div>
+              </div>
+            `;
+          }
 
           return `
-            <tr class="hover:bg-neutral-50/70 transition">
-              <td class="py-4 px-4 text-center align-middle">
+            <tr class="hover:bg-neutral-50/60 transition">
+              <td class="py-4 pl-8 pr-4 align-middle">
                 <p class="text-xs font-bold text-neutral-900">${item.patientName}</p>
-                <p class="text-[10px] text-neutral-400 truncate max-w-[140px] mx-auto">${item.patientEmail}</p>
+                <p class="text-[10px] text-neutral-400 truncate">${item.patientEmail}</p>
               </td>
-              <td class="py-4 px-4 text-center align-middle">
-                <p class="text-xs font-bold text-neutral-800 truncate">${item.targetName}</p>
-                <p class="text-[10px] text-neutral-400">${item.targetMeta}</p>
+              <td class="py-4 px-4 align-middle">
+                ${targetCellContent}
               </td>
-              <td class="py-4 px-4 text-center align-middle">
-                <div class="flex items-center justify-center gap-0.5">${starIcons}</div>
-                <span class="text-[10px] text-neutral-400 block mt-0.5 font-mono">${item.rating} / 5</span>
+              <td class="py-4 px-4 align-middle">
+                <div class="flex items-center gap-0.5">${starIcons}</div>
+                <span class="text-[10px] text-neutral-400 font-mono mt-0.5 block">${item.rating} / 5</span>
               </td>
-              <td class="py-4 px-4 text-center align-middle">
-                <p class="text-xs text-neutral-600 leading-relaxed max-w-sm mx-auto line-clamp-2" title="${item.comment}">
+              <td class="py-4 px-4 align-middle">
+                <p class="text-xs text-neutral-600 line-clamp-2" title="${item.comment}">
                   "${item.comment}"
                 </p>
-                <span class="text-[10px] text-neutral-400 block mt-1">${item.createdAt}</span>
+                <span class="text-[10px] text-neutral-400 block mt-0.5">${item.createdAt}</span>
               </td>
-              <td class="py-4 px-4 text-center align-middle">${visibilityBadge}</td>
-              <td class="py-4 px-4 text-center align-middle">${actionBtn}</td>
+              <td class="py-4 px-4 align-middle">${visibilityBadge}</td>
+              <td class="py-4 pl-4 pr-8 align-middle text-right">${actionBtn}</td>
             </tr>
           `;
         }).join('');
@@ -367,16 +511,16 @@
         if (window.lucide) lucide.createIcons();
       }
 
-      // Global toggle visibility handler
+      // Toggle Review Visibility (Restore & Take Down)
       window.toggleReview = async function (reviewId, newStatus) {
         try {
           const res = await fetch('./review_actions.php?action=toggle_visibility', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              reviewId: reviewId,
+              reviewId: parseInt(reviewId, 10),
               type: currentChannel,
-              isHidden: newStatus
+              isHidden: parseInt(newStatus, 10)
             })
           });
           const json = await res.json();
@@ -395,50 +539,47 @@
       function initEventHandlers() {
         const tabService = document.getElementById('tab-service');
         const tabNurse = document.getElementById('tab-nurse');
-        const selectIconBox = document.getElementById('select-icon-box');
+        const dropdownBtn = document.getElementById('custom-dropdown-btn');
+        const dropdownMenu = document.getElementById('custom-dropdown-menu');
 
-        // Switch to Packages
+        dropdownBtn.onclick = function (e) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', function (e) {
+          if (!dropdownMenu.contains(e.target) && !dropdownBtn.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+          }
+        });
+
+        // Switch to Packages Tab
         tabService.onclick = async function () {
           if (currentChannel === 'service') return;
           currentChannel = 'service';
 
-          tabService.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer bg-white text-[#3C52C3] shadow-xs border border-neutral-200/40';
-          tabNurse.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-neutral-500 hover:text-black';
-
-          selectIconBox.innerHTML = '<i data-lucide="package" class="w-4 h-4"></i>';
-          if (window.lucide) lucide.createIcons();
+          tabService.className = 'w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer bg-white text-[#3C52C3] border-t-2 border-t-[#3C52C3] relative';
+          tabNurse.className = 'w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-neutral-500 border-t-2 border-t-transparent hover:border-t-[#0D652D] hover:bg-[#E6F4EA]/70 hover:text-[#0D652D]';
 
           await loadDropdownOptions();
           await loadAnalytics();
           await loadReviews();
         };
 
-        // Switch to Nurses
+        // Switch to Nurse Tab
         tabNurse.onclick = async function () {
           if (currentChannel === 'nurse') return;
           currentChannel = 'nurse';
 
-          tabNurse.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer bg-white text-emerald-600 shadow-xs border border-neutral-200/40';
-          tabService.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer text-neutral-500 hover:text-black';
-
-          selectIconBox.innerHTML = '<i data-lucide="stethoscope" class="w-4 h-4"></i>';
-          if (window.lucide) lucide.createIcons();
+          tabNurse.className = 'w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer bg-white text-emerald-700 border-t-2 border-t-emerald-600 relative';
+          tabService.className = 'w-1/2 py-3.5 px-6 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-neutral-500 border-t-2 border-t-transparent hover:border-t-[#3C52C3] hover:bg-[#EEF2FF]/70 hover:text-[#3C52C3]';
 
           await loadDropdownOptions();
           await loadAnalytics();
           await loadReviews();
         };
 
-        // Select Change
-        const select = document.getElementById('entity-select');
-        select.addEventListener('change', () => {
-          currentEntityId = parseInt(select.value, 10);
-          updateSelectedLabel();
-          loadAnalytics();
-          loadReviews();
-        });
-
-        // Search Input
+        // Search Input filter
         const searchInput = document.getElementById('review-search-input');
         if (searchInput) searchInput.addEventListener('input', renderTable);
 
@@ -446,9 +587,9 @@
         document.querySelectorAll('.filter-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach(b => {
-              b.className = 'filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
+              b.className = 'filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
             });
-            btn.className = 'filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
+            btn.className = 'filter-btn px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer bg-[#3C52C3] text-white border-[#3C52C3]';
             currentFilter = btn.getAttribute('data-filter');
             loadReviews();
           });

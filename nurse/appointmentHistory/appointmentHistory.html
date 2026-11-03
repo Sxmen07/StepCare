@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appointment History - StepCare</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="stylesheet" href="appointmentHistory.css">
+</head>
+<body class="bg-[#fafafa] min-h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
+
+  <!-- Sidebar Include -->
+  <?php include __DIR__ . '/../../components/sidebar-nurse.html'; ?>
+
+  <!-- Main Layout Area -->
+  <div class="flex-1 flex flex-col h-screen overflow-hidden">
+    
+    <!-- Topbar Include -->
+    <?php include __DIR__ . '/../../components/topbar.html'; ?>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div class="w-full max-w-[1500px] mx-auto space-y-8">
+        
+        <!-- SUMMARY CARDS -->
+        <div id="summary-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- HISTORY LIST & SEARCH -->
+        <div class="flex flex-col">
+          
+          <!-- Header & Search Bar -->
+          <div class="pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Past Appointments</h2>
+              <p class="text-xs font-semibold text-slate-400 mt-1">Review your completed and cancelled sessions.</p>
+            </div>
+            
+            <div class="relative w-full sm:w-72">
+              <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              <input type="text" id="searchInput" placeholder="Search patient or service..." 
+                     class="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-medium focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none transition-all placeholder:font-normal placeholder:text-slate-400 shadow-sm">
+            </div>
+          </div>
+
+          <!-- SLIDING FILTER BAR -->
+          <div class="py-4">
+            <div class="relative inline-flex items-center p-1.5 bg-white rounded-full border border-neutral-200/80 shadow-sm" id="filterContainer">
+              <!-- The sliding background pill with gradient -->
+              <div id="filterSlider" class="absolute top-1.5 bottom-1.5 rounded-full z-0 shadow-sm" style="background: linear-gradient(90deg, #3C52C3 0%, #007FFF 100%);"></div>
+              
+              <!-- The clickable buttons -->
+              <button type="button" class="filter-chip active relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="all">All History</button>
+              <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="completed">Completed</button>
+              <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="cancelled">Cancelled</button>
+            </div>
+          </div>
+
+          <!-- List Container -->
+          <div id="history-list" class="flex flex-col">
+            <!-- Rendered by JS -->
+          </div>
+          
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Pass PHP data to JS -->
+  <script>
+    window.historyData = <?= $historyJson ?>;
+    window.statsData = <?= $statsJson ?>;
+  </script>
+  
+  <script src="appointmentHistory.js"></script>
+</body>
+</html>

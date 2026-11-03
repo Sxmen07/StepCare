@@ -32,14 +32,14 @@ switch ($action) {
         break;
 }
 
-// 1. Fetch available options for the selector dropdown
+// 1. Fetch available options for the selector dropdown (with nurse avatar & specialization)
 function getDropdownOptions($pdo) {
     try {
         $type = $_GET['type'] ?? 'service';
         if ($type === 'nurse') {
-            $stmt = $pdo->query("SELECT nurseID AS id, CONCAT(firstName, ' ', lastName) AS label FROM nurses ORDER BY firstName ASC");
+            $stmt = $pdo->query("SELECT nurseID AS id, CONCAT(firstName, ' ', lastName) AS label, nursePhotoURL AS photoURL, specialization FROM nurses ORDER BY firstName ASC");
         } else {
-            $stmt = $pdo->query("SELECT serviceID AS id, serviceName AS label FROM services ORDER BY serviceName ASC");
+            $stmt = $pdo->query("SELECT serviceID AS id, serviceName AS label, category FROM services ORDER BY serviceName ASC");
         }
         $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['status' => 'success', 'data' => $options]);
@@ -51,8 +51,8 @@ function getDropdownOptions($pdo) {
 // 2. Calculate quantifiable metrics for overall or a specific entity
 function getReviewAnalytics($pdo) {
     try {
-        $type = $_GET['type'] ?? 'service'; // 'service' or 'nurse'
-        $entityId = (int)($_GET['entityId'] ?? 0); // 0 means all
+        $type = $_GET['type'] ?? 'service';
+        $entityId = (int)($_GET['entityId'] ?? 0);
 
         $table = ($type === 'nurse') ? 'nurseReviews' : 'serviceComments';
         $foreignKey = ($type === 'nurse') ? 'nurseID' : 'serviceID';
@@ -64,12 +64,11 @@ function getReviewAnalytics($pdo) {
             $params[] = $entityId;
         }
 
-        // Summary calculations
         $summaryStmt = $pdo->prepare("
             SELECT 
                 COUNT(*) AS totalCount,
                 IFNULL(AVG(rating), 0) AS avgRating,
-                SUM(CASE WHEN isHidden = 1 THEN 1 ELSE 0 END) AS hiddenCount,
+                SUM(CASE WHEN CAST(isHidden AS UNSIGNED) = 1 THEN 1 ELSE 0 END) AS hiddenCount,
                 SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) AS lowRatingCount
             FROM {$table}
             {$whereClause}
@@ -82,7 +81,6 @@ function getReviewAnalytics($pdo) {
         $hiddenCount = (int)($summary['hiddenCount'] ?? 0);
         $lowRatingCount = (int)($summary['lowRatingCount'] ?? 0);
 
-        // Star distribution breakdown
         $distQuery = "SELECT rating, COUNT(*) AS count FROM {$table} {$whereClause} GROUP BY rating";
         $distStmt = $pdo->prepare($distQuery);
         $distStmt->execute($params);
@@ -131,12 +129,13 @@ function fetchReviewsList($pdo) {
                     r.nurseReviewID AS reviewId,
                     r.rating,
                     r.comment,
-                    r.isHidden,
+                    CAST(r.isHidden AS UNSIGNED) AS isHidden,
                     r.createdAt,
                     CONCAT(u.firstName, ' ', u.lastName) AS patientName,
                     u.email AS patientEmail,
                     CONCAT(n.firstName, ' ', n.lastName) AS targetName,
-                    n.specialization AS targetMeta
+                    n.specialization AS targetMeta,
+                    n.nursePhotoURL AS targetPhoto
                 FROM nurseReviews r
                 JOIN users u ON r.userID = u.userID
                 JOIN nurses n ON r.nurseID = n.nurseID
@@ -151,12 +150,13 @@ function fetchReviewsList($pdo) {
                     r.serviceCommentID AS reviewId,
                     r.rating,
                     r.comment,
-                    r.isHidden,
+                    CAST(r.isHidden AS UNSIGNED) AS isHidden,
                     r.createdAt,
                     CONCAT(u.firstName, ' ', u.lastName) AS patientName,
                     u.email AS patientEmail,
                     s.serviceName AS targetName,
-                    s.category AS targetMeta
+                    s.category AS targetMeta,
+                    NULL AS targetPhoto
                 FROM serviceComments r
                 JOIN users u ON r.userID = u.userID
                 JOIN services s ON r.serviceID = s.serviceID
@@ -168,9 +168,9 @@ function fetchReviewsList($pdo) {
         }
 
         if ($filter === 'visible') {
-            $conditions[] = "r.isHidden = 0";
+            $conditions[] = "CAST(r.isHidden AS UNSIGNED) = 0";
         } elseif ($filter === 'hidden') {
-            $conditions[] = "r.isHidden = 1";
+            $conditions[] = "CAST(r.isHidden AS UNSIGNED) = 1";
         } elseif ($filter === 'low') {
             $conditions[] = "r.rating <= 2";
         }
@@ -197,7 +197,8 @@ function fetchReviewsList($pdo) {
                 'patientName' => $row['patientName'],
                 'patientEmail' => $row['patientEmail'],
                 'targetName' => $row['targetName'],
-                'targetMeta' => $row['targetMeta'] ?? 'General'
+                'targetMeta' => $row['targetMeta'] ?? 'General',
+                'targetPhoto' => $row['targetPhoto'] ?? null
             ];
         }
 
@@ -207,29 +208,33 @@ function fetchReviewsList($pdo) {
     }
 }
 
-// 4. Toggle review visibility (moderation take down or restore)
+// 4. Toggle review visibility (fixed restore & take down logic)
 function toggleReviewVisibility($pdo) {
     try {
-        $input = json_decode(file_get_contents('php://input'), true);
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true);
 
-        $reviewId = (int)($input['reviewId'] ?? 0);
+        $reviewId = isset($input['reviewId']) ? (int)$input['reviewId'] : 0;
         $type = trim($input['type'] ?? 'service');
-        $newStatus = (int)($input['isHidden'] ?? 0);
+        $newStatus = isset($input['isHidden']) ? (int)$input['isHidden'] : 0;
 
-        if (!$reviewId) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid review identifier']);
+        if ($reviewId <= 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid review ID']);
             return;
         }
 
         $table = ($type === 'nurse') ? 'nurseReviews' : 'serviceComments';
         $idCol = ($type === 'nurse') ? 'nurseReviewID' : 'serviceCommentID';
 
-        $stmt = $pdo->prepare("UPDATE {$table} SET isHidden = ? WHERE {$idCol} = ?");
-        $stmt->execute([$newStatus, $reviewId]);
+        $stmt = $pdo->prepare("UPDATE {$table} SET isHidden = :status WHERE {$idCol} = :id");
+        $stmt->bindValue(':status', $newStatus, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $reviewId, PDO::PARAM_INT);
+        $stmt->execute();
 
         echo json_encode([
             'status' => 'success',
-            'message' => ($newStatus === 1) ? 'Review taken down successfully.' : 'Review restored.'
+            'newStatus' => $newStatus,
+            'message' => ($newStatus === 1) ? 'Review taken down.' : 'Review restored successfully.'
         ]);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);

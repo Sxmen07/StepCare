@@ -9,115 +9,134 @@
   <style>
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+    .app-row {
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .app-row:hover {
+      background-color: #f8fafc;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
   </style>
 </head>
-<body class="bg-white text-neutral-800 font-sans antialiased flex h-screen overflow-hidden">
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
 
-  <!-- Sidebar Mount Point -->
-  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
+  <!-- Modular Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
 
-  <!-- Main View Container -->
-  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
-    
-    <!-- Topbar Mount Point -->
+  <!-- Main View Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- Modular Topbar Container -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
-    <!-- Scrollable Main Content -->
-    <main class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white">
-      <div class="max-w-7xl mx-auto space-y-6">
-        
-        <!-- Search and Filter Ribbon -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <!-- Search Bar -->
-          <div class="relative flex-1 max-w-lg">
-            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-            <input type="text" 
-                   id="app-search-input" 
-                   placeholder="Search applicant nurse name or ID..." 
-                   class="w-full pl-11 pr-4 py-3 bg-neutral-50/70 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3] transition" />
-          </div>
-
-          <!-- Status Filter Tabs -->
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-1">Status:</span>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900" data-status="All">All</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="pending">Pending</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="approved">Approved</button>
-            <button type="button" class="status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300" data-status="rejected">Rejected</button>
-          </div>
+    <!-- Sticky Sub-Bar: Search, Filter & Export -->
+    <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 flex-1">
+        <!-- Search Bar -->
+        <div class="relative w-80">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+          <input type="text" 
+                 id="app-search-input" 
+                 placeholder="Search applicant nurse name or ID..." 
+                 class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
         </div>
 
-        <!-- Table Container (Strictly Centered Alignment) -->
-        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-center border-collapse table-fixed">
-              <thead>
-                <tr class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/40">
-                  <th class="py-4 px-4 w-[14%] text-center align-middle">Nurse ID</th>
-                  <th class="py-4 px-4 w-[18%] text-center align-middle">Nurse Name</th>
-                  <th class="py-4 px-4 w-[16%] text-center align-middle">Requested Date</th>
-                  <th class="py-4 px-4 w-[14%] text-center align-middle">Time Frame</th>
-                  <th class="py-4 px-4 w-[20%] text-center align-middle">Reason</th>
-                  <th class="py-4 px-4 w-[10%] text-center align-middle">Status</th>
-                  <th class="py-4 px-4 w-[16%] text-center align-middle">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="applications-table-body" class="divide-y divide-neutral-100 text-neutral-700">
-                <!-- Dynamically rendered rows -->
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Empty State Container -->
-          <div id="applications-empty-state" class="hidden py-16 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 mx-auto mb-3">
-              <i data-lucide="file-check-2" class="w-7 h-7"></i>
-            </div>
-            <h4 class="text-sm font-bold text-neutral-800">No applications found</h4>
-            <p class="text-xs text-neutral-400 mt-1">There are currently no leave requests matching this filter criteria.</p>
-          </div>
+        <!-- Filter By Status -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Status:</span>
+          <select id="filter-status" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="All">All Requests</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
         </div>
+      </div>
 
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Export to Excel Button -->
+        <button id="export-excel-btn" type="button" class="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 text-xs font-semibold rounded-xl border border-neutral-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
+          <i data-lucide="download" class="w-4 h-4 text-neutral-500"></i>
+          <span>Export Excel</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Table Header Grid (Full-width 12 cols) -->
+    <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+      <div class="col-span-2 text-left pl-2">Nurse ID</div>
+      <div class="col-span-3 text-left">Nurse Name</div>
+      <div class="col-span-2 text-left">Requested Schedule</div>
+      <div class="col-span-2 text-left">Reason</div>
+      <div class="col-span-1 text-center">Status</div>
+      <div class="col-span-2 text-center">Actions</div>
+    </div>
+
+    <!-- Full-Width Stream Container -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="applications-list-container" class="divide-y divide-neutral-100 w-full">
+        <!-- Dynamic Rows Rendered Here -->
       </div>
     </main>
   </div>
 
-  <!-- Review Confirmation Modal -->
+  <!-- Review Confirmation Modal with Large Typography & Reject Comment Box -->
   <div id="action-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
-    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-neutral-200 text-center">
-      <div id="modal-icon-container" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4">
-        <!-- Lucide icon dynamically placed -->
+    <div class="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
+      <div class="text-center">
+        <div id="modal-icon-container" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <!-- Dynamic Status Icon -->
+        </div>
+        <h3 id="modal-title" class="text-xl font-bold text-neutral-900 mb-2">Review Request</h3>
+        <p id="modal-desc" class="text-sm text-neutral-500 mb-6 leading-relaxed"></p>
       </div>
-      <h3 id="modal-title" class="text-lg font-bold text-neutral-900 mb-1">Confirm Review Action</h3>
-      <p id="modal-desc" class="text-xs text-neutral-400 mb-6 leading-relaxed">
-        Are you sure you want to proceed with this application review?
-      </p>
 
-      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2 text-left mb-6 text-xs">
+      <!-- Applicant Info Card -->
+      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-2 text-left mb-6 text-xs">
         <div class="flex justify-between"><span class="text-neutral-400">Applicant:</span><span id="modal-nurse-name" class="font-bold text-neutral-800"></span></div>
         <div class="flex justify-between"><span class="text-neutral-400">Target Date:</span><span id="modal-target-date" class="font-bold text-neutral-800"></span></div>
         <div class="flex justify-between"><span class="text-neutral-400">Time Range:</span><span id="modal-time-range" class="font-bold text-neutral-800"></span></div>
+        <div class="flex justify-between border-t border-neutral-200/60 pt-2"><span class="text-neutral-400">Nurse Note:</span><span id="modal-nurse-reason" class="text-neutral-700 italic max-w-xs truncate"></span></div>
       </div>
 
-      <div class="flex gap-3">
-        <button type="button" id="modal-cancel-btn" class="flex-1 py-3 rounded-2xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition cursor-pointer">
+      <!-- Rejection Reason / Comment Input Section (Only active when rejecting) -->
+      <div id="reject-reason-wrapper" class="space-y-2.5 mb-6 text-left hidden">
+        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600">
+          Reason for Rejection <span class="text-neutral-400 font-normal">(Sent to Nurse)</span>
+        </label>
+        <textarea id="reject-reason-input" 
+                  rows="3" 
+                  placeholder="Specify reason (e.g., Staff shortage on this shift, pending urgent appointments)..." 
+                  class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500 font-medium transition resize-none"></textarea>
+        
+        <!-- Preset Reason Quick Tags -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-bold text-neutral-400">Presets:</span>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Staff Shortage</button>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">High Booking Volume</button>
+          <button type="button" class="preset-reason-btn px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 text-xs font-medium transition cursor-pointer">Notice Too Short</button>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" id="modal-cancel-btn" class="px-6 py-3 border border-neutral-200 rounded-xl text-sm font-semibold hover:bg-neutral-50 transition cursor-pointer text-neutral-700">
           Cancel
         </button>
-        <button type="button" id="modal-confirm-btn" class="flex-1 py-3 rounded-2xl text-white font-bold text-xs transition cursor-pointer shadow-sm">
+        <button type="button" id="modal-confirm-btn" class="px-7 py-3 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm">
           Confirm
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Page Logic Controller -->
   <script>
     // English comments only
     (function () {
       'use strict';
 
       let applicationsList = [];
-      let currentFilterStatus = 'All';
       let pendingAction = null;
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -155,17 +174,19 @@
             }
           });
 
-        // 3. Load initial applications
+        // 3. Load applications
         loadApplications();
 
-        // 4. Bind event listeners
+        // 4. Bind events
         initEventHandlers();
       });
 
-      // Fetch applications from server
+      // Fetch applications from backend
       async function loadApplications() {
         try {
-          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${currentFilterStatus}`);
+          const filterStatus = document.getElementById('filter-status');
+          const currentStatus = filterStatus ? filterStatus.value : 'All';
+          const res = await fetch(`./application_actions.php?action=fetch_applications&status=${currentStatus}`);
           const result = await res.json();
           if (result.status === 'success') {
             applicationsList = result.data || [];
@@ -180,15 +201,27 @@
         }
       }
 
-      // Render applications table
+      // Avatar Fallback Initial Bubble
+      function getAvatarBubble(name) {
+        const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NR';
+        return `
+          <div class="w-8 h-8 rounded-full bg-[#EEF2FF] text-[#3C52C3] font-bold text-[11px] flex items-center justify-center border border-black/5 shrink-0 select-none">
+            ${initials}
+          </div>
+        `;
+      }
+
+      // Render applications in Notifications full-width stream
       function renderTable() {
-        const tbody = document.getElementById('applications-table-body');
-        const emptyState = document.getElementById('applications-empty-state');
+        const container = document.getElementById('applications-list-container');
         const searchInput = document.getElementById('app-search-input');
+        const filterStatus = document.getElementById('filter-status');
+
         const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        const currentStatus = filterStatus ? filterStatus.value.toLowerCase() : 'all';
 
         const filtered = applicationsList.filter(item => {
-          const matchesStatus = (currentFilterStatus === 'All') || (item.status === currentFilterStatus.toLowerCase());
+          const matchesStatus = (currentStatus === 'all') || (item.status === currentStatus);
           const matchesSearch = item.nurseName.toLowerCase().includes(searchTerm) || 
                                 item.nurseId.toLowerCase().includes(searchTerm) ||
                                 item.reason.toLowerCase().includes(searchTerm);
@@ -196,37 +229,57 @@
         });
 
         if (filtered.length === 0) {
-          tbody.innerHTML = '';
-          emptyState.classList.remove('hidden');
+          container.innerHTML = `
+            <div class="py-24 text-center">
+              <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="file-check-2" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-neutral-600">No applications found</p>
+              <p class="text-xs text-neutral-400 mt-1">There are currently no off-day requests matching this criteria.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
           return;
         }
 
-        emptyState.classList.add('hidden');
-        tbody.innerHTML = filtered.map(item => {
-          // Status Badge
+        container.innerHTML = filtered.map(item => {
+          // Status Badges with larger padding
           let statusBadge = '';
           if (item.status === 'pending') {
-            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>';
+            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Pending</span>';
           } else if (item.status === 'approved') {
-            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>';
+            statusBadge = '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">Approved</span>';
           } else {
-            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Rejected</span>';
+            const tooltip = item.rejectionReason ? `title="Reason: ${item.rejectionReason.replace(/"/g, '&quot;')}"` : '';
+            statusBadge = `<span ${tooltip} class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200 cursor-help">Rejected</span>`;
           }
 
-          // Action Buttons: Active for Pending, Reviewed text for closed records
+          // Avatar rendering
+          const fallbackBadge = getAvatarBubble(item.nurseName);
+          const avatarHtml = item.photo
+            ? `<div class="relative w-8 h-8 shrink-0">
+                 <img src="${item.photo}" 
+                      alt="${item.nurseName}" 
+                      class="w-8 h-8 rounded-full object-cover border border-neutral-200" 
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                 <div style="display:none;" class="absolute inset-0">${fallbackBadge}</div>
+               </div>`
+            : fallbackBadge;
+
+          // Actions
           let actionCell = '';
           if (item.status === 'pending') {
             actionCell = `
               <div class="flex items-center justify-center gap-2">
                 <button type="button" 
                         onclick="window.promptAction(${item.requestId}, 'approved')" 
-                        class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs">
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 hover:border-emerald-300 shadow-2xs transition cursor-pointer">
                   <i data-lucide="check" class="w-3.5 h-3.5"></i>
                   <span>Approve</span>
                 </button>
                 <button type="button" 
                         onclick="window.promptAction(${item.requestId}, 'rejected')" 
-                        class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:border-rose-300 shadow-2xs transition cursor-pointer">
                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
                   <span>Reject</span>
                 </button>
@@ -235,28 +288,57 @@
           } else {
             actionCell = `
               <span class="text-xs font-medium text-neutral-400">
-                ${item.reviewedBy ? 'By ' + item.reviewedBy : 'Resolved'}
+                ${item.reviewedBy ? 'Reviewed by ' + item.reviewedBy : 'Resolved'}
               </span>
             `;
           }
 
           return `
-            <tr class="hover:bg-neutral-50/70 transition">
-              <td class="py-4 px-4 text-xs font-mono font-bold text-neutral-500 text-center align-middle">${item.nurseId}</td>
-              <td class="py-4 px-4 text-xs font-bold text-neutral-900 text-center align-middle">${item.nurseName}</td>
-              <td class="py-4 px-4 text-xs font-semibold text-neutral-700 text-center align-middle">${item.requestDate}</td>
-              <td class="py-4 px-4 text-xs text-neutral-500 font-mono text-center align-middle">${item.startTime} - ${item.endTime}</td>
-              <td class="py-4 px-4 text-xs text-neutral-600 text-center align-middle max-w-xs truncate" title="${item.reason}">${item.reason}</td>
-              <td class="py-4 px-4 text-center align-middle">${statusBadge}</td>
-              <td class="py-4 px-4 text-center align-middle">${actionCell}</td>
-            </tr>
+            <div class="app-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100">
+              
+              <!-- Col 1: Nurse ID -->
+              <div class="col-span-2 text-xs font-mono font-bold text-neutral-500 pl-2">
+                ${item.nurseId}
+              </div>
+
+              <!-- Col 2: Nurse Name with Profile Photo -->
+              <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
+                ${avatarHtml}
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-neutral-900 truncate">${item.nurseName}</div>
+                  <div class="text-[10px] text-neutral-400 truncate">${item.email}</div>
+                </div>
+              </div>
+
+              <!-- Col 3: Requested Date & Time -->
+              <div class="col-span-2 text-xs pr-4">
+                <div class="font-semibold text-neutral-800">${item.requestDate}</div>
+                <div class="text-[11px] font-mono text-neutral-400">${item.startTime} - ${item.endTime}</div>
+              </div>
+
+              <!-- Col 4: Reason -->
+              <div class="col-span-2 text-xs text-neutral-600 truncate pr-4" title="${item.reason}">
+                ${item.reason}
+              </div>
+
+              <!-- Col 5: Status Badge -->
+              <div class="col-span-1 text-center">
+                ${statusBadge}
+              </div>
+
+              <!-- Col 6: Actions Button Group -->
+              <div class="col-span-2 flex items-center justify-center">
+                ${actionCell}
+              </div>
+
+            </div>
           `;
         }).join('');
 
         if (window.lucide) lucide.createIcons();
       }
 
-      // Prompt Approval/Rejection Dialog
+      // Prompt Approval or Rejection Modal
       window.promptAction = function(requestId, targetStatus) {
         const item = applicationsList.find(a => a.requestId === requestId);
         if (!item) return;
@@ -267,26 +349,33 @@
         const iconContainer = document.getElementById('modal-icon-container');
         const titleEl = document.getElementById('modal-title');
         const descEl = document.getElementById('modal-desc');
+        const rejectWrapper = document.getElementById('reject-reason-wrapper');
+        const rejectInput = document.getElementById('reject-reason-input');
         const confirmBtn = document.getElementById('modal-confirm-btn');
 
         document.getElementById('modal-nurse-name').textContent = item.nurseName;
         document.getElementById('modal-target-date').textContent = item.requestDate;
         document.getElementById('modal-time-range').textContent = `${item.startTime} - ${item.endTime}`;
+        document.getElementById('modal-nurse-reason').textContent = item.reason;
+
+        rejectInput.value = '';
 
         if (targetStatus === 'approved') {
-          iconContainer.className = 'w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-emerald-50 text-emerald-600';
-          iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-7 h-7"></i>';
+          rejectWrapper.classList.add('hidden');
+          iconContainer.className = 'w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-emerald-50 text-emerald-600';
+          iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-8 h-8"></i>';
           titleEl.textContent = 'Approve Off-Day Request';
-          descEl.textContent = 'Are you sure you want to approve this request? The nurse will be marked off duty on this date.';
-          confirmBtn.className = 'flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-sm';
+          descEl.textContent = 'Are you sure you want to approve this request? The nurse will be registered as off duty for this schedule.';
+          confirmBtn.className = 'px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
           confirmBtn.textContent = 'Yes, Approve';
         } else {
-          iconContainer.className = 'w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 text-rose-600';
-          iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-7 h-7"></i>';
+          rejectWrapper.classList.remove('hidden');
+          iconContainer.className = 'w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 text-rose-600';
+          iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8"></i>';
           titleEl.textContent = 'Reject Off-Day Request';
-          descEl.textContent = 'Are you sure you want to decline this request? The nurse will be notified via portal.';
-          confirmBtn.className = 'flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer shadow-sm';
-          confirmBtn.textContent = 'Yes, Reject';
+          descEl.textContent = 'Please provide a justification comment for declining this request. The nurse will receive this in their notification feed.';
+          confirmBtn.className = 'px-7 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition cursor-pointer shadow-sm';
+          confirmBtn.textContent = 'Yes, Reject Request';
         }
 
         modal.classList.remove('hidden');
@@ -296,19 +385,26 @@
 
       // Configure Event Handlers
       function initEventHandlers() {
-        // Search Input
         const searchInput = document.getElementById('app-search-input');
         if (searchInput) searchInput.addEventListener('input', renderTable);
 
-        // Status Filter Buttons
-        document.querySelectorAll('.status-filter-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.status-filter-btn').forEach(b => {
-              b.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300';
-            });
-            btn.className = 'status-filter-btn px-4 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer bg-neutral-900 text-white border-neutral-900';
-            currentFilterStatus = btn.getAttribute('data-status');
-            loadApplications();
+        const filterStatus = document.getElementById('filter-status');
+        if (filterStatus) filterStatus.addEventListener('change', loadApplications);
+
+        // Export Excel Button
+        const exportBtn = document.getElementById('export-excel-btn');
+        if (exportBtn) {
+          exportBtn.addEventListener('click', () => {
+            const currentStatus = filterStatus ? filterStatus.value : 'All';
+            window.location.href = `./application_actions.php?action=export_excel&status=${encodeURIComponent(currentStatus)}`;
+          });
+        }
+
+        // Preset Rejection Reason Buttons
+        document.querySelectorAll('.preset-reason-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const input = document.getElementById('reject-reason-input');
+            if (input) input.value = e.target.textContent;
           });
         });
 
@@ -331,13 +427,16 @@
             confirmBtn.disabled = true;
             confirmBtn.textContent = 'Processing...';
 
+            const rejectReasonText = document.getElementById('reject-reason-input').value.trim();
+
             try {
               const res = await fetch('./application_actions.php?action=update_status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   requestId: pendingAction.requestId,
-                  status: pendingAction.targetStatus
+                  status: pendingAction.targetStatus,
+                  rejectionReason: rejectReasonText
                 })
               });
               const result = await res.json();
