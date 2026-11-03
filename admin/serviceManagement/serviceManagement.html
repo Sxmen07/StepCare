@@ -106,102 +106,245 @@
 
   <!-- ADD / EDIT SERVICE MANAGEMENT MODAL -->
   <div id="service-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-neutral-200 flex flex-col">
+    <div class="bg-white rounded-3xl w-full max-w-6xl h-[88vh] shadow-2xl border border-neutral-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       
       <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between sticky top-0 bg-white z-10">
-        <h3 id="modal-title" class="text-lg font-black text-neutral-900">Add New Service</h3>
+      <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
+        <div class="flex items-center gap-3">
+          <h3 id="modal-title" class="text-lg font-black text-neutral-900">Add New Service</h3>
+          <span class="text-xs bg-indigo-50 text-[#3C52C3] font-bold px-2.5 py-0.5 rounded-full">Live Interactive Preview</span>
+        </div>
         <button type="button" id="close-service-modal" class="p-2 text-neutral-400 hover:text-neutral-700 transition cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Tab Navigation (Outer vs Inner) -->
-      <div class="flex border-b border-neutral-100 px-6 pt-2 bg-neutral-50/50">
-        <button type="button" onclick="switchModalTab('outer')" id="tab-btn-outer" class="px-4 py-2.5 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer">1. Outer Page Details</button>
-        <button type="button" onclick="switchModalTab('inner')" id="tab-btn-inner" class="px-4 py-2.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer">2. Inner Page Details</button>
+      <!-- Modal Body Split: Left = Live Preview, Right = Form Tabs -->
+      <div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+        
+        <!-- LEFT SIDE: WHITE BACKGROUND LIVE PREVIEW PANEL -->
+        <div class="w-full md:w-[460px] bg-white border-r border-neutral-200 p-6 flex flex-col justify-between shrink-0 overflow-hidden relative">
+          
+          <div class="flex items-center justify-between pb-2 border-b border-neutral-100 z-20">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">User Interface Preview</span>
+            <div class="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+              <button type="button" onclick="switchPreviewMode('outer')" id="preview-mode-outer" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer">Outer Card</button>
+              <button type="button" onclick="switchPreviewMode('inner_overview')" id="preview-mode-inner-1" class="px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Overview</button>
+              <button type="button" onclick="switchPreviewMode('inner_booking')" id="preview-mode-inner-2" class="px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Booking</button>
+            </div>
+          </div>
+
+          <!-- Simulated White Modal Box Preview Container -->
+          <div class="my-auto relative rounded-3xl overflow-hidden shadow-xl w-full h-[480px] bg-white border border-neutral-200 flex flex-row transition-all duration-500 ease-in-out">
+            
+            <!-- Left Side of Split Modal: Outer Card Style -->
+            <div id="preview-outer-pane" class="relative w-full h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300">
+              <div class="absolute inset-0 z-0 overflow-hidden">
+                <img id="preview-img" src="/StepCare/images/services/elderly.png" alt="Preview" class="w-full h-full object-cover object-center">
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20 z-10 pointer-events-none"></div>
+
+              <!-- Top Badges -->
+              <div class="absolute top-3 inset-x-3 z-30 flex items-center justify-between">
+                <span class="bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">★ TOP PICK</span>
+                <span class="text-white/80"><i data-lucide="pencil" class="w-4 h-4"></i></span>
+              </div>
+
+              <div class="relative z-20 space-y-2.5">
+                <div><span id="preview-category" class="text-[10px] font-black tracking-widest text-[#34D399] uppercase">ELDERLY</span></div>
+                <h4 id="preview-title" class="text-base font-black text-white leading-snug tracking-tight line-clamp-2">Elderly Mobility and Vitals Assessment</h4>
+                <div class="flex items-center gap-2 text-[11px] text-neutral-300 font-medium">
+                  <div class="flex items-center gap-1 text-amber-400 font-bold"><span>★</span><span>3.00</span><span class="text-neutral-400 font-normal">(1)</span></div>
+                  <span class="text-neutral-500">•</span>
+                  <span id="preview-duration" class="text-neutral-300">Est. 45–60 mins</span>
+                </div>
+
+                <ul id="preview-outer-features" class="space-y-1 pt-1">
+                  <li class="flex items-start gap-1.5 text-[10px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span>Blood pressure, ECG spot-check & glucose</span></li>
+                </ul>
+
+                <div class="w-full h-px bg-white/15 my-1"></div>
+
+                <div class="flex items-end justify-between pt-0.5">
+                  <div>
+                    <p class="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">SERVICE FEE</p>
+                    <div class="text-lg font-black text-white tracking-tight leading-none mt-1">RM <span id="preview-price">85.00</span> <span class="text-[10px] font-normal text-neutral-400">/visit</span></div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 backdrop-blur-md text-[10px] font-bold text-emerald-400 border border-emerald-500/30">Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side of Split Modal: Dynamic Inner Views -->
+            <div id="preview-inner-pane" class="relative w-full h-full bg-white p-4 flex flex-col justify-between overflow-y-auto no-scrollbar hidden shrink-0">
+              
+              <!-- SUB-VIEW 1: INNER OVERVIEW & REVIEWS -->
+              <div id="preview-view-overview" class="space-y-3 transition-all duration-300 ease-in-out">
+                <p id="preview-desc" class="text-[10px] text-neutral-600 leading-relaxed line-clamp-3">Comprehensive routine wellness triage for aging loved ones. Focus on fall prevention...</p>
+                
+                <div>
+                  <h5 class="text-[10px] font-bold text-neutral-900 mb-1">What's included</h5>
+                  <ul id="preview-features" class="space-y-1">
+                    <li class="flex items-start gap-1 text-[9px] text-neutral-600"><span class="text-emerald-500 font-bold">✓</span><span>Blood pressure check</span></li>
+                  </ul>
+                </div>
+
+                <div class="pt-2 border-t border-neutral-100">
+                  <span class="text-[10px] font-bold text-neutral-900 block mb-1">Ratings and reviews</span>
+                  <div class="bg-neutral-50 p-2 rounded-xl border border-neutral-200">
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="w-5 h-5 rounded-full bg-indigo-50 text-[#3C52C3] font-bold text-[9px] flex items-center justify-center">J</div>
+                      <span class="text-[10px] font-bold text-neutral-800">Joker C</span>
+                      <span class="text-amber-400 text-[9px] ml-auto">★★★★★</span>
+                    </div>
+                    <p class="text-[9px] text-neutral-500 italic">"Testing123"</p>
+                  </div>
+                </div>
+
+                <button type="button" onclick="switchPreviewMode('inner_booking')" class="w-full py-2 bg-[#3C52C3] text-white text-[10px] font-bold rounded-xl shadow-sm cursor-pointer">Book this service →</button>
+              </div>
+
+              <!-- SUB-VIEW 2: INNER BOOKING FORM -->
+              <div id="preview-view-booking" class="space-y-3 hidden transition-all duration-300 ease-in-out">
+                <div>
+                  <button type="button" onclick="switchPreviewMode('inner_overview')" class="text-[9px] text-[#3C52C3] font-bold mb-1 block cursor-pointer">← Back to details</button>
+                  <h5 class="text-[11px] font-black text-neutral-900">Book this service</h5>
+                  <p class="text-[9px] text-neutral-400">Choose a date and time slot that works for you.</p>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Preferred date *</label>
+                  <div class="px-2 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-semibold text-neutral-800 flex items-center justify-between">
+                    <span>11/12/2026</span>
+                    <i data-lucide="calendar" class="w-3 h-3 text-neutral-400"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] font-bold text-neutral-700 mb-1">Preferred time slot *</label>
+                  <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">MORNING - A.M.</span>
+                  <div id="preview-timeslots" class="grid grid-cols-2 gap-1.5">
+                    <span class="px-2 py-1.5 bg-indigo-50 text-[#3C52C3] border border-indigo-200 rounded-lg text-[9px] font-bold text-center">8:00 AM</span>
+                    <span class="px-2 py-1.5 bg-neutral-50 text-neutral-600 border border-neutral-200 rounded-lg text-[9px] text-center">10:00 AM</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Who is this service for? *</label>
+                  <div class="px-2 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-[9px] text-neutral-700">Jonsen Choong</div>
+                </div>
+
+                <button type="button" class="w-full py-2 bg-[#3C52C3] text-white text-[10px] font-bold rounded-xl shadow-sm">Confirm Booking</button>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="text-center z-20">
+            <span class="text-[10px] text-neutral-500">Click preview tabs above to test Outer vs Inner screens</span>
+          </div>
+        </div>
+
+        <!-- RIGHT SIDE: FORM EDIT TABS -->
+        <div class="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
+          
+          <!-- Tab Navigation -->
+          <div class="flex border-b border-neutral-100 px-6 pt-3 bg-neutral-50/50 shrink-0">
+            <button type="button" onclick="switchModalTab('outer')" id="tab-btn-outer" class="px-4 py-2 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer">1. Outer Page Details</button>
+            <button type="button" onclick="switchModalTab('inner')" id="tab-btn-inner" class="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer">2. Inner Page Details</button>
+          </div>
+
+          <!-- Form Scroll Area -->
+          <form id="service-form" class="flex-1 overflow-y-auto p-6 space-y-5">
+            <input type="hidden" id="form-service-id" name="serviceID">
+            <input type="hidden" id="form-existing-image" name="existingImage">
+
+            <!-- TAB 1: OUTER PAGE DETAILS -->
+            <div id="modal-tab-outer" class="space-y-4">
+              
+              <!-- Google Style Drag & Drop Box -->
+              <div>
+                <label class="block text-xs font-bold text-neutral-700 mb-1.5">Service Image (Top Placement)</label>
+                <div id="drop-zone" class="border-2 border-dashed border-neutral-300 rounded-2xl p-4 text-center hover:border-[#3C52C3] transition bg-neutral-50 cursor-pointer relative flex flex-col items-center justify-center">
+                  <input type="file" id="form-service-image" name="serviceImage" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                  <div class="flex flex-col items-center space-y-1">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-[#3C52C3] flex items-center justify-center">
+                      <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-xs font-bold text-neutral-700">Drag & drop image here, or <span class="text-[#3C52C3] underline">browse</span></p>
+                    <p class="text-[10px] text-neutral-400">Supports PNG, JPG, WEBP</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Service Title *</label>
+                  <input type="text" id="form-service-name" name="serviceName" required placeholder="e.g., Post-Operative Wound Care" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Category *</label>
+                  <select id="form-category" name="category" required class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                    <option value="Elderly">Elderly Care</option>
+                    <option value="Post-op">Post-Op</option>
+                    <option value="Neuro">Neuro Care</option>
+                    <option value="Postnatal">Postnatal</option>
+                    <option value="Hospice">Hospice</option>
+                    <option value="Chronic">Chronic Care</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Service Fee (RM) *</label>
+                  <input type="number" step="0.01" id="form-price" name="price" required placeholder="85.00" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Min Duration (Mins)</label>
+                  <input type="number" id="form-duration-min" name="durationMin" value="45" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Max Duration (Mins)</label>
+                  <input type="number" id="form-duration-max" name="durationMax" value="60" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-bold text-neutral-700">What's Included (Features)</label>
+                  <button type="button" onclick="addFeatureInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Feature</button>
+                </div>
+                <div id="features-container" class="space-y-2 max-h-32 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+
+            <!-- TAB 2: INNER PAGE DETAILS -->
+            <div id="modal-tab-inner" class="space-y-4 hidden">
+              <div>
+                <label class="block text-xs font-bold text-neutral-700 mb-1">Detailed Description (Inner Page Content)</label>
+                <textarea id="form-description" name="description" rows="5" placeholder="Provide comprehensive details about this healthcare service..." class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]"></textarea>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-bold text-neutral-700">Available Time Slots</label>
+                  <button type="button" onclick="addSlotInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Time Slot</button>
+                </div>
+                <div id="timeslots-container" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3 shrink-0">
+              <button type="button" id="cancel-service-modal" class="px-5 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 text-xs font-bold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+              <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#3C52C3] hover:bg-[#3244a8] text-white text-xs font-bold transition shadow-sm cursor-pointer">Save Service</button>
+            </div>
+          </form>
+
+        </div>
       </div>
-
-      <!-- Modal Form -->
-      <form id="service-form" class="p-6 space-y-5">
-        <input type="hidden" id="form-service-id" name="serviceID">
-        <input type="hidden" id="form-existing-image" name="existingImage">
-
-        <!-- TAB 1: OUTER PAGE DETAILS -->
-        <div id="modal-tab-outer" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-neutral-700 mb-1">Service Title *</label>
-              <input type="text" id="form-service-name" name="serviceName" required placeholder="e.g., Post-Operative Wound Care" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-neutral-700 mb-1">Category *</label>
-              <select id="form-category" name="category" required class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                <option value="Elderly">Elderly Care</option>
-                <option value="Post-op">Post-Op</option>
-                <option value="Neuro">Neuro Care</option>
-                <option value="Postnatal">Postnatal</option>
-                <option value="Hospice">Hospice</option>
-                <option value="Chronic">Chronic Care</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-neutral-700 mb-1">Service Fee (RM) *</label>
-              <input type="number" step="0.01" id="form-price" name="price" required placeholder="85.00" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-neutral-700 mb-1">Min Duration (Mins)</label>
-              <input type="number" id="form-duration-min" name="durationMin" value="45" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-neutral-700 mb-1">Max Duration (Mins)</label>
-              <input type="number" id="form-duration-max" name="durationMax" value="60" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-neutral-700 mb-1">Service Image</label>
-            <input type="file" id="form-service-image" name="serviceImage" accept="image/*" class="w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-[#3C52C3] hover:file:bg-indigo-100 cursor-pointer">
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-neutral-700">What's Included (Features)</label>
-              <button type="button" onclick="addFeatureInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Feature</button>
-            </div>
-            <div id="features-container" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-              <!-- Dynamically populated feature rows -->
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: INNER PAGE DETAILS -->
-        <div id="modal-tab-inner" class="space-y-4 hidden">
-          <div>
-            <label class="block text-xs font-bold text-neutral-700 mb-1">Detailed Description (Inner Page Content)</label>
-            <textarea id="form-description" name="description" rows="4" placeholder="Provide comprehensive details about this healthcare service..." class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]"></textarea>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-neutral-700">Available Time Slots</label>
-              <button type="button" onclick="addSlotInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Time Slot</button>
-            </div>
-            <div id="timeslots-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
-              <!-- Dynamically populated time slot rows -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Footer Actions -->
-        <div class="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
-          <button type="button" id="cancel-service-modal" class="px-5 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 text-xs font-bold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
-          <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#3C52C3] hover:bg-[#3244a8] text-white text-xs font-bold transition shadow-sm cursor-pointer">Save Service</button>
-        </div>
-      </form>
 
     </div>
   </div>

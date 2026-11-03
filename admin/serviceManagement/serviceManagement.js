@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearchAndFilters();
   setupViewModeToggle();
   setupModalHandlers();
+  setupLivePreviewListeners();
 });
 
 // 1. Load Components
@@ -150,7 +151,7 @@ function renderServices() {
   if (window.lucide) lucide.createIcons();
 }
 
-// 4. Modal and Tab Handlers
+// 4. Modal, Tabs & Live Preview Handlers
 function setupModalHandlers() {
   const modal = document.getElementById('service-modal');
   const openAddBtn = document.getElementById('btn-open-add-modal');
@@ -163,14 +164,17 @@ function setupModalHandlers() {
       form.reset();
       document.getElementById('form-service-id').value = '';
       document.getElementById('modal-title').textContent = 'Add New Service';
-      
-      // FIXED: Corrected ID selection
       document.getElementById('features-container').innerHTML = '';
       document.getElementById('timeslots-container').innerHTML = '';
+      document.getElementById('preview-img').src = '/StepCare/images/services/elderly.png';
       
-      addFeatureInput('Blood pressure & vitals check');
-      addSlotInput('09:00 AM - 11:00 AM');
+      addFeatureInput('Blood pressure, ECG spot-check & glucose');
+      addFeatureInput('Prescription pillbox reconciliation');
+      addSlotInput('8:00 AM');
+      addSlotInput('10:00 AM');
       switchModalTab('outer');
+      switchPreviewMode('outer');
+      updateLivePreview();
       modal.classList.remove('hidden');
     });
   }
@@ -178,6 +182,20 @@ function setupModalHandlers() {
   const closeModal = () => modal.classList.add('hidden');
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  // Google Style Image Drop Zone Preview
+  const imageInput = document.getElementById('form-service-image');
+  if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('preview-img').src = evt.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+  }
 
   if (form) {
     form.addEventListener('submit', async (e) => {
@@ -207,6 +225,102 @@ function setupModalHandlers() {
   }
 }
 
+function setupLivePreviewListeners() {
+  const nameInput = document.getElementById('form-service-name');
+  const catSelect = document.getElementById('form-category');
+  const priceInput = document.getElementById('form-price');
+  const descInput = document.getElementById('form-description');
+  const minDur = document.getElementById('form-duration-min');
+  const maxDur = document.getElementById('form-duration-max');
+
+  [nameInput, catSelect, priceInput, descInput, minDur, maxDur].forEach(el => {
+    if (el) el.addEventListener('input', updateLivePreview);
+  });
+}
+
+function updateLivePreview() {
+  const name = document.getElementById('form-service-name').value.trim() || 'Elderly Mobility and Vitals Assessment';
+  const cat = document.getElementById('form-category').value.toUpperCase();
+  const price = parseFloat(document.getElementById('form-price').value || 85.00).toFixed(2);
+  const desc = document.getElementById('form-description').value.trim() || 'Comprehensive routine wellness triage for aging loved ones. Focus on fall prevention, mobility exercises, medication reconciliation, and heart monitoring.';
+  const min = document.getElementById('form-duration-min').value || 45;
+  const max = document.getElementById('form-duration-max').value || 60;
+
+  document.getElementById('preview-title').textContent = name;
+  document.getElementById('preview-category').textContent = cat;
+  document.getElementById('preview-price').textContent = price;
+  document.getElementById('preview-desc').textContent = desc;
+  document.getElementById('preview-duration').textContent = `Est. ${min}–${max} mins`;
+
+  // Update outer card features preview list (up to 2 features)
+  const features = Array.from(document.querySelectorAll('.feature-input')).map(i => i.value).filter(Boolean);
+  const previewOuterFeaturesUl = document.getElementById('preview-outer-features');
+  if (features.length > 0) {
+    previewOuterFeaturesUl.innerHTML = features.slice(0, 2).map(f => `
+      <li class="flex items-start gap-1.5 text-[10px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span class="line-clamp-1">${f}</span></li>
+    `).join('');
+  } else {
+    previewOuterFeaturesUl.innerHTML = `<li class="text-[10px] text-neutral-400 italic">No features added</li>`;
+  }
+
+  // Update inner overview features preview list (all features)
+  const previewFeaturesUl = document.getElementById('preview-features');
+  if (features.length > 0) {
+    previewFeaturesUl.innerHTML = features.map(f => `
+      <li class="flex items-start gap-1 text-[9px] text-neutral-600"><span class="text-emerald-500 font-bold">✓</span><span>${f}</span></li>
+    `).join('');
+  } else {
+    previewFeaturesUl.innerHTML = `<li class="text-[9px] text-neutral-400 italic">No features added</li>`;
+  }
+
+  // Update time slots preview list
+  const slots = Array.from(document.querySelectorAll('.slot-input')).map(i => i.value).filter(Boolean);
+  const previewSlotsDiv = document.getElementById('preview-timeslots');
+  if (slots.length > 0) {
+    previewSlotsDiv.innerHTML = slots.map((s, idx) => `
+      <span class="px-2 py-1.5 ${idx === 0 ? 'bg-indigo-50 text-[#3C52C3] border border-indigo-200 font-bold' : 'bg-neutral-50 text-neutral-600 border border-neutral-200'} rounded-lg text-[9px] text-center">${s}</span>
+    `).join('');
+  } else {
+    previewSlotsDiv.innerHTML = `<span class="text-[9px] text-neutral-400 italic col-span-2">No slots added</span>`;
+  }
+}
+
+function switchPreviewMode(mode) {
+  const outerPane = document.getElementById('preview-outer-pane');
+  const innerPane = document.getElementById('preview-inner-pane');
+  const viewOverview = document.getElementById('preview-view-overview');
+  const viewBooking = document.getElementById('preview-view-booking');
+  const btnOuter = document.getElementById('preview-mode-outer');
+  const btnInner1 = document.getElementById('preview-mode-inner-1');
+  const btnInner2 = document.getElementById('preview-mode-inner-2');
+
+  // Reset button highlights
+  [btnOuter, btnInner1, btnInner2].forEach(b => {
+    b.className = "px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer";
+  });
+
+  if (mode === 'outer') {
+    btnOuter.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.className = "relative w-full h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    innerPane.classList.add('hidden');
+    switchModalTab('outer');
+  } else if (mode === 'inner_overview') {
+    btnInner1.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.className = "relative w-1/2 h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    innerPane.classList.remove('hidden');
+    viewOverview.classList.remove('hidden');
+    viewBooking.classList.add('hidden');
+    switchModalTab('inner');
+  } else if (mode === 'inner_booking') {
+    btnInner2.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.className = "relative w-1/2 h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    innerPane.classList.remove('hidden');
+    viewOverview.classList.add('hidden');
+    viewBooking.classList.remove('hidden');
+    switchModalTab('inner');
+  }
+}
+
 function switchModalTab(tab) {
   const tabOuter = document.getElementById('modal-tab-outer');
   const tabInner = document.getElementById('modal-tab-inner');
@@ -216,13 +330,13 @@ function switchModalTab(tab) {
   if (tab === 'outer') {
     tabOuter.classList.remove('hidden');
     tabInner.classList.add('hidden');
-    btnOuter.className = "px-4 py-2.5 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
-    btnInner.className = "px-4 py-2.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
+    btnOuter.className = "px-4 py-2 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
+    btnInner.className = "px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
   } else {
     tabOuter.classList.add('hidden');
     tabInner.classList.remove('hidden');
-    btnInner.className = "px-4 py-2.5 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
-    btnOuter.className = "px-4 py-2.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
+    btnInner.className = "px-4 py-2 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
+    btnOuter.className = "px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
   }
 }
 
@@ -231,11 +345,12 @@ function addFeatureInput(val = '') {
   const div = document.createElement('div');
   div.className = "flex items-center gap-2";
   div.innerHTML = `
-    <input type="text" value="${val}" placeholder="Feature description" class="feature-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20">
-    <button type="button" onclick="this.parentElement.remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+    <input type="text" value="${val}" placeholder="Feature description" class="feature-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20" oninput="updateLivePreview()">
+    <button type="button" onclick="this.parentElement.remove(); updateLivePreview();" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
   `;
   container.appendChild(div);
   if (window.lucide) lucide.createIcons();
+  updateLivePreview();
 }
 
 function addSlotInput(val = '') {
@@ -243,11 +358,12 @@ function addSlotInput(val = '') {
   const div = document.createElement('div');
   div.className = "flex items-center gap-2";
   div.innerHTML = `
-    <input type="text" value="${val}" placeholder="e.g. 02:00 PM - 04:00 PM" class="slot-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20">
-    <button type="button" onclick="this.parentElement.remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+    <input type="text" value="${val}" placeholder="e.g. 8:00 AM" class="slot-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20" oninput="updateLivePreview()">
+    <button type="button" onclick="this.parentElement.remove(); updateLivePreview();" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
   `;
   container.appendChild(div);
   if (window.lucide) lucide.createIcons();
+  updateLivePreview();
 }
 
 function openEditModal(serviceID) {
@@ -262,6 +378,9 @@ function openEditModal(serviceID) {
   document.getElementById('form-duration-max').value = service.durationMax || 60;
   document.getElementById('form-existing-image').value = service.serviceImageURL || '';
   document.getElementById('form-description').value = service.description || '';
+
+  const imagePath = service.serviceImageURL ? service.serviceImageURL.replace('../..', '/StepCare') : '/StepCare/images/services/elderly.png';
+  document.getElementById('preview-img').src = imagePath;
 
   const featContainer = document.getElementById('features-container');
   featContainer.innerHTML = '';
@@ -281,6 +400,8 @@ function openEditModal(serviceID) {
 
   document.getElementById('modal-title').textContent = 'Edit Service: ' + service.serviceName;
   switchModalTab('outer');
+  switchPreviewMode('outer');
+  updateLivePreview();
   document.getElementById('service-modal').classList.remove('hidden');
 }
 
