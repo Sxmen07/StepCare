@@ -21,10 +21,10 @@
 <body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden">
 
   <!-- Modular Sidebar Container -->
-  <div id="sidebar-container" class="shrink-0 h-full"></div>
+  <div id="sidebar-container" class="shrink-0 h-full flex"></div>
 
   <!-- Main View Workspace -->
-  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
     <!-- Modular Topbar Container -->
     <div id="topbar-container" class="w-full shrink-0"></div>
 
@@ -71,34 +71,28 @@
       </div>
     </section>
 
-    <!-- Table Header Grid (Balanced Column Spacing with Wider Checkbox Gap) -->
+    <!-- Table Header Grid (Staff-style 100% full width) -->
     <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
-      <!-- Col 1: Select & ID (col-span-2, gap-5 加大间距) -->
       <div class="col-span-2 flex items-center gap-5 text-left pl-2">
         <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 cursor-pointer shrink-0" />
         <span>User ID</span>
       </div>
-      <!-- Col 2: Name (col-span-3) -->
       <div class="col-span-3 text-left">Full Name</div>
-      <!-- Col 3: IC / Passport (col-span-2) -->
       <div class="col-span-2 text-left">IC / Passport</div>
-      <!-- Col 4: Email Address (col-span-2) -->
       <div class="col-span-2 text-left">Email Address</div>
-      <!-- Col 5: Status (col-span-1) -->
       <div class="col-span-1 text-center">Status</div>
-      <!-- Col 6: Action (col-span-2) -->
       <div class="col-span-2 text-center">Action</div>
     </div>
 
     <!-- Full-Width Stream Container -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar">
-      <div id="user-list-container" class="divide-y divide-neutral-100 w-full">
+    <main class="flex-1 overflow-y-auto custom-scrollbar bg-white">
+      <div id="user-list-container" class="divide-y divide-neutral-100 w-full pb-8">
         <!-- Dynamic Rows Rendered Here -->
       </div>
     </main>
   </div>
 
-  <!-- Single / Batch Ban Confirmation Modal with Comment Box & Larger Typography -->
+  <!-- Single / Batch Ban Confirmation Modal with Comment Box -->
   <div id="ban-confirm-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
     <div class="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-neutral-200">
       <div class="text-center">
@@ -148,48 +142,64 @@
       let userList = [];
       let selectedIcs = new Set();
       let pendingAction = null;
+      let isSuperAdmin = false;
+
+      // Helper: inject components and evaluate inner script tags
+      function injectComponent(containerId, html) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = html;
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+        if (window.lucide) lucide.createIcons();
+      }
 
       document.addEventListener('DOMContentLoaded', () => {
         // 1. Mount sidebar
         fetch('/StepCare/components/sidebar-admin.html')
           .then(res => res.text())
-          .then(html => {
-            const sb = document.getElementById('sidebar-container');
-            if (sb) {
-              sb.innerHTML = html;
-              sb.querySelectorAll('script').forEach(s => {
-                const ns = document.createElement('script');
-                ns.textContent = s.textContent;
-                document.body.appendChild(ns);
-              });
-              if (window.lucide) lucide.createIcons();
-            }
-          });
+          .then(html => injectComponent('sidebar-container', html));
 
         // 2. Mount topbar
         fetch('/StepCare/components/topbar.html')
           .then(res => res.text())
           .then(html => {
-            const tb = document.getElementById('topbar-container');
-            if (tb) {
-              tb.innerHTML = html;
-              tb.querySelectorAll('script').forEach(s => {
-                const ns = document.createElement('script');
-                ns.textContent = s.textContent;
-                document.body.appendChild(ns);
-              });
-              const title = document.getElementById('topbar-page-title');
-              if (title) title.textContent = 'User Management';
-              if (window.lucide) lucide.createIcons();
-            }
+            injectComponent('topbar-container', html);
+            const title = document.getElementById('topbar-page-title');
+            if (title) title.textContent = 'User Management';
           });
 
-        // 3. Load users
+        // 3. Detect current session role
+        detectAdminRole();
+
+        // 4. Load users
         loadUsersData();
 
-        // 4. Bind events
+        // 5. Bind events
         initEvents();
       });
+
+      // Detect whether currently logged-in user is Super Admin
+      async function detectAdminRole() {
+        try {
+          const res = await fetch('/StepCare/auth/get_current_user.php');
+          const data = await res.json();
+          if (data && data.success) {
+            const role = (data.role || data.user_role || '').toLowerCase();
+            const level = (data.role_level || data.admin_level || '').toLowerCase();
+            if (role === 'super admin' || role === 'superadmin' || level === 'super' || data.is_super_admin) {
+              isSuperAdmin = true;
+            }
+          }
+        } catch (e) {
+          console.warn('Role detection fallback to backend API flag.');
+        }
+      }
 
       // Fetch users
       async function loadUsersData() {
@@ -198,6 +208,9 @@
           const data = await res.json();
           if (data.status === 'success') {
             userList = data.data || [];
+            if (data.is_super_admin !== undefined) {
+              isSuperAdmin = Boolean(data.is_super_admin);
+            }
             selectedIcs.clear();
             updateBatchButton();
             renderTable();
@@ -211,11 +224,18 @@
         }
       }
 
-      // Avatar Fallback Initial Bubble
+      // Avatar Fallback Initial Bubble (Matching Staff capsule standard)
       function getAvatarBubble(name) {
-        const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+        const clean = (name || 'User').trim();
+        const parts = clean.split(/\s+/).filter(Boolean);
+        let initials = '';
+        if (parts.length >= 2) {
+          initials = (parts[0][0] + parts[1][0]).toUpperCase();
+        } else {
+          initials = clean.substring(0, 2).toUpperCase();
+        }
         return `
-          <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-700 font-bold text-[11px] flex items-center justify-center border border-black/5 shrink-0 select-none">
+          <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-700 font-bold text-[11px] flex items-center justify-center border border-orange-200/60 shrink-0 select-none">
             ${initials}
           </div>
         `;
@@ -229,8 +249,16 @@
 
         if (countSpan) countSpan.textContent = count;
 
+        if (!isSuperAdmin) {
+          batchBtn.disabled = true;
+          batchBtn.title = "Only Super Admins can ban users";
+          batchBtn.className = 'px-4 py-2 bg-rose-50 text-rose-300 border border-rose-200/60 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-not-allowed opacity-60 shadow-2xs';
+          return;
+        }
+
         if (count > 0) {
           batchBtn.disabled = false;
+          batchBtn.removeAttribute('title');
           batchBtn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm';
         } else {
           batchBtn.disabled = true;
@@ -298,34 +326,54 @@
                </div>`
             : fallbackBadge;
 
-          const actionButton = isBanned
-            ? `<button type="button" 
-                       onclick="window.promptToggleBan('${user.ic}', 'Active', '${user.name}')" 
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 hover:border-emerald-300 shadow-2xs transition cursor-pointer">
-                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                 <span>Unban</span>
-               </button>`
-            : `<button type="button" 
-                       onclick="window.promptToggleBan('${user.ic}', 'Banned', '${user.name}')" 
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:border-rose-300 shadow-2xs transition cursor-pointer">
-                 <i data-lucide="ban" class="w-3.5 h-3.5"></i>
-                 <span>Ban</span>
-               </button>`;
+          // Retain visual appearance of Ban/Unban buttons, but disable action if not Super Admin
+          let actionButton = '';
+          if (isBanned) {
+            actionButton = isSuperAdmin
+              ? `<button type="button" 
+                         onclick="window.promptToggleBan('${user.ic}', 'Active', '${user.name.replace(/'/g, "\\'")}')" 
+                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-xs font-semibold rounded-lg border border-emerald-200 hover:border-emerald-300 shadow-2xs transition cursor-pointer">
+                   <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                   <span>Unban</span>
+                 </button>`
+              : `<button type="button" 
+                         disabled
+                         title="Only Super Admins can unban users"
+                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-400 text-xs font-semibold rounded-lg border border-neutral-200 shadow-2xs cursor-not-allowed opacity-60">
+                   <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                   <span>Unban</span>
+                 </button>`;
+          } else {
+            actionButton = isSuperAdmin
+              ? `<button type="button" 
+                         onclick="window.promptToggleBan('${user.ic}', 'Banned', '${user.name.replace(/'/g, "\\'")}')" 
+                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:border-rose-300 shadow-2xs transition cursor-pointer">
+                   <i data-lucide="ban" class="w-3.5 h-3.5"></i>
+                   <span>Ban</span>
+                 </button>`
+              : `<button type="button" 
+                         disabled
+                         title="Only Super Admins can ban users"
+                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-400 text-xs font-semibold rounded-lg border border-neutral-200 shadow-2xs cursor-not-allowed opacity-60">
+                   <i data-lucide="ban" class="w-3.5 h-3.5"></i>
+                   <span>Ban</span>
+                 </button>`;
+          }
 
           return `
             <div class="user-row grid grid-cols-12 items-center px-8 py-3.5 border-b border-neutral-100 ${isBanned ? 'bg-neutral-50/50' : ''}">
               
-              <!-- Col 1: Select Checkbox & User ID (gap-5 加大间距) -->
+              <!-- Col 1: Select Checkbox & User ID -->
               <div class="col-span-2 flex items-center gap-5 pl-2">
                 <input type="checkbox" 
                        data-ic="${user.ic}" 
-                       ${isBanned ? 'disabled title="User is already banned"' : ''}
+                       ${(isBanned || !isSuperAdmin) ? 'disabled title="' + (!isSuperAdmin ? 'Only Super Admins can select for ban' : 'User is already banned') + '"' : ''}
                        ${isChecked ? 'checked' : ''} 
-                       class="user-row-checkbox w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 shrink-0 ${isBanned ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}" />
+                       class="user-row-checkbox w-4 h-4 text-[#3C52C3] rounded border-neutral-300 focus:ring-0 shrink-0 ${(isBanned || !isSuperAdmin) ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}" />
                 <span class="text-xs font-mono font-bold text-neutral-500">${user.id}</span>
               </div>
 
-              <!-- Col 2: Full Name with Photo (col-span-3) -->
+              <!-- Col 2: Full Name with Photo -->
               <div class="col-span-3 flex items-center gap-3 min-w-0 pr-4">
                 ${avatarHtml}
                 <div class="min-w-0">
@@ -334,22 +382,22 @@
                 </div>
               </div>
 
-              <!-- Col 3: IC / Passport (col-span-2) -->
+              <!-- Col 3: IC / Passport -->
               <div class="col-span-2 text-xs font-mono font-bold text-neutral-700 truncate pr-4">
                 ${user.ic}
               </div>
 
-              <!-- Col 4: Email Address (col-span-2) -->
+              <!-- Col 4: Email Address -->
               <div class="col-span-2 text-xs text-neutral-600 font-medium truncate pr-4">
                 ${user.email}
               </div>
 
-              <!-- Col 5: Status Badge (col-span-1) -->
+              <!-- Col 5: Status Badge -->
               <div class="col-span-1 flex items-center justify-center">
                 ${statusBadge}
               </div>
 
-              <!-- Col 6: Ban/Unban Action (col-span-2) -->
+              <!-- Col 6: Ban/Unban Action -->
               <div class="col-span-2 flex items-center justify-center">
                 ${actionButton}
               </div>
@@ -379,6 +427,11 @@
 
       // Prompt Single Ban / Unban Modal tied to IC
       window.promptToggleBan = function (ic, targetStatus, userName) {
+        if (!isSuperAdmin) {
+          alert('Unauthorized: Only Super Administrators have permission to ban or reactivate users.');
+          return;
+        }
+
         if (!ic || ic === 'N/A') {
           alert('Cannot perform identity ban: This user does not have a registered IC number.');
           return;
@@ -420,6 +473,11 @@
 
       // Prompt Batch Ban Modal
       function promptBatchBan() {
+        if (!isSuperAdmin) {
+          alert('Unauthorized: Only Super Administrators have permission to ban users.');
+          return;
+        }
+
         if (selectedIcs.size === 0) return;
 
         pendingAction = { type: 'batch', ics: Array.from(selectedIcs) };
@@ -466,6 +524,12 @@
         const selectAllCb = document.getElementById('select-all-checkbox');
         if (selectAllCb) {
           selectAllCb.addEventListener('change', (e) => {
+            if (!isSuperAdmin) {
+              e.target.checked = false;
+              alert('Only Super Administrators can select accounts for ban.');
+              return;
+            }
+
             const currentStatus = filterStatus ? filterStatus.value : 'All';
             const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
             
