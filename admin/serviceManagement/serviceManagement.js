@@ -166,7 +166,9 @@ function setupModalHandlers() {
       document.getElementById('modal-title').textContent = 'Add New Service';
       document.getElementById('features-container').innerHTML = '';
       document.getElementById('timeslots-container').innerHTML = '';
-      document.getElementById('preview-img').src = '/StepCare/images/services/elderly.png';
+      const defaultImg = '/StepCare/images/services/elderly.png';
+      document.getElementById('preview-img').src = defaultImg;
+      document.getElementById('preview-inner-img').src = defaultImg;
       
       addFeatureInput('Blood pressure, ECG spot-check & glucose');
       addFeatureInput('Prescription pillbox reconciliation');
@@ -191,6 +193,7 @@ function setupModalHandlers() {
         const reader = new FileReader();
         reader.onload = function(evt) {
           document.getElementById('preview-img').src = evt.target.result;
+          document.getElementById('preview-inner-img').src = evt.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
       }
@@ -246,24 +249,28 @@ function updateLivePreview() {
   const min = document.getElementById('form-duration-min').value || 45;
   const max = document.getElementById('form-duration-max').value || 60;
 
+  // Update Outer Preview
   document.getElementById('preview-title').textContent = name;
   document.getElementById('preview-category').textContent = cat;
   document.getElementById('preview-price').textContent = price;
   document.getElementById('preview-desc').textContent = desc;
   document.getElementById('preview-duration').textContent = `Est. ${min}–${max} mins`;
 
-  // Update outer card features preview list (up to 2 features)
+  // Update Inner Modal Preview Left Pane
+  document.getElementById('preview-inner-title').textContent = name;
+  document.getElementById('preview-inner-category').textContent = cat;
+  document.getElementById('preview-inner-price').textContent = price;
+
   const features = Array.from(document.querySelectorAll('.feature-input')).map(i => i.value).filter(Boolean);
   const previewOuterFeaturesUl = document.getElementById('preview-outer-features');
   if (features.length > 0) {
     previewOuterFeaturesUl.innerHTML = features.slice(0, 2).map(f => `
-      <li class="flex items-start gap-1.5 text-[10px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span class="line-clamp-1">${f}</span></li>
+      <li class="flex items-start gap-1.5 text-[9px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span class="line-clamp-1">${f}</span></li>
     `).join('');
   } else {
-    previewOuterFeaturesUl.innerHTML = `<li class="text-[10px] text-neutral-400 italic">No features added</li>`;
+    previewOuterFeaturesUl.innerHTML = `<li class="text-[9px] text-neutral-400 italic">No features added</li>`;
   }
 
-  // Update inner overview features preview list (all features)
   const previewFeaturesUl = document.getElementById('preview-features');
   if (features.length > 0) {
     previewFeaturesUl.innerHTML = features.map(f => `
@@ -273,15 +280,14 @@ function updateLivePreview() {
     previewFeaturesUl.innerHTML = `<li class="text-[9px] text-neutral-400 italic">No features added</li>`;
   }
 
-  // Update time slots preview list
   const slots = Array.from(document.querySelectorAll('.slot-input')).map(i => i.value).filter(Boolean);
   const previewSlotsDiv = document.getElementById('preview-timeslots');
   if (slots.length > 0) {
     previewSlotsDiv.innerHTML = slots.map((s, idx) => `
-      <span class="px-2 py-1.5 ${idx === 0 ? 'bg-indigo-50 text-[#3C52C3] border border-indigo-200 font-bold' : 'bg-neutral-50 text-neutral-600 border border-neutral-200'} rounded-lg text-[9px] text-center">${s}</span>
+      <span class="px-2 py-1 ${idx === 0 ? 'bg-indigo-50 text-[#3C52C3] border border-indigo-200 font-bold text-[8px]' : 'bg-neutral-50 text-neutral-600 border border-neutral-200 text-[8px]'} rounded-lg text-center">${s}</span>
     `).join('');
   } else {
-    previewSlotsDiv.innerHTML = `<span class="text-[9px] text-neutral-400 italic col-span-2">No slots added</span>`;
+    previewSlotsDiv.innerHTML = `<span class="text-[8px] text-neutral-400 italic col-span-2">No slots added</span>`;
   }
 }
 
@@ -294,26 +300,25 @@ function switchPreviewMode(mode) {
   const btnInner1 = document.getElementById('preview-mode-inner-1');
   const btnInner2 = document.getElementById('preview-mode-inner-2');
 
-  // Reset button highlights
   [btnOuter, btnInner1, btnInner2].forEach(b => {
-    b.className = "px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer";
+    b.className = "px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer";
   });
 
   if (mode === 'outer') {
-    btnOuter.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.className = "relative w-full h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    btnOuter.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.classList.remove('hidden');
     innerPane.classList.add('hidden');
     switchModalTab('outer');
   } else if (mode === 'inner_overview') {
-    btnInner1.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.className = "relative w-1/2 h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    btnInner1.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.classList.add('hidden');
     innerPane.classList.remove('hidden');
     viewOverview.classList.remove('hidden');
     viewBooking.classList.add('hidden');
     switchModalTab('inner');
   } else if (mode === 'inner_booking') {
-    btnInner2.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.className = "relative w-1/2 h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300";
+    btnInner2.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
+    outerPane.classList.add('hidden');
     innerPane.classList.remove('hidden');
     viewOverview.classList.add('hidden');
     viewBooking.classList.remove('hidden');
@@ -381,6 +386,7 @@ function openEditModal(serviceID) {
 
   const imagePath = service.serviceImageURL ? service.serviceImageURL.replace('../..', '/StepCare') : '/StepCare/images/services/elderly.png';
   document.getElementById('preview-img').src = imagePath;
+  document.getElementById('preview-inner-img').src = imagePath;
 
   const featContainer = document.getElementById('features-container');
   featContainer.innerHTML = '';

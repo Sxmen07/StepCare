@@ -106,7 +106,7 @@
 
   <!-- ADD / EDIT SERVICE MANAGEMENT MODAL -->
   <div id="service-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-3xl w-full max-w-6xl h-[88vh] shadow-2xl border border-neutral-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div class="bg-white rounded-3xl w-full max-w-7xl h-[90vh] shadow-2xl border border-neutral-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       
       <!-- Modal Header -->
       <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
@@ -119,135 +119,162 @@
         </button>
       </div>
 
-      <!-- Modal Body Split: Left = Live Preview, Right = Form Tabs -->
-      <div class="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+      <!-- Modal Body Grid Split -->
+      <div class="flex-1 grid grid-cols-12 min-h-0 overflow-hidden">
         
-        <!-- LEFT SIDE: WHITE BACKGROUND LIVE PREVIEW PANEL -->
-        <div class="w-full md:w-[460px] bg-white border-r border-neutral-200 p-6 flex flex-col justify-between shrink-0 overflow-hidden relative">
+        <!-- LEFT SIDE: LIVE PREVIEW PANEL -->
+        <div class="col-span-12 md:col-span-6 bg-white border-r border-neutral-200 p-6 flex flex-col justify-between overflow-hidden relative">
           
-          <div class="flex items-center justify-between pb-2 border-b border-neutral-100 z-20">
+          <div class="flex items-center justify-between pb-3 border-b border-neutral-100 z-20">
             <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">User Interface Preview</span>
             <div class="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
-              <button type="button" onclick="switchPreviewMode('outer')" id="preview-mode-outer" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer">Outer Card</button>
-              <button type="button" onclick="switchPreviewMode('inner_overview')" id="preview-mode-inner-1" class="px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Overview</button>
-              <button type="button" onclick="switchPreviewMode('inner_booking')" id="preview-mode-inner-2" class="px-2.5 py-1 text-[10px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Booking</button>
+              <button type="button" onclick="switchPreviewMode('outer')" id="preview-mode-outer" class="px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer">Outer Card</button>
+              <button type="button" onclick="switchPreviewMode('inner_overview')" id="preview-mode-inner-1" class="px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Overview</button>
+              <button type="button" onclick="switchPreviewMode('inner_booking')" id="preview-mode-inner-2" class="px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Booking</button>
             </div>
           </div>
 
-          <!-- Simulated White Modal Box Preview Container -->
-          <div class="my-auto relative rounded-3xl overflow-hidden shadow-xl w-full h-[480px] bg-white border border-neutral-200 flex flex-row transition-all duration-500 ease-in-out">
+          <!-- Preview Container -->
+          <div class="my-auto relative flex items-center justify-center w-full h-[510px] bg-neutral-50/70 rounded-3xl border border-neutral-200/80 p-4 overflow-hidden">
             
-            <!-- Left Side of Split Modal: Outer Card Style -->
-            <div id="preview-outer-pane" class="relative w-full h-full flex flex-col justify-end p-5 overflow-hidden bg-neutral-900 shrink-0 transition-all duration-300">
+            <!-- OUTER CARD PREVIEW -->
+            <div id="preview-outer-pane" class="relative w-full max-w-[320px] h-[450px] rounded-3xl overflow-hidden shadow-xl flex flex-col justify-end p-5 bg-neutral-900 shrink-0 transition-all duration-300">
               <div class="absolute inset-0 z-0 overflow-hidden">
                 <img id="preview-img" src="/StepCare/images/services/elderly.png" alt="Preview" class="w-full h-full object-cover object-center">
               </div>
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20 z-10 pointer-events-none"></div>
 
-              <!-- Top Badges -->
               <div class="absolute top-3 inset-x-3 z-30 flex items-center justify-between">
                 <span class="bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">★ TOP PICK</span>
                 <span class="text-white/80"><i data-lucide="pencil" class="w-4 h-4"></i></span>
               </div>
 
-              <div class="relative z-20 space-y-2.5">
-                <div><span id="preview-category" class="text-[10px] font-black tracking-widest text-[#34D399] uppercase">ELDERLY</span></div>
-                <h4 id="preview-title" class="text-base font-black text-white leading-snug tracking-tight line-clamp-2">Elderly Mobility and Vitals Assessment</h4>
-                <div class="flex items-center gap-2 text-[11px] text-neutral-300 font-medium">
+              <div class="relative z-20 space-y-2">
+                <div><span id="preview-category" class="text-[9px] font-black tracking-widest text-[#34D399] uppercase">ELDERLY</span></div>
+                <h4 id="preview-title" class="text-sm font-black text-white leading-snug tracking-tight line-clamp-2">Elderly Mobility and Vitals Assessment</h4>
+                <div class="flex items-center gap-2 text-[10px] text-neutral-300 font-medium">
                   <div class="flex items-center gap-1 text-amber-400 font-bold"><span>★</span><span>3.00</span><span class="text-neutral-400 font-normal">(1)</span></div>
                   <span class="text-neutral-500">•</span>
                   <span id="preview-duration" class="text-neutral-300">Est. 45–60 mins</span>
                 </div>
 
-                <ul id="preview-outer-features" class="space-y-1 pt-1">
-                  <li class="flex items-start gap-1.5 text-[10px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span>Blood pressure, ECG spot-check & glucose</span></li>
+                <ul id="preview-outer-features" class="space-y-1 pt-0.5">
+                  <li class="flex items-start gap-1.5 text-[9px] text-neutral-300"><span class="text-[#34D399] font-bold">✓</span><span>Blood pressure, ECG spot-check & glucose</span></li>
                 </ul>
 
                 <div class="w-full h-px bg-white/15 my-1"></div>
 
                 <div class="flex items-end justify-between pt-0.5">
                   <div>
-                    <p class="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">SERVICE FEE</p>
-                    <div class="text-lg font-black text-white tracking-tight leading-none mt-1">RM <span id="preview-price">85.00</span> <span class="text-[10px] font-normal text-neutral-400">/visit</span></div>
+                    <p class="text-[8px] font-semibold text-neutral-400 uppercase tracking-wider">SERVICE FEE</p>
+                    <div class="text-base font-black text-white tracking-tight leading-none mt-1">RM <span id="preview-price">85.00</span> <span class="text-[9px] font-normal text-neutral-400">/visit</span></div>
                   </div>
-                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 backdrop-blur-md text-[10px] font-bold text-emerald-400 border border-emerald-500/30">Active</span>
+                  <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 backdrop-blur-md text-[9px] font-bold text-emerald-400 border border-emerald-500/30">Active</span>
                 </div>
               </div>
             </div>
 
-            <!-- Right Side of Split Modal: Dynamic Inner Views -->
-            <div id="preview-inner-pane" class="relative w-full h-full bg-white p-4 flex flex-col justify-between overflow-y-auto no-scrollbar hidden shrink-0">
+            <!-- MODIFIED: INNER DETAILS PANE (MATCHING REFERENCE MODAL LAYOUT WITH SPLIT BACKGROUND & CONTENT BOX) -->
+            <div id="preview-inner-pane" class="relative w-full max-w-[560px] h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden hidden shrink-0 flex flex-row border border-neutral-200">
               
-              <!-- SUB-VIEW 1: INNER OVERVIEW & REVIEWS -->
-              <div id="preview-view-overview" class="space-y-3 transition-all duration-300 ease-in-out">
-                <p id="preview-desc" class="text-[10px] text-neutral-600 leading-relaxed line-clamp-3">Comprehensive routine wellness triage for aging loved ones. Focus on fall prevention...</p>
-                
-                <div>
-                  <h5 class="text-[10px] font-bold text-neutral-900 mb-1">What's included</h5>
-                  <ul id="preview-features" class="space-y-1">
-                    <li class="flex items-start gap-1 text-[9px] text-neutral-600"><span class="text-emerald-500 font-bold">✓</span><span>Blood pressure check</span></li>
-                  </ul>
+              <!-- Left Half of Inner Modal: Background Image & Title Overlay -->
+              <div class="relative w-1/2 h-full flex flex-col justify-end p-4 overflow-hidden shrink-0">
+                <div class="absolute inset-0 z-0 overflow-hidden">
+                  <img id="preview-inner-img" src="/StepCare/images/services/elderly.png" alt="Preview" class="w-full h-full object-cover object-center">
                 </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/10 z-10 pointer-events-none"></div>
 
-                <div class="pt-2 border-t border-neutral-100">
-                  <span class="text-[10px] font-bold text-neutral-900 block mb-1">Ratings and reviews</span>
-                  <div class="bg-neutral-50 p-2 rounded-xl border border-neutral-200">
-                    <div class="flex items-center gap-2 mb-1">
-                      <div class="w-5 h-5 rounded-full bg-indigo-50 text-[#3C52C3] font-bold text-[9px] flex items-center justify-center">J</div>
-                      <span class="text-[10px] font-bold text-neutral-800">Joker C</span>
-                      <span class="text-amber-400 text-[9px] ml-auto">★★★★★</span>
-                    </div>
-                    <p class="text-[9px] text-neutral-500 italic">"Testing123"</p>
+                <div class="relative z-20 space-y-1.5">
+                  <span id="preview-inner-category" class="text-[8px] font-black tracking-widest text-[#34D399] uppercase">ELDERLY</span>
+                  <h4 id="preview-inner-title" class="text-xs font-black text-white leading-snug line-clamp-2">Elderly Mobility and Vitals Assessment</h4>
+                  <div class="flex items-center gap-1 text-[9px] text-amber-400 font-bold">
+                    <span>★</span><span>3.00</span><span class="text-neutral-300 font-normal">(1 reviews)</span>
+                    <span class="text-neutral-400 ml-1">• Est. 45–60 mins</span>
+                  </div>
+                  <div class="pt-2 border-t border-white/20">
+                    <p class="text-[7px] font-semibold text-neutral-400 uppercase">Service fee</p>
+                    <p class="text-sm font-black text-white">RM <span id="preview-inner-price">85.00</span> <span class="text-[8px] font-normal text-neutral-400">/visit</span></p>
                   </div>
                 </div>
-
-                <button type="button" onclick="switchPreviewMode('inner_booking')" class="w-full py-2 bg-[#3C52C3] text-white text-[10px] font-bold rounded-xl shadow-sm cursor-pointer">Book this service →</button>
               </div>
 
-              <!-- SUB-VIEW 2: INNER BOOKING FORM -->
-              <div id="preview-view-booking" class="space-y-3 hidden transition-all duration-300 ease-in-out">
-                <div>
-                  <button type="button" onclick="switchPreviewMode('inner_overview')" class="text-[9px] text-[#3C52C3] font-bold mb-1 block cursor-pointer">← Back to details</button>
-                  <h5 class="text-[11px] font-black text-neutral-900">Book this service</h5>
-                  <p class="text-[9px] text-neutral-400">Choose a date and time slot that works for you.</p>
-                </div>
-
-                <div>
-                  <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Preferred date *</label>
-                  <div class="px-2 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-semibold text-neutral-800 flex items-center justify-between">
-                    <span>11/12/2026</span>
-                    <i data-lucide="calendar" class="w-3 h-3 text-neutral-400"></i>
+              <!-- Right Half of Inner Modal: Dynamic Sub-views (Overview vs Booking) -->
+              <div class="relative w-1/2 h-full bg-white p-4 flex flex-col justify-between overflow-y-auto no-scrollbar">
+                
+                <!-- SUB-VIEW 1: OVERVIEW & REVIEWS -->
+                <div id="preview-view-overview" class="space-y-3 transition-all duration-300 ease-in-out">
+                  <p id="preview-desc" class="text-[10px] text-neutral-600 leading-relaxed line-clamp-3">Comprehensive routine wellness triage for aging loved ones. Focus on fall prevention...</p>
+                  
+                  <div>
+                    <h5 class="text-[10px] font-bold text-neutral-900 mb-1">What's included</h5>
+                    <ul id="preview-features" class="space-y-1">
+                      <li class="flex items-start gap-1 text-[9px] text-neutral-600"><span class="text-emerald-500 font-bold">✓</span><span>Blood pressure check</span></li>
+                    </ul>
                   </div>
-                </div>
 
-                <div>
-                  <label class="block text-[9px] font-bold text-neutral-700 mb-1">Preferred time slot *</label>
-                  <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">MORNING - A.M.</span>
-                  <div id="preview-timeslots" class="grid grid-cols-2 gap-1.5">
-                    <span class="px-2 py-1.5 bg-indigo-50 text-[#3C52C3] border border-indigo-200 rounded-lg text-[9px] font-bold text-center">8:00 AM</span>
-                    <span class="px-2 py-1.5 bg-neutral-50 text-neutral-600 border border-neutral-200 rounded-lg text-[9px] text-center">10:00 AM</span>
+                  <div class="pt-2 border-t border-neutral-100">
+                    <span class="text-[10px] font-bold text-neutral-900 block mb-1">Ratings and reviews</span>
+                    <div class="bg-neutral-50 p-2 rounded-xl border border-neutral-200">
+                      <div class="flex items-center gap-2 mb-1">
+                        <div class="w-4 h-4 rounded-full bg-indigo-50 text-[#3C52C3] font-bold text-[8px] flex items-center justify-center">J</div>
+                        <span class="text-[9px] font-bold text-neutral-800">Joker C</span>
+                        <span class="text-amber-400 text-[8px] ml-auto">★★★★★</span>
+                      </div>
+                      <p class="text-[8px] text-neutral-500 italic">"Testing123"</p>
+                    </div>
                   </div>
+
+                  <button type="button" onclick="switchPreviewMode('inner_booking')" class="w-full py-2 bg-[#0070F3] hover:bg-[#0051B3] text-white text-[10px] font-bold rounded-xl shadow-sm cursor-pointer transition flex items-center justify-center gap-1">
+                    <span>Book this service</span> <span>→</span>
+                  </button>
                 </div>
 
-                <div>
-                  <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Who is this service for? *</label>
-                  <div class="px-2 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-[9px] text-neutral-700">Jonsen Choong</div>
+                <!-- SUB-VIEW 2: BOOKING FORM -->
+                <div id="preview-view-booking" class="space-y-2.5 hidden transition-all duration-300 ease-in-out">
+                  <div>
+                    <button type="button" onclick="switchPreviewMode('inner_overview')" class="text-[9px] text-[#0070F3] font-bold mb-0.5 block cursor-pointer">← Back to details</button>
+                    <h5 class="text-[11px] font-black text-neutral-900">Book this service</h5>
+                    <p class="text-[8px] text-neutral-400">Choose a date and time slot that works for you.</p>
+                  </div>
+
+                  <div>
+                    <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Preferred date *</label>
+                    <div class="px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[9px] font-semibold text-neutral-800 flex items-center justify-between">
+                      <span>11/12/2026</span>
+                      <i data-lucide="calendar" class="w-3 h-3 text-neutral-400"></i>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Preferred time slot *</label>
+                    <span class="text-[7px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">MORNING - A.M.</span>
+                    <div id="preview-timeslots" class="grid grid-cols-2 gap-1">
+                      <span class="px-2 py-1 bg-indigo-50 text-[#3C52C3] border border-indigo-200 rounded-lg text-[8px] font-bold text-center">8:00 AM</span>
+                      <span class="px-2 py-1 bg-neutral-50 text-neutral-600 border border-neutral-200 rounded-lg text-[8px] text-center">10:00 AM</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-[9px] font-bold text-neutral-700 mb-0.5">Who is this service for? *</label>
+                    <div class="px-2 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[9px] text-neutral-700">Jonsen Choong</div>
+                  </div>
+
+                  <button type="button" class="w-full py-1.5 bg-[#0070F3] text-white text-[10px] font-bold rounded-xl shadow-sm">Confirm Booking</button>
                 </div>
 
-                <button type="button" class="w-full py-2 bg-[#3C52C3] text-white text-[10px] font-bold rounded-xl shadow-sm">Confirm Booking</button>
               </div>
 
             </div>
 
           </div>
 
-          <div class="text-center z-20">
-            <span class="text-[10px] text-neutral-500">Click preview tabs above to test Outer vs Inner screens</span>
+          <div class="text-center z-20 pt-2">
+            <span class="text-xs text-neutral-400">Click preview tabs above to test Outer vs Inner screens</span>
           </div>
         </div>
 
         <!-- RIGHT SIDE: FORM EDIT TABS -->
-        <div class="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
+        <div class="col-span-12 md:col-span-6 flex flex-col min-h-0 bg-white overflow-hidden">
           
           <!-- Tab Navigation -->
           <div class="flex border-b border-neutral-100 px-6 pt-3 bg-neutral-50/50 shrink-0">
@@ -316,7 +343,7 @@
                   <label class="block text-xs font-bold text-neutral-700">What's Included (Features)</label>
                   <button type="button" onclick="addFeatureInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Feature</button>
                 </div>
-                <div id="features-container" class="space-y-2 max-h-32 overflow-y-auto pr-1"></div>
+                <div id="features-container" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
               </div>
             </div>
 
