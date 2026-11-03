@@ -56,7 +56,7 @@ async function fetchServices() {
   }
 }
 
-// 3. Render Service Cards Grid
+// 3. Render Merged Service Cards Grid (Background Image + Features + Pricing Footer)
 function renderServices() {
   const grid = document.getElementById('services-grid');
   const emptyState = document.getElementById('empty-state');
@@ -92,98 +92,97 @@ function renderServices() {
   emptyState.classList.add('hidden');
   emptyState.classList.remove('flex');
 
-  // Build Service Cards Grid HTML
+  // Build Merged Cards HTML Layout
   grid.innerHTML = filtered.map(service => {
-    const durationText = (service.durationMin && service.durationMax) 
-      ? `${service.durationMin}-${service.durationMax} min` 
-      : 'Flexible duration';
-
     const imagePath = service.serviceImageURL 
       ? service.serviceImageURL.replace('../..', '/StepCare') 
       : '/StepCare/images/services/elderly.png';
 
-    const featuresList = (service.features || []).map(f => `
-      <li class="flex items-start gap-2 text-xs text-neutral-600">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+    const durationText = (service.durationMin && service.durationMax) 
+      ? `Est. ${service.durationMin}–${service.durationMax} mins` 
+      : 'Flexible duration';
+
+    const ratingVal = parseFloat(service.average_rating || 0).toFixed(2);
+    const reviewCount = service.review_count || 0;
+    const categoryName = (service.category || 'General').toUpperCase();
+
+    // Render up to 2 key feature checkmarks (from user card layout) to keep card clean in admin grid
+    const topFeatures = (service.features || []).slice(0, 2).map(f => `
+      <li class="flex items-start gap-1.5 text-[11px] text-neutral-300">
+        <span class="text-[#34D399] font-bold">✓</span>
         <span class="line-clamp-1">${f}</span>
       </li>
     `).join('');
 
-    const badgesList = (service.badges || []).map(b => `
-      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-[#3C52C3] border border-indigo-100">
-        ${b}
-      </span>
-    `).join('');
-
     return `
-      <div class="bg-white rounded-3xl border border-neutral-200/90 shadow-sm hover:shadow-md transition duration-200 flex flex-col overflow-hidden">
+      <div class="relative group rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-end h-[460px] bg-neutral-900 border border-neutral-200/50 select-none">
         
-        <!-- Card Header / Image Container -->
-        <div class="relative h-44 bg-neutral-100 overflow-hidden">
+        <!-- Full Background Image with Zoom on Hover -->
+        <div class="absolute inset-0 z-0 overflow-hidden">
           <img src="${imagePath}" 
                alt="${service.serviceName}" 
-               class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+               class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                onerror="this.src='/StepCare/images/services/elderly.png'">
-          
-          ${service.isTopRecommendation == 1 ? `
-            <div class="absolute top-3 left-3 bg-amber-400 text-amber-950 font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
-              <i data-lucide="sparkles" class="w-3 h-3"></i> Top Pick
-            </div>
-          ` : ''}
-
-          <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-lg">
-            ${service.category || 'General'}
-          </div>
         </div>
 
-        <!-- Card Content Body -->
-        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+        <!-- Dark Gradient Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20 z-10 pointer-events-none"></div>
+
+        <!-- Top Badges if Top Pick -->
+        ${service.isTopRecommendation == 1 ? `
+          <div class="absolute top-3 left-3 z-20 bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+            ★ Top Pick
+          </div>
+        ` : ''}
+
+        <!-- Card Content Container -->
+        <div class="relative z-20 p-5 flex flex-col justify-end space-y-2.5">
+          
+          <!-- Category Tag -->
           <div>
-            <div class="flex items-center justify-between text-xs text-neutral-500 mb-2">
-              <div class="flex items-center gap-1 text-amber-500 font-bold">
-                <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
-                <span>${parseFloat(service.average_rating || 0).toFixed(1)}</span>
-                <span class="text-neutral-400 font-normal">(${service.review_count || 0})</span>
-              </div>
-              
-              <div class="flex items-center gap-1 font-semibold text-neutral-500">
-                <i data-lucide="clock" class="w-3.5 h-3.5 text-neutral-400"></i>
-                <span>${durationText}</span>
-              </div>
-            </div>
-
-            <h3 class="text-base font-bold text-neutral-900 leading-snug line-clamp-1">
-              ${service.serviceName}
-            </h3>
-
-            <p class="text-xs text-neutral-500 mt-1.5 leading-relaxed line-clamp-2">
-              ${service.description}
-            </p>
-
-            ${service.badges && service.badges.length > 0 ? `
-              <div class="flex flex-wrap gap-1.5 mt-3">
-                ${badgesList}
-              </div>
-            ` : ''}
-
-            ${service.features && service.features.length > 0 ? `
-              <ul class="mt-4 space-y-1.5 border-t border-neutral-100 pt-3">
-                ${featuresList}
-              </ul>
-            ` : ''}
+            <span class="text-[10px] font-black tracking-widest text-[#34D399] uppercase">
+              ${categoryName}
+            </span>
           </div>
 
-          <!-- Card Footer Pricing -->
-          <div class="pt-3 border-t border-neutral-100 flex items-center justify-between">
+          <!-- Service Title -->
+          <h3 class="text-lg font-black text-white leading-snug tracking-tight line-clamp-2">
+            ${service.serviceName}
+          </h3>
+
+          <!-- Ratings & Duration Row -->
+          <div class="flex items-center gap-2 text-[11px] text-neutral-300 font-medium">
+            <div class="flex items-center gap-1 text-amber-400 font-bold">
+              <span>★</span>
+              <span>${ratingVal}</span>
+              <span class="text-neutral-400 font-normal">(${reviewCount})</span>
+            </div>
+            <span class="text-neutral-500">•</span>
+            <span class="text-neutral-300">${durationText}</span>
+          </div>
+
+          <!-- Feature Bullets Preview (From User Card Layout) -->
+          ${topFeatures ? `
+            <ul class="space-y-1 pt-1">
+              ${topFeatures}
+            </ul>
+          ` : ''}
+
+          <!-- Thin Separator Line -->
+          <div class="w-full h-px bg-white/15 my-1"></div>
+
+          <!-- Price Footer Section -->
+          <div class="flex items-end justify-between pt-0.5">
             <div>
-              <span class="text-xs text-neutral-400 font-medium">From</span>
-              <div class="text-lg font-black text-neutral-900 leading-none">
-                RM ${parseFloat(service.price).toFixed(2)}
-                <span class="text-xs font-normal text-neutral-400">/${service.price_unit}</span>
+              <p class="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">Service fee</p>
+              <div class="text-xl font-black text-white tracking-tight leading-none mt-1">
+                RM ${parseFloat(service.price).toFixed(2)} 
+                <span class="text-[11px] font-normal text-neutral-400">/visit</span>
               </div>
             </div>
 
-            <span class="text-xs font-bold text-[#3C52C3] flex items-center gap-1">
+            <!-- Active Status Badge -->
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 backdrop-blur-md text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
               Active
             </span>
           </div>
@@ -204,7 +203,7 @@ function setupSearchAndFilters() {
   const searchInput = document.getElementById('service-search-input');
   const clearSearchBtn = document.getElementById('clear-search-btn');
 
-  // Calculates exact dimensions and moves sliding background pill
+  // Move sliding background pill
   function updateHighlight(activeButton) {
     if (!activeButton || !highlight || !pillsWrapper) return;
     

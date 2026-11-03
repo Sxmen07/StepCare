@@ -27,7 +27,7 @@
     <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
       
       <!-- Center Search & Filter Section with Add Button Next to Categories -->
-      <section class="max-w-4xl mx-auto space-y-5 pt-2">
+      <section class="max-w-5xl mx-auto space-y-5 pt-2">
         
         <!-- Center Search Bar Component -->
         <div class="relative w-full shadow-sm rounded-2xl group">
@@ -45,12 +45,12 @@
           </button>
         </div>
 
-        <!-- Categories Pill & Add Button Row -->
+        <!-- Categories Pill & Add Button Row (Clean, no background) -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
           
           <!-- Sliding Pill Category Selector Container -->
           <div class="relative flex items-center flex-1 justify-center sm:justify-start overflow-hidden w-full sm:w-auto">
-            <div id="category-pills-wrapper" class="relative inline-flex items-center gap-1.5 p-1.5 bg-neutral-200/60 rounded-2xl overflow-x-auto max-w-full no-scrollbar select-none">
+            <div id="category-pills-wrapper" class="relative inline-flex items-center gap-1.5 p-1 bg-transparent rounded-2xl overflow-x-auto max-w-full no-scrollbar select-none">
               
               <!-- Sliding Background Indicator Pill -->
               <div id="pill-highlight" class="absolute bg-white rounded-xl shadow-sm border border-neutral-200/80 transition-all duration-300 ease-out z-0 pointer-events-none"></div>
@@ -80,7 +80,7 @@
             </div>
           </div>
 
-          <!-- Add Service Button (Placed on the right of categories pill) -->
+          <!-- Add Service Button -->
           <div class="shrink-0">
             <button type="button" 
                     id="btn-add-service-placeholder"
@@ -93,7 +93,7 @@
         </div>
       </section>
 
-      <!-- Services Display Grid Section -->
+      <!-- Services Display Grid Section (4 Cards per row on lg screens) -->
       <section class="pt-2">
         <div class="flex items-center justify-between mb-4 px-1">
           <p id="service-count-text" class="text-xs font-bold text-neutral-500 uppercase tracking-wider">
@@ -102,7 +102,7 @@
         </div>
 
         <!-- Dynamic Service Cards Grid -->
-        <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
 
         <!-- Empty State View -->
         <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
