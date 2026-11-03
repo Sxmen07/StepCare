@@ -127,18 +127,22 @@
           
           <div class="flex items-center justify-between pb-3 border-b border-neutral-100 z-20">
             <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">User Interface Preview</span>
-            <div class="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
-              <button type="button" onclick="switchPreviewMode('outer')" id="preview-mode-outer" class="px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer">Outer Card</button>
-              <button type="button" onclick="switchPreviewMode('inner_overview')" id="preview-mode-inner-1" class="px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Overview</button>
-              <button type="button" onclick="switchPreviewMode('inner_booking')" id="preview-mode-inner-2" class="px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer">Inner: Booking</button>
+            
+            <!-- Sliding Pill Navigation for Preview Mode -->
+            <div id="preview-pills-wrapper" class="relative inline-flex items-center gap-1 p-1 bg-neutral-100 rounded-xl select-none">
+              <div id="preview-pill-highlight" class="absolute bg-[#3C52C3] rounded-lg shadow-sm transition-all duration-300 ease-out z-0 pointer-events-none"></div>
+
+              <button type="button" onclick="switchPreviewMode('outer')" id="preview-mode-outer" class="preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-bold text-white transition-colors cursor-pointer">Outer Card</button>
+              <button type="button" onclick="switchPreviewMode('inner_overview')" id="preview-mode-inner-1" class="preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer">Inner: Overview</button>
+              <button type="button" onclick="switchPreviewMode('inner_booking')" id="preview-mode-inner-2" class="preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer">Inner: Booking</button>
             </div>
           </div>
 
-          <!-- Preview Container -->
+          <!-- Preview Container with Card Animation -->
           <div class="my-auto relative flex items-center justify-center w-full h-[510px] bg-neutral-50/70 rounded-3xl border border-neutral-200/80 p-4 overflow-hidden">
             
             <!-- OUTER CARD PREVIEW -->
-            <div id="preview-outer-pane" class="relative w-full max-w-[320px] h-[450px] rounded-3xl overflow-hidden shadow-xl flex flex-col justify-end p-5 bg-neutral-900 shrink-0 transition-all duration-300">
+            <div id="preview-outer-pane" class="preview-card-pane relative w-full max-w-[320px] h-[450px] rounded-3xl overflow-hidden shadow-xl flex flex-col justify-end p-5 bg-neutral-900 shrink-0 transition-all duration-300 transform scale-100 opacity-100">
               <div class="absolute inset-0 z-0 overflow-hidden">
                 <img id="preview-img" src="/StepCare/images/services/elderly.png" alt="Preview" class="w-full h-full object-cover object-center">
               </div>
@@ -174,8 +178,8 @@
               </div>
             </div>
 
-            <!-- MODIFIED: INNER DETAILS PANE (MATCHING REFERENCE MODAL LAYOUT WITH SPLIT BACKGROUND & CONTENT BOX) -->
-            <div id="preview-inner-pane" class="relative w-full max-w-[560px] h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden hidden shrink-0 flex flex-row border border-neutral-200">
+            <!-- INNER DETAILS PANE (MATCHING REFERENCE MODAL LAYOUT) -->
+            <div id="preview-inner-pane" class="preview-card-pane relative w-full max-w-[560px] h-[450px] bg-white rounded-2xl shadow-2xl overflow-hidden hidden shrink-0 flex flex-row border border-neutral-200 transition-all duration-300 transform scale-100 opacity-100">
               
               <!-- Left Half of Inner Modal: Background Image & Title Overlay -->
               <div class="relative w-1/2 h-full flex flex-col justify-end p-4 overflow-hidden shrink-0">

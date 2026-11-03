@@ -249,14 +249,12 @@ function updateLivePreview() {
   const min = document.getElementById('form-duration-min').value || 45;
   const max = document.getElementById('form-duration-max').value || 60;
 
-  // Update Outer Preview
   document.getElementById('preview-title').textContent = name;
   document.getElementById('preview-category').textContent = cat;
   document.getElementById('preview-price').textContent = price;
   document.getElementById('preview-desc').textContent = desc;
   document.getElementById('preview-duration').textContent = `Est. ${min}–${max} mins`;
 
-  // Update Inner Modal Preview Left Pane
   document.getElementById('preview-inner-title').textContent = name;
   document.getElementById('preview-inner-category').textContent = cat;
   document.getElementById('preview-inner-price').textContent = price;
@@ -291,6 +289,21 @@ function updateLivePreview() {
   }
 }
 
+// Sliding Pill Animation for Preview Mode Selector
+function updatePreviewPillHighlight(activeBtn) {
+  const wrapper = document.getElementById('preview-pills-wrapper');
+  const highlight = document.getElementById('preview-pill-highlight');
+  if (!wrapper || !highlight || !activeBtn) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const btnRect = activeBtn.getBoundingClientRect();
+
+  highlight.style.width = `${btnRect.width}px`;
+  highlight.style.height = `${btnRect.height}px`;
+  highlight.style.left = `${btnRect.left - wrapperRect.left}px`;
+  highlight.style.top = `${btnRect.top - wrapperRect.top}px`;
+}
+
 function switchPreviewMode(mode) {
   const outerPane = document.getElementById('preview-outer-pane');
   const innerPane = document.getElementById('preview-inner-pane');
@@ -300,30 +313,48 @@ function switchPreviewMode(mode) {
   const btnInner1 = document.getElementById('preview-mode-inner-1');
   const btnInner2 = document.getElementById('preview-mode-inner-2');
 
-  [btnOuter, btnInner1, btnInner2].forEach(b => {
-    b.className = "px-3 py-1 text-[11px] font-semibold rounded-lg text-neutral-500 hover:text-neutral-900 transition-all cursor-pointer";
+  const previewButtons = [btnOuter, btnInner1, btnInner2];
+  previewButtons.forEach(b => {
+    b.className = "preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer";
   });
 
-  if (mode === 'outer') {
-    btnOuter.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.classList.remove('hidden');
-    innerPane.classList.add('hidden');
-    switchModalTab('outer');
-  } else if (mode === 'inner_overview') {
-    btnInner1.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.classList.add('hidden');
-    innerPane.classList.remove('hidden');
-    viewOverview.classList.remove('hidden');
-    viewBooking.classList.add('hidden');
-    switchModalTab('inner');
-  } else if (mode === 'inner_booking') {
-    btnInner2.className = "px-3 py-1 text-[11px] font-bold rounded-lg bg-[#3C52C3] text-white transition-all cursor-pointer";
-    outerPane.classList.add('hidden');
-    innerPane.classList.remove('hidden');
-    viewOverview.classList.add('hidden');
-    viewBooking.classList.remove('hidden');
-    switchModalTab('inner');
-  }
+  // Animate card switch with smooth scale & opacity
+  const panes = document.querySelectorAll('.preview-card-pane');
+  panes.forEach(p => {
+    p.classList.add('opacity-0', 'scale-95');
+  });
+
+  setTimeout(() => {
+    if (mode === 'outer') {
+      btnOuter.className = "preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-bold text-white transition-colors cursor-pointer";
+      outerPane.classList.remove('hidden');
+      innerPane.classList.add('hidden');
+      updatePreviewPillHighlight(btnOuter);
+      switchModalTab('outer');
+    } else if (mode === 'inner_overview') {
+      btnInner1.className = "preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-bold text-white transition-colors cursor-pointer";
+      outerPane.classList.add('hidden');
+      innerPane.classList.remove('hidden');
+      viewOverview.classList.remove('hidden');
+      viewBooking.classList.add('hidden');
+      updatePreviewPillHighlight(btnInner1);
+      switchModalTab('inner');
+    } else if (mode === 'inner_booking') {
+      btnInner2.className = "preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-bold text-white transition-colors cursor-pointer";
+      outerPane.classList.add('hidden');
+      innerPane.classList.remove('hidden');
+      viewOverview.classList.add('hidden');
+      viewBooking.classList.remove('hidden');
+      updatePreviewPillHighlight(btnInner2);
+      switchModalTab('inner');
+    }
+
+    setTimeout(() => {
+      const activePane = mode === 'outer' ? outerPane : innerPane;
+      activePane.classList.remove('opacity-0', 'scale-95');
+      activePane.classList.add('opacity-100', 'scale-100');
+    }, 50);
+  }, 150);
 }
 
 function switchModalTab(tab) {
@@ -342,6 +373,11 @@ function switchModalTab(tab) {
     tabInner.classList.remove('hidden');
     btnInner.className = "px-4 py-2 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
     btnOuter.className = "px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
+    
+    // Auto-switch preview to inner: overview when user clicks Inner Page Details form tab
+    if (!document.getElementById('preview-inner-pane').classList.contains('hidden') === false) {
+      switchPreviewMode('inner_overview');
+    }
   }
 }
 
