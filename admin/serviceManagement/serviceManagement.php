@@ -38,7 +38,7 @@ if ($action === 'fetch_services') {
     exit;
 }
 
-// Handle Add or Edit Form Submission
+// Handle Add or Edit Form Submission with Buffer Overlap Validation
 if ($action === 'save_service') {
     header('Content-Type: application/json; charset=utf-8');
     try {
@@ -47,10 +47,44 @@ if ($action === 'save_service') {
         $category = $_POST['category'] ?? '';
         $price = $_POST['price'] ?? 0;
         $durationMin = $_POST['durationMin'] ?? 45;
-        $durationMax = $_POST['durationMax'] ?? 60;
-        $description = $_POST['description'] ?? ''; // Inner page content
-        $features = json_decode($_POST['features'] ?? '[]', true); // What's included
-        $timeSlots = json_decode($_POST['timeSlots'] ?? '[]', true); // Inner page time slots
+        $durationMax = (int)($_POST['durationMax'] ?? 60);
+        $description = $_POST['description'] ?? ''; 
+        $features = json_decode($_POST['features'] ?? '[]', true); 
+        $timeSlotsRaw = json_decode($_POST['timeSlots'] ?? '[]', true); 
+
+        // Validate time slot buffer overlaps (+1 hour front and back buffer check)
+        $validatedSlots = [];
+        $slotRanges = [];
+
+        foreach ($timeSlotsRaw as $slotTime) {
+            if (empty(trim($slotTime))) continue;
+
+            $dateTime = DateTime::createFromFormat('H:i', $slotTime) ?: DateTime::createFromFormat('g:i A', $slotTime);
+            if (!$dateTime) {
+                // Try parsing standard formats if passed differently
+                $dateTime = new DateTime($slotTime);
+            }
+            if (!$dateTime) continue;
+
+            $startMins = ((int)$dateTime->format('H') * 60) + (int)$dateTime->format('i');
+            
+            // Front buffer: -60 mins, Back buffer: +durationMax + 60 mins
+            $bufferStart = max(0, $startMins - 60);
+            $bufferEnd = $startMins + $durationMax + 60;
+
+            foreach ($slotRanges as $existing) {
+                if ($bufferStart < $existing['end'] && $bufferEnd > $existing['start']) {
+                    echo json_encode([
+                        'status' => 'error', 
+                        'message' => "Time slot '{$slotTime}' violates buffer rules by overlapping another slot's 1-hour front/back buffer window."
+                    ]);
+                    exit;
+                }
+            }
+
+            $slotRanges[] = ['start' => $bufferStart, 'end' => $bufferEnd];
+            $validatedSlots[] = $dateTime->format('g:i A');
+        }
 
         // Handle Image Upload if provided
         $serviceImageURL = $_POST['existingImage'] ?? '../../images/services/elderly.png';
@@ -84,10 +118,8 @@ if ($action === 'save_service') {
             // Refresh Time Slots
             $pdo->prepare("DELETE FROM serviceTimeSlots WHERE serviceID=?")->execute([$serviceID]);
             $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel) VALUES (?, ?)");
-            foreach ($timeSlots as $s) {
-                if (!empty(trim($s))) {
-                    $slotStmt->execute([$serviceID, trim($s)]);
-                }
+            foreach ($validatedSlots as $s) {
+                $slotStmt->execute([$serviceID, $s]);
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Service updated successfully.']);
@@ -107,10 +139,8 @@ if ($action === 'save_service') {
 
             // Insert Time Slots
             $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel) VALUES (?, ?)");
-            foreach ($timeSlots as $s) {
-                if (!empty(trim($s))) {
-                    $slotStmt->execute([$newID, trim($s)]);
-                }
+            foreach ($validatedSlots as $s) {
+                $slotStmt->execute([$newID, $s]);
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Service added successfully.']);

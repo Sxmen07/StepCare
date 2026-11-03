@@ -151,6 +151,120 @@ function renderServices() {
   if (window.lucide) lucide.createIcons();
 }
 
+// Time Formatting & Buffer Helper Functions
+function formatTo12Hour(time24) {
+  if (!time24) return '';
+  const [hStr, mStr] = time24.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  h = h ? h : 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function formatTo24Hour(time12) {
+  if (!time12) return '08:00';
+  const match = time12.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return '08:00';
+  let [_, hStr, mStr, ampm] = match;
+  let h = parseInt(hStr, 10);
+  if (ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+  if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${mStr}`;
+}
+
+function calculateSlotBufferRange(startTime24, maxDurationMins) {
+  if (!startTime24) return null;
+  const [h, m] = startTime24.split(':').map(Number);
+  const startTotalMins = h * 60 + m;
+  
+  // Front Buffer (-1 hour) & Back Buffer (+ maxDuration + 1 hour)
+  const bufferStartTotal = Math.max(0, startTotalMins - 60);
+  const bufferEndTotal = startTotalMins + (parseInt(maxDurationMins) || 60) + 60;
+
+  const formatMinutes = (totalMins) => {
+    const hours = Math.floor(totalMins / 60) % 24;
+    const mins = totalMins % 60;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    return `${h12}:${String(mins).padStart(2, '0')} ${ampm}`;
+  };
+
+  return {
+    startMins: bufferStartTotal,
+    endMins: bufferEndTotal,
+    bufferStartLabel: formatMinutes(bufferStartTotal),
+    bufferEndLabel: formatMinutes(bufferEndTotal)
+  };
+}
+
+function addSlotPicker(timeVal = '08:00') {
+  const container = document.getElementById('timeslots-container');
+  if (!container) return;
+
+  const val24 = (timeVal && (timeVal.includes('AM') || timeVal.includes('PM'))) ? formatTo24Hour(timeVal) : (timeVal || '08:00');
+  
+  const div = document.createElement('div');
+  div.className = "slot-picker-item bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex flex-col gap-2 transition hover:border-indigo-200";
+
+  div.innerHTML = `
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2 flex-1">
+        <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Start Time:</label>
+        <input type="time" value="${val24}" 
+               class="slot-time-input px-3 py-1.5 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] focus:outline-none cursor-pointer" 
+               onchange="updateSlotBuffers(); updateLivePreview();">
+      </div>
+      <button type="button" onclick="this.closest('.slot-picker-item').remove(); updateSlotBuffers(); updateLivePreview();" class="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="buffer-indicator-bar flex items-center gap-1.5 text-[9px] bg-indigo-50/60 border border-indigo-100 rounded-xl px-2.5 py-1 text-indigo-950 font-medium">
+      <span class="font-bold text-[#3C52C3]">🔒 Blocked Window (+1h front/back):</span>
+      <span class="buffer-range-text font-bold text-neutral-700">Calculating...</span>
+    </div>
+  `;
+
+  container.appendChild(div);
+  if (window.lucide) lucide.createIcons();
+  updateSlotBuffers();
+  updateLivePreview();
+}
+
+function updateSlotBuffers() {
+  const maxDur = parseInt(document.getElementById('form-duration-max')?.value || 60);
+  const items = document.querySelectorAll('.slot-picker-item');
+  const ranges = [];
+
+  items.forEach((item) => {
+    const timeInput = item.querySelector('.slot-time-input');
+    const rangeText = item.querySelector('.buffer-range-text');
+    if (!timeInput || !rangeText) return;
+
+    const calc = calculateSlotBufferRange(timeInput.value, maxDur);
+    if (calc) {
+      rangeText.textContent = `${calc.bufferStartLabel} – ${calc.bufferEndLabel}`;
+      
+      let hasConflict = false;
+      for (let prev of ranges) {
+        if (calc.startMins < prev.endMins && calc.endMins > prev.startMins) {
+          hasConflict = true;
+          break;
+        }
+      }
+
+      if (hasConflict) {
+        item.classList.add('border-red-300', 'bg-red-50/30');
+        rangeText.innerHTML = `${calc.bufferStartLabel} – ${calc.bufferEndLabel} <span class="text-red-600 font-bold ml-1">(⚠️ Overlaps buffer!)</span>`;
+      } else {
+        item.classList.remove('border-red-300', 'bg-red-50/30');
+        ranges.push(calc);
+      }
+    }
+  });
+}
+
 // 4. Modal, Tabs & Live Preview Handlers
 function setupModalHandlers() {
   const modal = document.getElementById('service-modal');
@@ -172,8 +286,8 @@ function setupModalHandlers() {
       
       addFeatureInput('Blood pressure, ECG spot-check & glucose');
       addFeatureInput('Prescription pillbox reconciliation');
-      addSlotInput('8:00 AM');
-      addSlotInput('10:00 AM');
+      addSlotPicker('08:00');
+      addSlotPicker('10:00');
       switchModalTab('outer');
       switchPreviewMode('outer');
       updateLivePreview();
@@ -185,7 +299,6 @@ function setupModalHandlers() {
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-  // Google Style Image Drop Zone Preview
   const imageInput = document.getElementById('form-service-image');
   if (imageInput) {
     imageInput.addEventListener('change', function(e) {
@@ -209,7 +322,7 @@ function setupModalHandlers() {
       const features = Array.from(document.querySelectorAll('.feature-input')).map(i => i.value).filter(Boolean);
       formData.append('features', JSON.stringify(features));
 
-      const timeSlots = Array.from(document.querySelectorAll('.slot-input')).map(i => i.value).filter(Boolean);
+      const timeSlots = Array.from(document.querySelectorAll('.slot-time-input')).map(i => formatTo12Hour(i.value)).filter(Boolean);
       formData.append('timeSlots', JSON.stringify(timeSlots));
 
       try {
@@ -245,7 +358,7 @@ function updateLivePreview() {
   const name = document.getElementById('form-service-name').value.trim() || 'Elderly Mobility and Vitals Assessment';
   const cat = document.getElementById('form-category').value.toUpperCase();
   const price = parseFloat(document.getElementById('form-price').value || 85.00).toFixed(2);
-  const desc = document.getElementById('form-description').value.trim() || 'Comprehensive routine wellness triage for aging loved ones. Focus on fall prevention, mobility exercises, medication reconciliation, and heart monitoring.';
+  const desc = document.getElementById('form-description').value.trim() || 'Comprehensive routine wellness triage for aging loved ones.';
   const min = document.getElementById('form-duration-min').value || 45;
   const max = document.getElementById('form-duration-max').value || 60;
 
@@ -278,7 +391,7 @@ function updateLivePreview() {
     previewFeaturesUl.innerHTML = `<li class="text-[9px] text-neutral-400 italic">No features added</li>`;
   }
 
-  const slots = Array.from(document.querySelectorAll('.slot-input')).map(i => i.value).filter(Boolean);
+  const slots = Array.from(document.querySelectorAll('.slot-time-input')).map(i => formatTo12Hour(i.value)).filter(Boolean);
   const previewSlotsDiv = document.getElementById('preview-timeslots');
   if (slots.length > 0) {
     previewSlotsDiv.innerHTML = slots.map((s, idx) => `
@@ -289,7 +402,6 @@ function updateLivePreview() {
   }
 }
 
-// Sliding Pill Animation for Preview Mode Selector
 function updatePreviewPillHighlight(activeBtn) {
   const wrapper = document.getElementById('preview-pills-wrapper');
   const highlight = document.getElementById('preview-pill-highlight');
@@ -318,11 +430,8 @@ function switchPreviewMode(mode) {
     b.className = "preview-mode-btn relative z-10 px-3 py-1 text-[11px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer";
   });
 
-  // Animate card switch with smooth scale & opacity
   const panes = document.querySelectorAll('.preview-card-pane');
-  panes.forEach(p => {
-    p.classList.add('opacity-0', 'scale-95');
-  });
+  panes.forEach(p => p.classList.add('opacity-0', 'scale-95'));
 
   setTimeout(() => {
     if (mode === 'outer') {
@@ -373,11 +482,6 @@ function switchModalTab(tab) {
     tabInner.classList.remove('hidden');
     btnInner.className = "px-4 py-2 text-xs font-bold text-[#3C52C3] border-b-2 border-[#3C52C3] transition cursor-pointer";
     btnOuter.className = "px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer";
-    
-    // Auto-switch preview to inner: overview when user clicks Inner Page Details form tab
-    if (!document.getElementById('preview-inner-pane').classList.contains('hidden') === false) {
-      switchPreviewMode('inner_overview');
-    }
   }
 }
 
@@ -387,19 +491,6 @@ function addFeatureInput(val = '') {
   div.className = "flex items-center gap-2";
   div.innerHTML = `
     <input type="text" value="${val}" placeholder="Feature description" class="feature-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20" oninput="updateLivePreview()">
-    <button type="button" onclick="this.parentElement.remove(); updateLivePreview();" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-  `;
-  container.appendChild(div);
-  if (window.lucide) lucide.createIcons();
-  updateLivePreview();
-}
-
-function addSlotInput(val = '') {
-  const container = document.getElementById('timeslots-container');
-  const div = document.createElement('div');
-  div.className = "flex items-center gap-2";
-  div.innerHTML = `
-    <input type="text" value="${val}" placeholder="e.g. 8:00 AM" class="slot-input flex-1 px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20" oninput="updateLivePreview()">
     <button type="button" onclick="this.parentElement.remove(); updateLivePreview();" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
   `;
   container.appendChild(div);
@@ -435,9 +526,9 @@ function openEditModal(serviceID) {
   const slotContainer = document.getElementById('timeslots-container');
   slotContainer.innerHTML = '';
   if (service.timeSlots && service.timeSlots.length > 0) {
-    service.timeSlots.forEach(s => addSlotInput(s));
+    service.timeSlots.forEach(s => addSlotPicker(s));
   } else {
-    addSlotInput();
+    addSlotPicker('08:00');
   }
 
   document.getElementById('modal-title').textContent = 'Edit Service: ' + service.serviceName;
@@ -447,7 +538,6 @@ function openEditModal(serviceID) {
   document.getElementById('service-modal').classList.remove('hidden');
 }
 
-// 5. View Mode & Search Filters
 function setupViewModeToggle() {
   const viewHighlight = document.getElementById('view-pill-highlight');
   const viewPills = document.querySelectorAll('.view-pill');
@@ -497,11 +587,6 @@ function setupViewModeToggle() {
       }
     });
   });
-
-  window.addEventListener('resize', () => {
-    const activeBtn = document.querySelector('.view-pill.font-bold');
-    if (activeBtn) updateViewHighlight(activeBtn);
-  });
 }
 
 function setupSearchAndFilters() {
@@ -536,11 +621,6 @@ function setupSearchAndFilters() {
       currentCategory = pill.getAttribute('data-category');
       renderServices();
     });
-  });
-
-  window.addEventListener('resize', () => {
-    const activePill = document.querySelector('.category-pill.font-bold');
-    updateHighlight(activePill);
   });
 
   if (searchInput) {
