@@ -179,7 +179,6 @@ function calculateSlotBufferRange(startTime24, maxDurationMins) {
   const [h, m] = startTime24.split(':').map(Number);
   const startTotalMins = h * 60 + m;
   
-  // Front Buffer (-1 hour) & Back Buffer (+ maxDuration + 1 hour)
   const bufferStartTotal = Math.max(0, startTotalMins - 60);
   const bufferEndTotal = startTotalMins + (parseInt(maxDurationMins) || 60) + 60;
 
@@ -199,7 +198,7 @@ function calculateSlotBufferRange(startTime24, maxDurationMins) {
   };
 }
 
-function addSlotPicker(timeVal = '08:00') {
+function addSlotPicker(timeVal = '08:00', maxCap = 5) {
   const container = document.getElementById('timeslots-container');
   if (!container) return;
 
@@ -210,11 +209,19 @@ function addSlotPicker(timeVal = '08:00') {
 
   div.innerHTML = `
     <div class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2 flex-1">
-        <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Start Time:</label>
-        <input type="time" value="${val24}" 
-               class="slot-time-input px-3 py-1.5 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] focus:outline-none cursor-pointer" 
-               onchange="updateSlotBuffers(); updateLivePreview();">
+      <div class="flex items-center gap-3 flex-1 flex-wrap">
+        <div class="flex items-center gap-1.5">
+          <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Time:</label>
+          <input type="time" value="${val24}" 
+                 class="slot-time-input px-3 py-1 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] focus:outline-none cursor-pointer" 
+                 onchange="updateSlotBuffers(); updateLivePreview();">
+        </div>
+        <div class="flex items-center gap-1.5">
+          <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Max Capacity:</label>
+          <input type="number" min="1" value="${maxCap}" 
+                 class="slot-capacity-input w-16 px-2.5 py-1 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] focus:outline-none" 
+                 title="Maximum bookings allowed for this slot">
+        </div>
       </div>
       <button type="button" onclick="this.closest('.slot-picker-item').remove(); updateSlotBuffers(); updateLivePreview();" class="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer">
         <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -286,8 +293,8 @@ function setupModalHandlers() {
       
       addFeatureInput('Blood pressure, ECG spot-check & glucose');
       addFeatureInput('Prescription pillbox reconciliation');
-      addSlotPicker('08:00');
-      addSlotPicker('10:00');
+      addSlotPicker('08:00', 5);
+      addSlotPicker('10:00', 5);
       switchModalTab('outer');
       switchPreviewMode('outer');
       updateLivePreview();
@@ -322,7 +329,17 @@ function setupModalHandlers() {
       const features = Array.from(document.querySelectorAll('.feature-input')).map(i => i.value).filter(Boolean);
       formData.append('features', JSON.stringify(features));
 
-      const timeSlots = Array.from(document.querySelectorAll('.slot-time-input')).map(i => formatTo12Hour(i.value)).filter(Boolean);
+      // Collect time slots along with their max capacities
+      const timeSlots = Array.from(document.querySelectorAll('.slot-picker-item')).map(item => {
+        const timeInput = item.querySelector('.slot-time-input');
+        const capInput = item.querySelector('.slot-capacity-input');
+        if (!timeInput) return null;
+        return {
+          label: formatTo12Hour(timeInput.value),
+          capacity: parseInt(capInput?.value || 5)
+        };
+      }).filter(s => s && s.label);
+
       formData.append('timeSlots', JSON.stringify(timeSlots));
 
       try {
@@ -526,9 +543,14 @@ function openEditModal(serviceID) {
   const slotContainer = document.getElementById('timeslots-container');
   slotContainer.innerHTML = '';
   if (service.timeSlots && service.timeSlots.length > 0) {
-    service.timeSlots.forEach(s => addSlotPicker(s));
+    service.timeSlots.forEach(s => {
+      // Support object or string representation
+      const label = typeof s === 'object' ? s.timeSlotLabel : s;
+      const cap = typeof s === 'object' ? (s.maxCapacity || 5) : 5;
+      addSlotPicker(label, cap);
+    });
   } else {
-    addSlotPicker('08:00');
+    addSlotPicker('08:00', 5);
   }
 
   document.getElementById('modal-title').textContent = 'Edit Service: ' + service.serviceName;

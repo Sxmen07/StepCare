@@ -25,10 +25,10 @@ if ($action === 'fetch_services') {
             $badgeStmt->execute([$serviceId]);
             $service['badges'] = $badgeStmt->fetchAll(PDO::FETCH_COLUMN);
 
-            // Time Slots (Inner Page)
-            $slotStmt = $pdo->prepare("SELECT timeSlotLabel FROM serviceTimeSlots WHERE serviceID = ? ORDER BY slotID ASC");
+            // Time Slots (Inner Page with Capacity)
+            $slotStmt = $pdo->prepare("SELECT timeSlotLabel, maxCapacity, currentBookings FROM serviceTimeSlots WHERE serviceID = ? ORDER BY slotID ASC");
             $slotStmt->execute([$serviceId]);
-            $service['timeSlots'] = $slotStmt->fetchAll(PDO::FETCH_COLUMN);
+            $service['timeSlots'] = $slotStmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         echo json_encode(['status' => 'success', 'data' => $services]);
@@ -38,7 +38,7 @@ if ($action === 'fetch_services') {
     exit;
 }
 
-// Handle Add or Edit Form Submission with Buffer Overlap Validation
+// Handle Add or Edit Form Submission with Buffer Overlap Validation & Capacity Limits
 if ($action === 'save_service') {
     header('Content-Type: application/json; charset=utf-8');
     try {
@@ -56,12 +56,14 @@ if ($action === 'save_service') {
         $validatedSlots = [];
         $slotRanges = [];
 
-        foreach ($timeSlotsRaw as $slotTime) {
+        foreach ($timeSlotsRaw as $slotObj) {
+            $slotTime = is_array($slotObj) ? ($slotObj['label'] ?? '') : trim($slotObj);
+            $maxCap = is_array($slotObj) ? (int)($slotObj['capacity'] ?? 5) : 5;
+
             if (empty(trim($slotTime))) continue;
 
             $dateTime = DateTime::createFromFormat('H:i', $slotTime) ?: DateTime::createFromFormat('g:i A', $slotTime);
             if (!$dateTime) {
-                // Try parsing standard formats if passed differently
                 $dateTime = new DateTime($slotTime);
             }
             if (!$dateTime) continue;
@@ -83,7 +85,10 @@ if ($action === 'save_service') {
             }
 
             $slotRanges[] = ['start' => $bufferStart, 'end' => $bufferEnd];
-            $validatedSlots[] = $dateTime->format('g:i A');
+            $validatedSlots[] = [
+                'label' => $dateTime->format('g:i A'),
+                'capacity' => $maxCap
+            ];
         }
 
         // Handle Image Upload if provided
@@ -115,11 +120,11 @@ if ($action === 'save_service') {
                 }
             }
 
-            // Refresh Time Slots
+            // Refresh Time Slots with Capacity Limits
             $pdo->prepare("DELETE FROM serviceTimeSlots WHERE serviceID=?")->execute([$serviceID]);
-            $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel) VALUES (?, ?)");
+            $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel, maxCapacity) VALUES (?, ?, ?)");
             foreach ($validatedSlots as $s) {
-                $slotStmt->execute([$serviceID, $s]);
+                $slotStmt->execute([$serviceID, $s['label'], $s['capacity']]);
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Service updated successfully.']);
@@ -137,10 +142,10 @@ if ($action === 'save_service') {
                 }
             }
 
-            // Insert Time Slots
-            $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel) VALUES (?, ?)");
+            // Insert Time Slots with Capacity Limits
+            $slotStmt = $pdo->prepare("INSERT INTO serviceTimeSlots (serviceID, timeSlotLabel, maxCapacity) VALUES (?, ?, ?)");
             foreach ($validatedSlots as $s) {
-                $slotStmt->execute([$newID, $s]);
+                $slotStmt->execute([$newID, $s['label'], $s['capacity']]);
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Service added successfully.']);
