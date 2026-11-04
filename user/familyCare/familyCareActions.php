@@ -95,10 +95,10 @@ if ($action === 'redeem') {
         $pdo->prepare("UPDATE familyCare SET isUsed = 1 WHERE familyCareID = ?")
             ->execute([$invite['familyCareID']]);
 
-        // Notify the owner
+        // ★ 修复：使用正确的 recipientType 和 recipientID 字段，而不是旧的 userID
         $pdo->prepare(
-            "INSERT INTO notifications (userID, title, message, type, linkURL)
-             VALUES (?, 'New family member connected',
+            "INSERT INTO notifications (recipientType, recipientID, title, message, type, linkURL)
+             VALUES ('user', ?, 'New family member connected',
                         'A family member has joined your care circle.',
                         'system',
                         '../familyCare/familyCare.php')"
@@ -107,6 +107,8 @@ if ($action === 'redeem') {
         $pdo->commit();
     } catch (Exception $e) {
         $pdo->rollBack();
+        // 记录具体错误到服务器日志，方便以后排查
+        error_log('Family connection failed: ' . $e->getMessage());
         echo json_encode(['ok' => false, 'message' => 'Connection failed. Please try again.']);
         exit;
     }

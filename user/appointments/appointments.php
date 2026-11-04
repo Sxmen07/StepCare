@@ -11,21 +11,12 @@ $userID = (int)$_SESSION['userID'];
 
 $stmt = $pdo->prepare("
     SELECT
-        a.appointmentID,
-        a.serviceID,
-        a.patientName,
-        a.startDateTime,
-        a.endDateTime,
-        a.locationAddress,
-        a.specialInstructions,
-        a.appointmentStatus,
-        s.serviceName,
-        s.category,
-        s.serviceImageURL,
-        s.price,
-        s.price_unit,
-        n.firstName   AS nurseFirstName,
-        n.lastName    AS nurseLastName
+        a.appointmentID, a.serviceID, a.nurseID,
+        a.patientName, a.startDateTime, a.endDateTime,
+        a.locationAddress, a.specialInstructions, a.appointmentStatus,
+        s.serviceName, s.category, s.serviceImageURL, s.price, s.price_unit,
+        n.firstName AS nurseFirstName,
+        n.lastName  AS nurseLastName
     FROM appointments a
     LEFT JOIN services s ON s.serviceID = a.serviceID
     LEFT JOIN nurses   n ON n.nurseID   = a.nurseID
@@ -35,20 +26,30 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userID]);
 $appointments = $stmt->fetchAll();
 
-/* Counts for the chips (small inline badges) */
 $counts = ['all' => count($appointments),
            'pending' => 0, 'confirmed' => 0,
            'completed' => 0, 'cancelled' => 0];
 
 foreach ($appointments as $a) {
     $st = $a['appointmentStatus'];
-    if ($st === 'pending')                                       $counts['pending']++;
-    elseif (in_array($st, ['confirmed','in_progress'], true))    $counts['confirmed']++;
-    elseif ($st === 'completed')                                 $counts['completed']++;
-    elseif (in_array($st, ['cancelled','declined'], true))       $counts['cancelled']++;
+    if ($st === 'pending')                                    $counts['pending']++;
+    elseif (in_array($st, ['confirmed','in_progress'], true)) $counts['confirmed']++;
+    elseif ($st === 'completed')                              $counts['completed']++;
+    elseif (in_array($st, ['cancelled','declined'], true))    $counts['cancelled']++;
 }
 
-/* Small helper for status badges */
+/* Which completed appointments has this user already reviewed? */
+$reviewedAppts = [];
+$rStmt = $pdo->prepare("
+    SELECT appointmentID, rating
+    FROM serviceComments
+    WHERE userID = ? AND appointmentID IS NOT NULL
+");
+$rStmt->execute([$userID]);
+foreach ($rStmt->fetchAll() as $r) {
+    $reviewedAppts[(int)$r['appointmentID']] = (int)$r['rating'];
+}
+
 function statusBadge(string $status): array {
     return match ($status) {
         'pending'     => ['Pending Nurse', 'amber'],

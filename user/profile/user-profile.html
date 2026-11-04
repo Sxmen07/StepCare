@@ -8,22 +8,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Teammate Header Stylesheet -->
+  <!-- Header Stylesheet -->
   <link rel="stylesheet" href="/StepCare/user/headerNfooter/header/header.css">
-
-  <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
-  </style>
+  <!-- Custom Profile Stylesheet -->
+  <link rel="stylesheet" href="user-profile.css">
 </head>
 <body class="bg-[#fafafa] min-h-screen flex flex-col text-neutral-800 antialiased">
 
-  <!-- Mount Point for Teammate Header -->
-  <div id="header-container" class="w-full shrink-0"></div>
+  <!-- Include Standardized Header -->
+  <?php include __DIR__ . '/../headerNfooter/header/header.php'; ?>
 
   <!-- Main View Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- 修改 1: items-start 改为 items-stretch，让左侧卡片与右侧区域等高 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
       
       <!-- ================= LEFT PROFILE CARD ================= -->
       <div class="lg:col-span-4 bg-white border border-neutral-200/90 rounded-[2.5rem] p-8 shadow-sm flex flex-col items-center text-center">
@@ -53,8 +52,8 @@
           -
         </h2>
 
-        <!-- Info Fields with Pill Borders -->
-        <div class="w-full space-y-4 mb-8">
+        <!-- Basic Info Fields -->
+        <div class="w-full space-y-4">
           <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
             <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Name</p>
             <p id="info-full-name" class="text-sm font-bold text-neutral-800 truncate">-</p>
@@ -74,9 +73,42 @@
           </div>
         </div>
 
-        <button id="open-edit-modal-btn" type="button" class="w-36 py-3 bg-[#6979F8] hover:bg-[#5868e8] text-white rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer">
-          Edit
-        </button>
+        <!-- Extra Info Container (Moved above buttons) -->
+        <div id="extra-info-container" class="w-full overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0">
+          <div class="pt-4 space-y-4">
+            <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">IC Number</p>
+              <p id="info-ic" class="text-sm font-bold text-neutral-800 truncate">-</p>
+            </div>
+
+            <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Gender & DOB</p>
+              <p id="info-gender-dob" class="text-sm font-bold text-neutral-800 truncate">-</p>
+            </div>
+
+            <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Address</p>
+              <p id="info-address" class="text-sm font-bold text-neutral-800 line-clamp-2 leading-snug">-</p>
+            </div>
+
+            <div class="w-full py-3.5 px-6 rounded-2xl border border-neutral-200 bg-white text-left shadow-2xs">
+              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Emergency Contact</p>
+              <p id="info-emergency" class="text-sm font-bold text-neutral-800 truncate">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 修改 2: 按钮组放到最后，并添加 mt-auto 将其推至底部 -->
+        <div class="mt-auto pt-6 flex items-center gap-3 w-full">
+          <button id="open-edit-modal-btn" type="button" class="flex-1 py-3 bg-[#6979F8] hover:bg-[#5868e8] text-white rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer">
+            Edit
+          </button>
+          
+          <button type="button" id="toggle-extra-info" class="flex-1 py-3 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 rounded-2xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+            <span id="toggle-text">More Info</span>
+            <i data-lucide="chevron-down" id="toggle-icon" class="w-4 h-4 transition-transform duration-300 text-neutral-500"></i>
+          </button>
+        </div>
       </div>
 
       <!-- ================= RIGHT SECTION ================= -->
@@ -109,7 +141,7 @@
 
                 <div id="family-not-joined-view">
                   <p class="text-xs text-neutral-500 font-medium">Currently not join any family</p>
-                  <a href="/StepCare/user/familyCare/familyCare.html" class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition border border-emerald-200">
+                  <a href="/StepCare/user/familyCare/familyCare.php" class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition border border-emerald-200">
                     <span>Join or Create Family</span>
                     <i data-lucide="arrow-right" class="w-3 h-3"></i>
                   </a>
@@ -125,7 +157,7 @@
         </div>
 
         <!-- Bottom Appointments Card -->
-        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] p-8 shadow-sm flex flex-col min-h-[380px]">
+        <div class="bg-white border border-neutral-200/90 rounded-[2.5rem] p-8 shadow-sm flex flex-col flex-1 min-h-[380px]">
           <div class="flex items-center justify-between border-b border-neutral-100 pb-4 mb-6">
             <h3 class="text-base font-bold text-neutral-900">Appointments</h3>
             <span class="text-xs text-neutral-400">Recent logs</span>
@@ -279,240 +311,7 @@
     </div>
   </div>
 
-  <script>
-    function toggleEditSection(sectionId) {
-      const el = document.getElementById(sectionId);
-      if (el) el.classList.toggle('hidden');
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window.lucide) lucide.createIcons();
-
-      // Render Clean User Header directly (Bypasses any 403 Forbidden issues permanently)
-      const headerContainer = document.getElementById('header-container');
-      headerContainer.innerHTML = `
-        <header class="bg-white border-b border-neutral-200 h-20 px-8 flex items-center justify-between sticky top-0 z-30 select-none">
-          <div class="flex items-center gap-3">
-            <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-8 h-8 object-contain" onerror="this.src='/StepCare/images/services/logo.png'">
-            <span class="text-xl font-black tracking-tight"><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></span>
-          </div>
-          <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-neutral-600">
-            <a href="/StepCare/user/aboutUs/aboutUs.html" class="hover:text-black transition">About Us</a>
-            <a href="/StepCare/user/services/services.html" class="hover:text-black transition">Services</a>
-            <a href="/StepCare/user/appointments/appointments.html" class="hover:text-black transition">Appointments</a>
-            <a href="/StepCare/user/familyCare/familyCare.html" class="hover:text-black transition">FamilyCare</a>
-          </nav>
-          <div class="flex items-center gap-4">
-            <a href="/StepCare/user/profile/user-profile.html" class="w-10 h-10 rounded-full border border-neutral-200 overflow-hidden flex items-center justify-center bg-neutral-100">
-              <img id="nav-avatar" src="/StepCare/images/default.jpg" class="w-full h-full object-cover">
-            </a>
-          </div>
-        </header>
-      `;
-      if (window.lucide) lucide.createIcons();
-
-      let activeUser = null;
-
-      // Fetch User Profile from Database
-      function loadUserProfile() {
-        fetch('./user-profile-actions.php?action=fetch_profile')
-          .then(res => res.json())
-          .then(data => {
-            if (!data.success) {
-              console.error("Profile load error:", data.message);
-              return;
-            }
-
-            const u = data.user;
-            activeUser = u;
-
-            const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User Profile';
-
-            document.getElementById('card-user-name').textContent = fullName;
-            document.getElementById('info-full-name').textContent = fullName;
-            document.getElementById('info-email').textContent = u.email || 'No email registered';
-
-            const photoPath = u.userPhotoURL || '/StepCare/images/default.jpg';
-            document.getElementById('avatar-image').src = photoPath;
-            const navAvatar = document.getElementById('nav-avatar');
-            if (navAvatar) navAvatar.src = photoPath;
-
-            document.getElementById('stat-upcoming').textContent = data.stats.upcoming_appointments || 0;
-            const joinedView = document.getElementById('family-joined-view');
-            const notJoinedView = document.getElementById('family-not-joined-view');
-            if (data.stats.has_family) {
-              joinedView.classList.remove('hidden');
-              notJoinedView.classList.add('hidden');
-              document.getElementById('stat-family-members').textContent = data.stats.family_count;
-            } else {
-              joinedView.classList.add('hidden');
-              notJoinedView.classList.remove('hidden');
-            }
-
-            const apptsContainer = document.getElementById('appointments-stream-container');
-            if (!data.appointments || data.appointments.length === 0) {
-              apptsContainer.innerHTML = `
-                <div class="py-16 text-center border-2 border-dashed border-neutral-100 rounded-3xl p-8 bg-neutral-50/50">
-                  <div class="w-12 h-12 rounded-2xl bg-white border border-neutral-200 text-neutral-400 flex items-center justify-center mx-auto mb-3 shadow-2xs">
-                    <i data-lucide="calendar-x" class="w-6 h-6"></i>
-                  </div>
-                  <h4 class="text-sm font-bold text-neutral-800">No appointments scheduled</h4>
-                  <p class="text-xs text-neutral-400 mt-1 max-w-xs mx-auto leading-relaxed">
-                    You currently don't have any past or upcoming service bookings.
-                  </p>
-                </div>
-              `;
-            } else {
-              apptsContainer.innerHTML = data.appointments.map(a => {
-                const dateObj = new Date(a.appointmentDate);
-                const day = isNaN(dateObj.getDate()) ? '26' : dateObj.getDate();
-                const month = isNaN(dateObj.getDate()) ? 'Aug' : dateObj.toLocaleString('en-US', { month: 'short' });
-
-                let statusClass = 'bg-blue-50 text-blue-600 border border-blue-200';
-                let statusLabel = 'Booked';
-
-                const rawStatus = (a.appointmentStatus || '').toLowerCase();
-                if (rawStatus === 'completed') {
-                  statusClass = 'bg-emerald-50 text-emerald-600 border border-emerald-200';
-                  statusLabel = 'Completed';
-                } else if (rawStatus === 'cancelled') {
-                  statusClass = 'bg-red-50 text-red-600 border border-red-200';
-                  statusLabel = 'Cancelled';
-                }
-
-                return `
-                  <div class="flex items-center justify-between p-4 rounded-2xl border border-neutral-100 hover:bg-neutral-50/70 transition">
-                    <div class="text-center w-12 shrink-0">
-                      <p class="text-base font-black text-neutral-900 leading-none">${day}</p>
-                      <p class="text-[11px] font-bold text-neutral-400 mt-1 uppercase">${month}</p>
-                    </div>
-
-                    <div class="min-w-0 flex-1 px-6">
-                      <h4 class="text-sm font-bold text-neutral-900 truncate">${a.serviceName || 'General Care Service'}</h4>
-                      <p class="text-xs text-neutral-400 mt-0.5 truncate">${a.nurseName ? 'Nurse: ' + a.nurseName : 'Staff Assigned'}</p>
-                    </div>
-
-                    <div class="px-4 shrink-0">
-                      <span class="px-5 py-2 rounded-full text-xs font-bold tracking-wide capitalize ${statusClass}">
-                        ${statusLabel}
-                      </span>
-                    </div>
-
-                    <div class="text-right w-24 shrink-0">
-                      <span class="text-sm font-black text-neutral-900">
-                        RM ${parseFloat(a.price || 0).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                `;
-              }).join('');
-            }
-
-            // Sync View Texts in Modal
-            document.getElementById('view-name').textContent = fullName;
-            document.getElementById('view-contact').textContent = `${u.email || '-'} | ${u.phoneNumber || '-'}`;
-            document.getElementById('view-identity').textContent = `${u.gender || 'Not specified'} | IC: ${u.IC || '-'} | DOB: ${u.dateOfBirth || '-'}`;
-            document.getElementById('view-address').textContent = u.address || 'No address registered';
-            document.getElementById('view-emergency').textContent = `${u.emergencyContactName || '-'} (${u.emergencyContactPhone || '-'})`;
-
-            // Prefill Inputs
-            document.getElementById('edit-first-name').value = u.firstName || '';
-            document.getElementById('edit-last-name').value = u.lastName || '';
-            document.getElementById('edit-email').value = u.email || '';
-            document.getElementById('edit-phone').value = u.phoneNumber || '';
-            document.getElementById('edit-ic').value = u.IC || '';
-            document.getElementById('edit-gender').value = u.gender || 'Male';
-            document.getElementById('edit-dob').value = u.dateOfBirth || '';
-            document.getElementById('edit-address').value = u.address || '';
-            document.getElementById('edit-emg-name').value = u.emergencyContactName || '';
-            document.getElementById('edit-emg-phone').value = u.emergencyContactPhone || '';
-
-            if (window.lucide) lucide.createIcons();
-          })
-          .catch(err => console.error("Database fetch error:", err));
-      }
-
-      loadUserProfile();
-
-      // Avatar Upload
-      const fileInput = document.getElementById('avatar-file-input');
-      const uploadTrigger = document.getElementById('btn-trigger-upload');
-      uploadTrigger.onclick = () => fileInput.click();
-
-      fileInput.onchange = () => {
-        if (!fileInput.files || fileInput.files.length === 0) return;
-        const fd = new FormData();
-        fd.append('action', 'upload_avatar');
-        fd.append('avatar', fileInput.files[0]);
-
-        fetch('./user-profile-actions.php', { method: 'POST', body: fd })
-          .then(r => r.json())
-          .then(res => {
-            if (res.success) {
-              const freshUrl = res.photoURL + '?t=' + new Date().getTime();
-              document.getElementById('avatar-image').src = freshUrl;
-              const navAvatar = document.getElementById('nav-avatar');
-              if (navAvatar) navAvatar.src = freshUrl;
-            } else {
-              alert(res.message);
-            }
-          });
-      };
-
-      // Modal Controls
-      const modal = document.getElementById('edit-profile-modal');
-      const openBtn = document.getElementById('open-edit-modal-btn');
-      const closeBtn = document.getElementById('close-modal-btn');
-      const closeX = document.getElementById('close-modal-x');
-
-      const hideModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
-      closeBtn.onclick = hideModal;
-      closeX.onclick = hideModal;
-
-      openBtn.onclick = () => {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      };
-
-      // Submit Profile Changes
-      document.getElementById('edit-profile-form').onsubmit = (e) => {
-        e.preventDefault();
-        const submitBtn = document.getElementById('save-profile-btn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Saving...";
-
-        const fd = new FormData();
-        fd.append('action', 'update_profile');
-        fd.append('firstName', document.getElementById('edit-first-name').value);
-        fd.append('lastName', document.getElementById('edit-last-name').value);
-        fd.append('email', document.getElementById('edit-email').value);
-        fd.append('phoneNumber', document.getElementById('edit-phone').value);
-        fd.append('IC', document.getElementById('edit-ic').value);
-        fd.append('gender', document.getElementById('edit-gender').value);
-        fd.append('dateOfBirth', document.getElementById('edit-dob').value);
-        fd.append('address', document.getElementById('edit-address').value);
-        fd.append('emergencyContactName', document.getElementById('edit-emg-name').value);
-        fd.append('emergencyContactPhone', document.getElementById('edit-emg-phone').value);
-
-        fetch('./user-profile-actions.php', { method: 'POST', body: fd })
-          .then(r => r.json())
-          .then(res => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Save All Changes";
-            if (res.success) {
-              hideModal();
-              loadUserProfile();
-            } else {
-              alert(res.message);
-            }
-          })
-          .catch(err => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Save All Changes";
-            alert("Error: " + err);
-          });
-      };
-    });
-  </script>
+  <!-- External JS File -->
+  <script src="user-profile.js"></script>
 </body>
 </html>

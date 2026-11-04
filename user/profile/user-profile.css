@@ -1,0 +1,15 @@
+/* user/profile/user-profile.css */
+
+/* Custom Scrollbar for the appointments list and modals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e5e5;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d4d4d4;
+}

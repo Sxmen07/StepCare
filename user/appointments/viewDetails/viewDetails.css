@@ -1,0 +1,30 @@
+/* user/appointments/viewDetails/viewDetails.css */
+
+/* ---- Slide-in / slide-out page transitions ---- */
+@keyframes slideInFromRight {
+    from { transform: translateX(100%); opacity: 0.6; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideOutToRight {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0.4; }
+}
+
+.slide-in-from-right {
+    animation: slideInFromRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform;
+}
+
+.slide-out-to-right {
+    animation: slideOutToRight 0.4s cubic-bezier(0.4, 0, 1, 1) both;
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .slide-in-from-right,
+    .slide-out-to-right {
+        animation-duration: 0.01ms !important;
+    }
+}
+
+html, body { overflow-x: hidden; }

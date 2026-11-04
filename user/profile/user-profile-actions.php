@@ -63,16 +63,11 @@ try {
             $userData['userPhotoURL'] = '/StepCare/images/default.jpg';
         }
 
-        // Fetch upcoming appointments count (case-insensitive column check)
+        // Fetch upcoming appointments count
         $upcomingCount = 0;
         $checkAppts = $conn->query("SHOW TABLES LIKE 'appointments'");
         if ($checkAppts && $checkAppts->num_rows > 0) {
-            $colRes = $conn->query("SHOW COLUMNS FROM appointments");
-            $cols = [];
-            while ($c = $colRes->fetch_assoc()) $cols[] = $c['Field'];
-
-            $statusCol = in_array('appointmentStatus', $cols) ? 'appointmentStatus' : 'status';
-            $cStmt = $conn->prepare("SELECT COUNT(*) AS total FROM appointments WHERE userID = ? AND {$statusCol} IN ('booked', 'pending', 'in_progress')");
+            $cStmt = $conn->prepare("SELECT COUNT(*) AS total FROM appointments WHERE userID = ? AND appointmentStatus IN ('booked', 'pending', 'in_progress')");
             if ($cStmt) {
                 $cStmt->bind_param("i", $activeUserID);
                 $cStmt->execute();
@@ -95,21 +90,20 @@ try {
         // Fetch appointments list
         $appointmentsList = [];
         if ($checkAppts && $checkAppts->num_rows > 0) {
-            $dateCol = in_array('appointmentDate', $cols) ? 'appointmentDate' : (in_array('date', $cols) ? 'date' : $cols[0]);
-            $statusCol = in_array('appointmentStatus', $cols) ? 'appointmentStatus' : (in_array('status', $cols) ? 'status' : $cols[1]);
-            $priceCol = in_array('price', $cols) ? 'price' : (in_array('totalPrice', $cols) ? 'totalPrice' : 0);
-
-            $apptsSql = "SELECT a.*, 
-                                a.{$dateCol} AS computedDate,
-                                a.{$statusCol} AS computedStatus,
-                                " . ($priceCol ? "a.{$priceCol}" : "0.00") . " AS computedPrice,
+            
+            // 明确使用 appointments 表的 startDateTime 和 appointmentStatus
+            // 价格明确从 services 表的 s.price 获取
+            $apptsSql = "SELECT a.appointmentID, 
+                                a.startDateTime AS computedDate,
+                                a.appointmentStatus AS computedStatus,
+                                COALESCE(s.price, 0.00) AS computedPrice,
                                 COALESCE(s.serviceName, 'Care Service') AS serviceName, 
                                 CONCAT(n.firstName, ' ', n.lastName) AS nurseName
                          FROM appointments a
                          LEFT JOIN services s ON a.serviceID = s.serviceID
                          LEFT JOIN nurses n ON a.nurseID = n.nurseID
                          WHERE a.userID = ?
-                         ORDER BY a.{$dateCol} DESC";
+                         ORDER BY a.startDateTime DESC";
 
             $aStmt = $conn->prepare($apptsSql);
             if ($aStmt) {
@@ -119,9 +113,9 @@ try {
                 while ($r = $res->fetch_assoc()) {
                     $appointmentsList[] = [
                         'appointmentID'     => $r['appointmentID'],
-                        'appointmentDate'   => $r['computedDate'],
+                        'appointmentDate'   => $r['computedDate'], // 对应 startDateTime
                         'appointmentStatus' => $r['computedStatus'],
-                        'price'             => $r['computedPrice'],
+                        'price'             => $r['computedPrice'], // 来自 services.price
                         'serviceName'       => $r['serviceName'],
                         'nurseName'         => $r['nurseName']
                     ];

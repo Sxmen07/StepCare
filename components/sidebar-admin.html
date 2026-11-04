@@ -1,21 +1,23 @@
-<!-- Admin Sidebar Component (Self-Contained) -->
-<aside id="admin-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden">
+<!-- Admin Sidebar Component (Seamless Clean: Zero Internal Dividing Lines) -->
+<aside id="admin-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden font-sans">
   
-  <div class="flex flex-col min-w-0">
-    <!-- Brand Logo -->
+  <div class="flex flex-col min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <!-- Brand Logo-->
     <div class="h-16 px-6 flex items-center shrink-0">
-      <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="flex items-center gap-2 overflow-hidden">
-        <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-7 h-7 object-contain shrink-0" onerror="this.src='/StepCare/images/services/logo.png'">
-        <span class="sidebar-text text-lg font-black tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+      <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="flex items-center overflow-hidden">
+        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+          <img src="/StepCare/images/StepCare.png" alt="Logo" class="w-6 h-6 object-contain" onerror="this.src='/StepCare/images/services/logo.png'">
+        </span>
+        <span class="sidebar-text ml-3.5 text-lg font-black tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
           <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
         </span>
       </a>
     </div>
 
-    <!-- Navigation List (Ranked by Frequency of Use) -->
+    <!-- Navigation List: px-6 locked -->
     <div class="py-2 space-y-1">
       <div class="px-6 py-1.5 overflow-hidden">
-        <p class="sidebar-text text-xs font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+        <p class="sidebar-text text-[11px] font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
           Admin Portal
         </p>
       </div>
@@ -23,8 +25,8 @@
       <!-- 1. Dashboard -->
       <a href="/StepCare/admin/dashboard/admin-dashboard.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="dashboard">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+         data-page="dashboard" title="Dashboard">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="layout-grid" class="w-5 h-5"></i>
         </span>
         <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
@@ -32,71 +34,81 @@
         </span>
       </a>
 
-      <!-- 2. Verifications (Booking & Payment Verification) -->
+      <!-- 2. Verifications -->
       <a href="/StepCare/admin/verifications/admin-verifications.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="verifications">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+         data-page="verifications" title="Verifications">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="badge-check" class="w-5 h-5"></i>
+          <span id="dot-verifications" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
         </span>
-        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          Verifications
-        </span>
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Verifications</span>
+          <span id="badge-verifications" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
+        </div>
       </a>
 
       <!-- 3. Schedule -->
       <a href="/StepCare/admin/schedule/admin-schedule.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="schedule">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+         data-page="schedule" title="Schedule">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="calendar" class="w-5 h-5"></i>
+          <span id="dot-schedule" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
         </span>
-        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          Schedule
-        </span>
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Schedule</span>
+          <span id="badge-schedule" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
+        </div>
       </a>
 
-      <!-- 4. Reviews -->
-      <a href="/StepCare/admin/reviews/admin-reviews.html" 
-         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="reviews">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
-          <i data-lucide="star" class="w-5 h-5"></i>
-        </span>
-        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          Reviews
-        </span>
-      </a>
-
-      <!-- 5. Notifications -->
-      <a href="/StepCare/admin/notifications/notifications.html" 
-         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="notifications">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
-          <i data-lucide="bell" class="w-5 h-5"></i>
-        </span>
-        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          Notifications
-        </span>
-      </a>
-
-      <!-- 6. Applications (Nurse Leave & Off-day Requests) -->
+      <!-- 4. Applications -->
       <a href="/StepCare/admin/applications/admin-applications.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="applications">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
-          <i data-lucide="file-text" class="w-5 h-5"></i>
+         data-page="applications" title="Applications">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="notebook-pen" class="w-5 h-5"></i>
+          <span id="dot-applications" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
         </span>
-        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          Applications
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Applications</span>
+          <span id="badge-applications" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
+        </div>
+      </a>
+
+      <!-- 5. Reviews -->
+      <a href="/StepCare/admin/reviews/admin-reviews.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="reviews" title="Reviews">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="star" class="w-5 h-5"></i>
+          <span id="dot-reviews" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
         </span>
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Reviews</span>
+          <span id="badge-reviews" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
+        </div>
+      </a>
+
+      <!-- 6. Notifications -->
+      <a href="/StepCare/admin/notifications/notifications.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="notifications" title="Notifications">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span id="dot-notifications" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
+        </span>
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Notifications</span>
+          <span id="badge-notifications" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
+        </div>
       </a>
 
       <!-- 7. Users -->
       <a href="/StepCare/admin/user-management/userManagement.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="usermanagement">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+         data-page="user-management" title="Users">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="users" class="w-5 h-5"></i>
         </span>
         <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
@@ -104,11 +116,11 @@
         </span>
       </a>
 
-      <!-- 8. Staff (Nurse / Employee Management) -->
+      <!-- 8. Staff -->
       <a href="/StepCare/admin/staff-management/staffManagement.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="staff">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
+         data-page="staff-management" title="Staff">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="contact" class="w-5 h-5"></i>
         </span>
         <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
@@ -116,12 +128,25 @@
         </span>
       </a>
 
-      <!-- 9. Profile -->
+      <!-- 9. Service Packages -->
+      <a href="/StepCare/admin/services/admin-services.html" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors superadmin-only"
+         data-page="services" title="Service Packages">
+        <span id="packages-icon-wrap" class="relative w-6 h-6 shrink-0 flex items-center justify-center transition-colors">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </span>
+        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          <span>Packages</span>
+          <span class="sidebar-super-tag px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-purple-50 text-purple-600 border border-purple-200 select-none">Super</span>
+        </div>
+      </a>
+
+      <!-- 10. Profile -->
       <a href="/StepCare/admin/profile/admin-profile.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="profile">
-        <span class="w-6 h-6 shrink-0 flex items-center justify-center">
-          <i data-lucide="user" class="w-5 h-5"></i>
+         data-page="profile" title="Profile">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="user-circle" class="w-5 h-5"></i>
         </span>
         <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
           Profile
@@ -130,24 +155,12 @@
     </div>
   </div>
 
-  <!-- Bottom Utility Section -->
+  <!-- Bottom -->
   <div class="py-4 space-y-1 shrink-0">
-    <!-- Settings -->
-    <a href="/StepCare/admin/settings/admin-settings.html" 
-       class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-       data-page="settings">
-      <span class="w-6 h-6 shrink-0 flex items-center justify-center">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-      </span>
-      <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-        Settings
-      </span>
-    </a>
-
-    <!-- Collapsible Toggle -->
     <button id="toggle-sidebar-btn" 
             type="button" 
-            class="sidebar-item w-full flex items-center px-6 py-3 text-sm font-semibold text-neutral-500 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors cursor-pointer">
+            class="sidebar-item w-full flex items-center px-6 py-3 text-sm font-semibold text-neutral-500 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors cursor-pointer"
+            title="Hide sidebar">
       <span id="toggle-sidebar-icon-wrap" class="w-6 h-6 shrink-0 flex items-center justify-center">
         <i data-lucide="panel-left-close" class="w-5 h-5"></i>
       </span>
@@ -157,7 +170,7 @@
     </button>
   </div>
 
-  <!-- Self-contained activation vector executing without page-level script helpers -->
+  <!-- Self-contained Controller -->
   <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="hidden" onload="(function(){
     const sidebar = document.getElementById('admin-sidebar');
     if (!sidebar || sidebar.dataset.initialized) return;
@@ -166,52 +179,116 @@
     const toggleBtn = document.getElementById('toggle-sidebar-btn');
     const iconWrap = document.getElementById('toggle-sidebar-icon-wrap');
     const textLabels = sidebar.querySelectorAll('.sidebar-text');
+    const pkgIconWrap = document.getElementById('packages-icon-wrap');
 
-    function applyState(collapse) {
-      if (collapse) {
-        sidebar.classList.remove('w-52');
-        sidebar.classList.add('w-[72px]');
-        textLabels.forEach(el => {
-          el.style.maxWidth = '0px';
-          el.style.opacity = '0';
-          el.style.marginLeft = '0px';
-        });
-        if (iconWrap) {
-          iconWrap.innerHTML = '<i data-lucide=\'panel-left-open\' class=\'w-5 h-5\'></i>';
-        }
-        localStorage.setItem('stepcare_admin_sidebar_collapsed', 'true');
-      } else {
-        sidebar.classList.remove('w-[72px]');
-        sidebar.classList.add('w-52');
-        textLabels.forEach(el => {
-          el.style.maxWidth = '140px';
-          el.style.opacity = '1';
-          el.style.marginLeft = '0.875rem';
-        });
-        if (iconWrap) {
-          iconWrap.innerHTML = '<i data-lucide=\'panel-left-close\' class=\'w-5 h-5\'></i>';
-        }
-        localStorage.setItem('stepcare_admin_sidebar_collapsed', 'false');
-      }
-      if (window.lucide) lucide.createIcons();
+    // 1. Super Admin Exclusie controller
+    const userRole = localStorage.getItem('stepcare_role') || sessionStorage.getItem('adminRole') || 'admin';
+    if (userRole !== 'super_admin' && userRole !== 'superadmin') {
+      sidebar.querySelectorAll('.superadmin-only').forEach(el => el.remove());
     }
 
-    const isCollapsed = localStorage.getItem('stepcare_admin_sidebar_collapsed') === 'true';
-    if (isCollapsed) applyState(true);
-
-    const path = window.location.pathname.toLowerCase();
+    // 2. 当前路由高亮
+    const currentPath = window.location.pathname.toLowerCase();
     sidebar.querySelectorAll('.sidebar-item').forEach(item => {
       const pageKey = item.getAttribute('data-page');
-      if (pageKey && path.includes(pageKey)) {
+      if (pageKey && currentPath.includes(pageKey.toLowerCase())) {
         item.classList.add('bg-[#EEF2FF]', 'text-[#3C52C3]', 'font-bold');
         item.classList.remove('text-neutral-600');
       }
     });
 
+    // 3. Badges
+    window.syncBadgesAndDots = async function() {
+      const isCollapsed = sidebar.classList.contains('w-[72px]');
+      let counts = { verifications: 0, schedule: 0, applications: 0, reviews: 0, notifications: 0 };
+
+      try {
+        const res = await fetch('/StepCare/components/sidebar-badges.php');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.counts) {
+            counts = data.counts;
+          }
+        }
+      } catch (e) {}
+
+      const pageMappings = [
+        { key: 'verifications', badgeId: 'badge-verifications', dotId: 'dot-verifications' },
+        { key: 'schedule', badgeId: 'badge-schedule', dotId: 'dot-schedule' },
+        { key: 'applications', badgeId: 'badge-applications', dotId: 'dot-applications' },
+        { key: 'reviews', badgeId: 'badge-reviews', dotId: 'dot-reviews' },
+        { key: 'notifications', badgeId: 'badge-notifications', dotId: 'dot-notifications' }
+      ];
+
+      pageMappings.forEach(item => {
+        const val = counts[item.key] || 0;
+        const badge = document.getElementById(item.badgeId);
+        const dot = document.getElementById(item.dotId);
+
+        if (val > 0) {
+          if (badge) {
+            badge.textContent = val > 99 ? '99+' : val;
+            badge.classList.remove('hidden');
+          }
+          if (dot) {
+            dot.classList.toggle('hidden', !isCollapsed);
+          }
+        } else {
+          if (badge) badge.classList.add('hidden');
+          if (dot) dot.classList.add('hidden');
+        }
+      });
+
+      // Package icon turns purple during hide status
+      if (pkgIconWrap) {
+        if (isCollapsed) {
+          pkgIconWrap.classList.add('text-purple-600');
+        } else {
+          pkgIconWrap.classList.remove('text-purple-600');
+        }
+      }
+    };
+
+    // 4. Sidebar collapse / open controller（Fixed icon px-6）
+    function applyCollapse(collapse) {
+      if (collapse) {
+        sidebar.classList.remove('w-52');
+        sidebar.classList.add('w-[72px]');
+
+        textLabels.forEach(el => {
+          el.style.maxWidth = '0px';
+          el.style.opacity = '0';
+          el.style.marginLeft = '0px';
+        });
+
+        if (iconWrap) iconWrap.innerHTML = '<i data-lucide=\'panel-left-open\' class=\'w-5 h-5\'></i>';
+        localStorage.setItem('stepcare_admin_sidebar_collapsed', 'true');
+      } else {
+        sidebar.classList.remove('w-[72px]');
+        sidebar.classList.add('w-52');
+
+        textLabels.forEach(el => {
+          el.style.maxWidth = '140px';
+          el.style.opacity = '1';
+          el.style.marginLeft = '0.875rem';
+        });
+
+        if (iconWrap) iconWrap.innerHTML = '<i data-lucide=\'panel-left-close\' class=\'w-5 h-5\'></i>';
+        localStorage.setItem('stepcare_admin_sidebar_collapsed', 'false');
+      }
+
+      window.syncBadgesAndDots();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    const isCollapsed = localStorage.getItem('stepcare_admin_sidebar_collapsed') === 'true';
+    if (isCollapsed) applyCollapse(true);
+    else window.syncBadgesAndDots();
+
     if (toggleBtn) {
       toggleBtn.onclick = function(e) {
         e.preventDefault();
-        applyState(!sidebar.classList.contains('w-[72px]'));
+        applyCollapse(!sidebar.classList.contains('w-[72px]'));
       };
     }
 
