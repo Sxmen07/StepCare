@@ -5,7 +5,7 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ============================================================
-     FILTERS (WITH SMOOTH ANIMATION)
+     FILTERS
      ============================================================ */
   const searchInput  = document.getElementById('searchInput');
   const chips        = document.querySelectorAll('.cat-chip');
@@ -49,13 +49,15 @@
   }
 
   let searchTimer = null;
-  searchInput.addEventListener('input', function () {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-      activeTerm = searchInput.value.trim().toLowerCase();
-      applyFilter();
-    }, 300);
-  });
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        activeTerm = searchInput.value.trim().toLowerCase();
+        applyFilter();
+      }, 300);
+    });
+  }
 
   chips.forEach(chip => {
     chip.addEventListener('click', function () {
@@ -72,10 +74,7 @@
      SCROLL REVEAL ANIMATION
      ============================================================ */
   const revealElements = document.querySelectorAll('.reveal-on-scroll');
-  const revealOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-  };
+  const revealOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
 
   const revealObserver = new IntersectionObserver(function (entries, observer) {
     entries.forEach(entry => {
@@ -117,9 +116,7 @@
     return shuffled.slice(0, count);
   }
 
-  function getRect(el) {
-    return el ? el.getBoundingClientRect() : null;
-  }
+  function getRect(el) { return el ? el.getBoundingClientRect() : null; }
 
   /* ============================================================
      MODAL + FLIP TRANSITION
@@ -169,7 +166,6 @@
   let isOpen = false;
   let flipAnimating = false;
 
-  // 3 Panels translation
   function slideToDetail()  { modalSlider.style.transform = 'translateX(0)'; }
   function slideToBooking() { modalSlider.style.transform = 'translateX(-33.3333%)'; }
   function slideToPayment() { modalSlider.style.transform = 'translateX(-66.6666%)'; }
@@ -246,9 +242,7 @@
                     </div>
                     <p class="text-xs font-bold text-slate-800">${esc(r.firstName)} ${esc(r.lastName || '')}</p>
                 </div>
-                <div class="text-amber-500 text-sm tracking-widest">
-                    ${stars}
-                </div>
+                <div class="text-amber-500 text-sm tracking-widest">${stars}</div>
             </div>
             <p class="text-sm text-slate-600 leading-relaxed">"${esc(r.comment)}"</p>
             <div class="mt-auto pt-4 flex justify-end">
@@ -274,10 +268,12 @@
     }
 
     let effectiveMinDate = window.todayISO;
-    const slots = Object.keys(window.timeSlots || {});
+    const svcId = String(svc.serviceID);
+    const serviceSlotsMap = (window.serviceSlots && window.serviceSlots[svcId]) ? window.serviceSlots[svcId] : {};
+    const slotTimes = Object.keys(serviceSlotsMap);
 
-    if (slots.length > 0) {
-      const lastSlot = slots[slots.length - 1];
+    if (slotTimes.length > 0) {
+      const lastSlot = slotTimes[slotTimes.length - 1];
       if (window.serverTimeNow >= lastSlot) {
         const tomorrow = new Date(window.todayISO);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -304,7 +300,7 @@
             Preferred time slot <span class="text-red-500">*</span>
           </label>
           <p id="bkSlotHint" class="text-xs text-slate-500">
-            Please select a date first to see available slots.
+            Please select a date first to see available slots for this service.
           </p>
           <div id="bkMorningGroup" class="hidden">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">MORNING - A.M.</p>
@@ -394,7 +390,7 @@
       </form>`;
   }
 
-  function wireSlotLogic() {
+  function wireSlotLogic(serviceID) {
     const dateEl         = document.getElementById('bkDate');
     const hintEl         = document.getElementById('bkSlotHint');
     const morningGroup   = document.getElementById('bkMorningGroup');
@@ -407,10 +403,11 @@
 
     if (!dateEl) return;
 
-    const availability = window.availability || {};
-    const timeSlots    = window.timeSlots    || {};
+    const svcIdStr = String(serviceID);
+    const serviceSlots = (window.serviceSlots && window.serviceSlots[svcIdStr]) ? window.serviceSlots[svcIdStr] : {};
+    const availabilityMap = window.availability || {};
 
-    function slotButton(time, label, remaining, isPast) {
+    function slotButton(time24, label, remaining, isPast) {
       const disabled = remaining <= 0 || isPast;
 
       let subText  = `${remaining} left`;
@@ -427,7 +424,7 @@
       const wrap = document.createElement('label');
       wrap.className = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
       wrap.innerHTML = `
-        <input type="radio" name="startTime" value="${time}"
+        <input type="radio" name="startTime" value="${time24}"
                class="peer sr-only" ${disabled ? 'disabled' : ''} />
         <div class="rounded-xl border-2 border-slate-200 bg-white text-center py-3 px-2
                     transition select-none
@@ -435,45 +432,62 @@
                     peer-checked:border-[#3C52C3] peer-checked:bg-[#3C52C3]/5
                     ${disabled ? 'opacity-50 bg-slate-50' : ''}">
           <p class="text-sm font-bold text-slate-800">${label}</p>
-          <p class="text-xs mt-0.5 ${subColor}">
-            ${subText}
-          </p>
+          <p class="text-xs mt-0.5 ${subColor}">${subText}</p>
         </div>`;
       return wrap;
     }
 
     dateEl.addEventListener('change', function () {
-      const d = this.value;
-      if (!d) {
+      const selectedDate = this.value;
+      if (!selectedDate) {
         morningGroup.classList.add('hidden');
         afternoonGroup.classList.add('hidden');
         hintEl.classList.remove('hidden');
-        hintEl.textContent = 'Please select a date first to see available slots.';
+        hintEl.textContent = 'Please select a date first to see available slots for this service.';
         return;
       }
 
       morningSlots.innerHTML = '';
       afternoonSlots.innerHTML = '';
-      morningGroup.classList.remove('hidden');
-      afternoonGroup.classList.remove('hidden');
-      hintEl.classList.add('hidden');
+      morningGroup.classList.add('hidden');
+      afternoonGroup.classList.add('hidden');
 
-      const dayMap = availability[d] || {};
-      const isToday = (d === window.todayISO);
+      const dateAvailMap = availabilityMap[selectedDate] && availabilityMap[selectedDate][svcIdStr] 
+                            ? availabilityMap[selectedDate][svcIdStr] 
+                            : {};
+      const isToday = (selectedDate === window.todayISO);
       const currentTime = window.serverTimeNow || "00:00:00";
 
-      Object.entries(timeSlots).forEach(([time, meta]) => {
-        const remaining = dayMap[time] ?? 0;
-        const isPast = isToday && (time < currentTime);
-        const el = slotButton(time, meta.label, remaining, isPast);
-        if (meta.period === 'Morning') morningSlots.appendChild(el);
-        else                           afternoonSlots.appendChild(el);
+      let hasMorning = false;
+      let hasAfternoon = false;
+
+      Object.entries(serviceSlots).forEach(([time24, meta]) => {
+        const remaining = dateAvailMap[time24] ?? 0;
+        const isPast = isToday && (time24 < currentTime);
+        const el = slotButton(time24, meta.label, remaining, isPast);
+
+        if (meta.period === 'Morning') {
+          morningSlots.appendChild(el);
+          hasMorning = true;
+        } else {
+          afternoonSlots.appendChild(el);
+          hasAfternoon = true;
+        }
       });
+
+      if (hasMorning) morningGroup.classList.remove('hidden');
+      if (hasAfternoon) afternoonGroup.classList.remove('hidden');
+
+      if (!hasMorning && !hasAfternoon) {
+        hintEl.classList.remove('hidden');
+        hintEl.textContent = 'No available time slots configured for this service.';
+      } else {
+        hintEl.classList.add('hidden');
+      }
     });
 
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // ASYNC SUBMIT (保存数据到 Session)
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const picked = form.querySelector('input[name="startTime"]:checked');
@@ -496,20 +510,16 @@
         const data = await res.json();
 
         if (data.success) {
-          // 设置支付面板信息
           document.getElementById('payAmount').textContent = `RM ${data.price}`;
-          window._currentBooking = data; // 保存以供支付成功后重定向
+          window._currentBooking = data;
           
-          // 重置支付表单
           payFileInput.value = '';
           payPreviewContainer.classList.add('hidden');
           payImagePreview.src = '';
           paySubmitBtn.disabled = true;
 
-          // 滑到支付面板
           slideToPayment();
 
-          // 恢复按钮状态
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalText;
         } else {
@@ -572,9 +582,7 @@
   }
 
   if (backToBooking) {
-    backToBooking.addEventListener('click', () => {
-      slideToBooking();
-    });
+    backToBooking.addEventListener('click', () => { slideToBooking(); });
   }
 
   if (paymentForm) {
@@ -648,13 +656,8 @@
     cancelModal.classList.remove('flex');
   }
 
-  if (cancelBookingBtn) {
-    cancelBookingBtn.addEventListener('click', openCancelModal);
-  }
-
-  if (btnKeepAppt) {
-    btnKeepAppt.addEventListener('click', closeCancelModal);
-  }
+  if (cancelBookingBtn) { cancelBookingBtn.addEventListener('click', openCancelModal); }
+  if (btnKeepAppt) { btnKeepAppt.addEventListener('click', closeCancelModal); }
 
   if (btnConfirmCancel) {
     btnConfirmCancel.addEventListener('click', async () => {
@@ -666,9 +669,8 @@
       } catch (e) {}
 
       closeCancelModal();
-      closeModal(); // This will handle the exit animation
+      closeModal();
       
-      // Reset booking form
       if (bookingContainer) bookingContainer.innerHTML = '';
       payFileInput.value = '';
       payPreviewContainer.classList.add('hidden');
@@ -678,7 +680,7 @@
   }
 
   /* ============================================================
-     OPEN / CLOSE (WITH PAYMENT INTERCEPT)
+     OPEN / CLOSE
      ============================================================ */
   const EASE_OUT   = 'cubic-bezier(0.32, 0.72, 0, 1)';
   const EASE_INOUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
@@ -759,7 +761,7 @@
     populateShared(svc);
     populateDetail(svc);
     bookingContainer.innerHTML = buildBookingForm(svc);
-    wireSlotLogic();
+    wireSlotLogic(svc.serviceID);
 
     document.body.style.overflow = 'hidden';
 
@@ -919,33 +921,19 @@
     if (activeServiceID) slideToDetail();
   });
 
-  // Intercept X button if on Payment step
   closeModalBtn.addEventListener('click', () => {
-    if (isOnPaymentStep()) {
-      openCancelModal();
-    } else {
-      closeModal();
-    }
+    if (isOnPaymentStep()) openCancelModal(); else closeModal();
   });
 
-  // Intercept backdrop if on Payment step
   modalWrapper.addEventListener('click', e => {
     if (!modalCard.contains(e.target)) {
-      if (isOnPaymentStep()) {
-        openCancelModal();
-      } else {
-        closeModal();
-      }
+      if (isOnPaymentStep()) openCancelModal(); else closeModal();
     }
   });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && isOpen && !flipAnimating) {
-      if (isOnPaymentStep()) {
-        openCancelModal();
-      } else {
-        closeModal();
-      }
+      if (isOnPaymentStep()) openCancelModal(); else closeModal();
     }
   });
 
@@ -970,7 +958,7 @@
       document.body.style.overflow = '';
     }
 
-    successClose.addEventListener('click', closeSuccess);
+    if (successClose) successClose.addEventListener('click', closeSuccess);
 
     successModal.addEventListener('click', e => {
       const card = document.getElementById('successCard');
