@@ -2,7 +2,7 @@
 <aside id="admin-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden font-sans">
   
   <div class="flex flex-col min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-    <!-- Brand Logo-->
+    <!-- Brand Logo -->
     <div class="h-16 px-6 flex items-center shrink-0">
       <a href="/StepCare/admin/dashboard/admin-dashboard.html" class="flex items-center overflow-hidden">
         <span class="w-6 h-6 shrink-0 flex items-center justify-center">
@@ -128,10 +128,11 @@
         </span>
       </a>
 
-      <!-- 9. Service Packages -->
-      <a href="/StepCare/admin/services/admin-services.html" 
-         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors superadmin-only"
-         data-page="services" title="Service Packages">
+      <!-- 9. Service Packages (Path updated, strictly hidden unless Super Admin) -->
+      <a id="nav-item-packages" 
+         href="/StepCare/admin/serviceManagement/serviceMangement.php" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors superadmin-only hidden"
+         data-page="servicemangement" title="Service Packages">
         <span id="packages-icon-wrap" class="relative w-6 h-6 shrink-0 flex items-center justify-center transition-colors">
           <i data-lucide="layers" class="w-5 h-5"></i>
         </span>
@@ -179,16 +180,13 @@
     const toggleBtn = document.getElementById('toggle-sidebar-btn');
     const iconWrap = document.getElementById('toggle-sidebar-icon-wrap');
     const textLabels = sidebar.querySelectorAll('.sidebar-text');
+    const pkgItem = document.getElementById('nav-item-packages');
     const pkgIconWrap = document.getElementById('packages-icon-wrap');
 
-    // 1. Super Admin Exclusie controller
-    const userRole = localStorage.getItem('stepcare_role') || sessionStorage.getItem('adminRole') || 'admin';
-    if (userRole !== 'super_admin' && userRole !== 'superadmin') {
-      sidebar.querySelectorAll('.superadmin-only').forEach(el => el.remove());
-    }
-
-    // 2. 当前路由高亮
+    // 1. Current route highlight
     const currentPath = window.location.pathname.toLowerCase();
+    const isNotificationPage = currentPath.includes('notification');
+
     sidebar.querySelectorAll('.sidebar-item').forEach(item => {
       const pageKey = item.getAttribute('data-page');
       if (pageKey && currentPath.includes(pageKey.toLowerCase())) {
@@ -197,20 +195,36 @@
       }
     });
 
-    // 3. Badges
+    // 2. Dynamic Badges & Super Admin Access Sync
     window.syncBadgesAndDots = async function() {
       const isCollapsed = sidebar.classList.contains('w-[72px]');
       let counts = { verifications: 0, schedule: 0, applications: 0, reviews: 0, notifications: 0 };
+      let isSuperAdmin = false;
 
       try {
         const res = await fetch('/StepCare/components/sidebar-badges.php');
         if (res.ok) {
           const data = await res.json();
-          if (data && data.counts) {
-            counts = data.counts;
-          }
+          if (data && data.counts) counts = data.counts;
+          if (data && data.is_super_admin !== undefined) isSuperAdmin = Boolean(data.is_super_admin);
         }
       } catch (e) {}
+
+      // If already viewing notifications, force unread count badge to 0
+      if (isNotificationPage) {
+        counts.notifications = 0;
+      }
+
+      // Super Admin Package link visibility
+      if (pkgItem) {
+        if (isSuperAdmin) {
+          pkgItem.classList.remove('hidden');
+          pkgItem.classList.add('flex');
+        } else {
+          pkgItem.classList.add('hidden');
+          pkgItem.classList.remove('flex');
+        }
+      }
 
       const pageMappings = [
         { key: 'verifications', badgeId: 'badge-verifications', dotId: 'dot-verifications' },
@@ -234,22 +248,30 @@
             dot.classList.toggle('hidden', !isCollapsed);
           }
         } else {
+          // Strictly hide when zero
           if (badge) badge.classList.add('hidden');
           if (dot) dot.classList.add('hidden');
         }
       });
 
-      // Package icon turns purple during hide status
       if (pkgIconWrap) {
-        if (isCollapsed) {
-          pkgIconWrap.classList.add('text-purple-600');
-        } else {
-          pkgIconWrap.classList.remove('text-purple-600');
-        }
+        if (isCollapsed) pkgIconWrap.classList.add('text-purple-600');
+        else pkgIconWrap.classList.remove('text-purple-600');
       }
     };
 
-    // 4. Sidebar collapse / open controller（Fixed icon px-6）
+    // Remove notification badge on click
+    const notifNav = sidebar.querySelector('[data-page=\'notifications\']');
+    if (notifNav) {
+      notifNav.addEventListener('click', () => {
+        const b = document.getElementById('badge-notifications');
+        const d = document.getElementById('dot-notifications');
+        if (b) b.classList.add('hidden');
+        if (d) d.classList.add('hidden');
+      });
+    }
+
+    // 3. Sidebar Collapse Controller
     function applyCollapse(collapse) {
       if (collapse) {
         sidebar.classList.remove('w-52');
