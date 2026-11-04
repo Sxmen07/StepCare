@@ -13,12 +13,10 @@ $action = $_GET['action'] ?? '';
 function isCurrentSuperAdmin($pdo) {
     $adminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
 
-    // Fundamental baseline rule: adminID 1 is always Super Admin
     if ($adminId === 1) {
         return true;
     }
 
-    // Query adminRole column from admins table
     try {
         $stmt = $pdo->prepare("SELECT adminRole FROM admins WHERE adminID = ?");
         $stmt->execute([$adminId]);
@@ -27,11 +25,8 @@ function isCurrentSuperAdmin($pdo) {
         if ($role && strtolower(trim($role)) === 'super admin') {
             return true;
         }
-    } catch (Exception $e) {
-        // Fallback silently if table column has not been updated yet
-    }
+    } catch (Exception $e) {}
 
-    // Session compatibility fallback
     $role = strtolower($_SESSION['role'] ?? $_SESSION['user_role'] ?? '');
     $roleLevel = strtolower($_SESSION['role_level'] ?? $_SESSION['admin_level'] ?? '');
     if ($role === 'super admin' || $role === 'superadmin' || $roleLevel === 'super' || !empty($_SESSION['is_super_admin'])) {
@@ -72,12 +67,11 @@ switch ($action) {
         break;
 }
 
-// 1. Fetch unified staff list with category avatar paths + createdByAdminID
+// 1. Fetch unified staff list
 function fetchStaffList($pdo) {
     try {
         $staff = [];
 
-        // Check if adminRole column exists
         $hasAdminRoleCol = false;
         try {
             $colCheck = $pdo->query("SHOW COLUMNS FROM admins LIKE 'adminRole'");
@@ -86,7 +80,6 @@ function fetchStaffList($pdo) {
             $hasAdminRoleCol = false;
         }
 
-        // Fetch admins (including createdByAdminID if present)
         $adminSql = $hasAdminRoleCol
             ? "SELECT adminID AS id, firstName, lastName, email, adminPhotoURL, adminRole, createdByAdminID FROM admins ORDER BY adminID DESC"
             : "SELECT adminID AS id, firstName, lastName, email, adminPhotoURL, createdByAdminID FROM admins ORDER BY adminID DESC";
@@ -98,7 +91,6 @@ function fetchStaffList($pdo) {
                 $cleanPhoto = !empty($rawPhoto) ? basename($rawPhoto) : '';
                 $avatarPath = !empty($cleanPhoto) ? "/StepCare/images/avatars/admin/{$cleanPhoto}" : null;
 
-                // Determine display role
                 $displayRole = 'Admin';
                 $roleVal = strtolower(trim($row['adminRole'] ?? ''));
                 if ((int)$row['id'] === 1 || $roleVal === 'super admin' || $roleVal === 'superadmin') {
@@ -115,6 +107,7 @@ function fetchStaffList($pdo) {
                     'name' => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
                     'email' => $row['email'],
                     'role' => $displayRole,
+                    'specialization' => '-',
                     'created_by' => 'ADM-' . str_pad($creatorId, 3, '0', STR_PAD_LEFT),
                     'created_by_raw' => $creatorId,
                     'is_super_admin_account' => ($displayRole === 'Super Admin'),
@@ -123,8 +116,7 @@ function fetchStaffList($pdo) {
             }
         }
 
-        // Fetch nurses (including createdByAdminID)
-        $nurseStmt = $pdo->query("SELECT nurseID AS id, firstName, lastName, email, nursePhotoURL, createdByAdminID FROM nurses ORDER BY nurseID DESC");
+        $nurseStmt = $pdo->query("SELECT nurseID AS id, firstName, lastName, email, specialization, nursePhotoURL, createdByAdminID FROM nurses ORDER BY nurseID DESC");
         if ($nurseStmt) {
             while ($row = $nurseStmt->fetch(PDO::FETCH_ASSOC)) {
                 $rawPhoto = $row['nursePhotoURL'] ?? '';
@@ -141,6 +133,7 @@ function fetchStaffList($pdo) {
                     'name' => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
                     'email' => $row['email'],
                     'role' => 'Nurse',
+                    'specialization' => !empty($row['specialization']) ? $row['specialization'] : 'General Nursing',
                     'created_by' => 'ADM-' . str_pad($creatorId, 3, '0', STR_PAD_LEFT),
                     'created_by_raw' => $creatorId,
                     'is_super_admin_account' => false,
@@ -176,7 +169,6 @@ function deleteStaffAccount($pdo) {
             return;
         }
 
-        // Prevent deleting root Super Admin 1
         if (($role === 'Admin' || $role === 'Super Admin') && $rawId === 1) {
             echo json_encode(['status' => 'error', 'message' => 'System Protection: The root Super Administrator account (ID: 1) cannot be deleted.']);
             return;
@@ -218,7 +210,7 @@ function exportStaffToExcel($pdo) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $creatorId = !empty($row['createdByAdminID']) ? 'ADM-' . str_pad($row['createdByAdminID'], 3, '0', STR_PAD_LEFT) : 'ADM-001';
                 fputcsv($output, [
-                    $row['specialization'] ?? 'N/A',
+                    $row['specialization'] ?? 'General Nursing',
                     'NUR-' . str_pad($row['nurseID'], 3, '0', STR_PAD_LEFT),
                     trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
                     $row['dateOfBirth'] ?? 'N/A',
@@ -265,7 +257,7 @@ function exportStaffToExcel($pdo) {
             while ($row = $stmtNurse->fetch(PDO::FETCH_ASSOC)) {
                 $creatorId = !empty($row['createdByAdminID']) ? 'ADM-' . str_pad($row['createdByAdminID'], 3, '0', STR_PAD_LEFT) : 'ADM-001';
                 fputcsv($output, [
-                    $row['specialization'] ?? 'N/A',
+                    $row['specialization'] ?? 'General Nursing',
                     'NUR-' . str_pad($row['nurseID'], 3, '0', STR_PAD_LEFT),
                     trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')),
                     $row['dateOfBirth'] ?? 'N/A',
@@ -284,17 +276,17 @@ function exportStaffToExcel($pdo) {
     exit;
 }
 
-// 4. Create staff account (Records createdByAdminID)
+// 4. Create staff account (with custom specialization input for Nurse)
 function createStaffAccount($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        $firstName   = trim($input['firstName'] ?? '');
-        $lastName    = trim($input['lastName'] ?? '');
-        $emailPrefix = trim($input['emailPrefix'] ?? '');
-        $role        = trim($input['role'] ?? '');
+        $firstName      = trim($input['firstName'] ?? '');
+        $lastName       = trim($input['lastName'] ?? '');
+        $emailPrefix    = trim($input['emailPrefix'] ?? '');
+        $role           = trim($input['role'] ?? '');
+        $specialization = trim($input['specialization'] ?? 'General Nursing');
 
-        // Automatically determine current admin ID creator
         $currentAdminID = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
 
         if (empty($firstName) || empty($lastName) || empty($emailPrefix) || empty($role)) {
@@ -343,8 +335,8 @@ function createStaffAccount($pdo) {
 
             $formattedId = 'ADM-' . str_pad($newId, 3, '0', STR_PAD_LEFT);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash, createdByAdminID) VALUES (?, ?, ?, 'temp', ?)");
-            $stmt->execute([$firstName, $lastName, $fullEmail, $currentAdminID]);
+            $stmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash, specialization, createdByAdminID) VALUES (?, ?, ?, 'temp', ?, ?)");
+            $stmt->execute([$firstName, $lastName, $fullEmail, $specialization, $currentAdminID]);
             $newId = $pdo->lastInsertId();
 
             $cleanFirst = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
@@ -365,6 +357,7 @@ function createStaffAccount($pdo) {
                 'name' => "{$firstName} {$lastName}",
                 'email' => $fullEmail,
                 'role' => $role,
+                'specialization' => ($role === 'Nurse') ? $specialization : null,
                 'created_by' => 'ADM-' . str_pad($currentAdminID, 3, '0', STR_PAD_LEFT),
                 'default_password' => $defaultPassword
             ]
@@ -374,19 +367,19 @@ function createStaffAccount($pdo) {
     }
 }
 
-// 5. Update staff details with cross-table role transfer
+// 5. Update staff details with custom specialization input
 function updateStaffAccount($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        $rawId       = (int)($input['rawId'] ?? 0);
-        $originalRole= trim($input['originalRole'] ?? '');
-        $newRole     = trim($input['role'] ?? '');
-        $firstName   = trim($input['firstName'] ?? '');
-        $lastName    = trim($input['lastName'] ?? '');
-        $emailPrefix = trim($input['emailPrefix'] ?? '');
+        $rawId          = (int)($input['rawId'] ?? 0);
+        $originalRole   = trim($input['originalRole'] ?? '');
+        $newRole        = trim($input['role'] ?? '');
+        $firstName      = trim($input['firstName'] ?? '');
+        $lastName       = trim($input['lastName'] ?? '');
+        $emailPrefix    = trim($input['emailPrefix'] ?? '');
+        $specialization = trim($input['specialization'] ?? 'General Nursing');
 
-        // Standardize original role from Super Admin back to Admin for table mapping
         $dbOriginalRole = ($originalRole === 'Super Admin') ? 'Admin' : $originalRole;
 
         if (!$rawId || empty($dbOriginalRole) || empty($newRole) || empty($firstName) || empty($lastName) || empty($emailPrefix)) {
@@ -402,7 +395,6 @@ function updateStaffAccount($pdo) {
             return;
         }
 
-        // Email uniqueness validation
         $adminCheck = $pdo->prepare("SELECT adminID FROM admins WHERE email = ? AND NOT (adminID = ? AND ? = 'Admin') LIMIT 1");
         $adminCheck->execute([$fullEmail, $rawId, $dbOriginalRole]);
         if ($adminCheck->fetch()) {
@@ -417,20 +409,18 @@ function updateStaffAccount($pdo) {
             return;
         }
 
-        // Case A: Role unchanged
         if ($dbOriginalRole === $newRole) {
             if ($newRole === 'Admin') {
                 $stmt = $pdo->prepare("UPDATE admins SET firstName = ?, lastName = ?, email = ? WHERE adminID = ?");
                 $stmt->execute([$firstName, $lastName, $fullEmail, $rawId]);
             } else {
-                $stmt = $pdo->prepare("UPDATE nurses SET firstName = ?, lastName = ?, email = ? WHERE nurseID = ?");
-                $stmt->execute([$firstName, $lastName, $fullEmail, $rawId]);
+                $stmt = $pdo->prepare("UPDATE nurses SET firstName = ?, lastName = ?, email = ?, specialization = ? WHERE nurseID = ?");
+                $stmt->execute([$firstName, $lastName, $fullEmail, $specialization, $rawId]);
             }
             echo json_encode(['status' => 'success', 'message' => 'Staff details updated successfully.']);
             return;
         }
 
-        // Case B: Cross-table role migration (Admin -> Nurse)
         if ($dbOriginalRole === 'Admin' && $newRole === 'Nurse') {
             if ($rawId === 1) {
                 echo json_encode(['status' => 'error', 'message' => 'System Protection: Root Super Admin cannot be transferred to Nurse.']);
@@ -446,8 +436,8 @@ function updateStaffAccount($pdo) {
                 return;
             }
 
-            $insStmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash, nursePhotoURL, createdByAdminID) VALUES (?, ?, ?, ?, ?, ?)");
-            $insStmt->execute([$firstName, $lastName, $fullEmail, $src['passwordHash'], $src['adminPhotoURL'], $src['createdByAdminID'] ?? 1]);
+            $insStmt = $pdo->prepare("INSERT INTO nurses (firstName, lastName, email, passwordHash, specialization, nursePhotoURL, createdByAdminID) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $insStmt->execute([$firstName, $lastName, $fullEmail, $src['passwordHash'], $specialization, $src['adminPhotoURL'], $src['createdByAdminID'] ?? 1]);
 
             $delStmt = $pdo->prepare("DELETE FROM admins WHERE adminID = ?");
             $delStmt->execute([$rawId]);
@@ -456,7 +446,6 @@ function updateStaffAccount($pdo) {
             return;
         }
 
-        // Case C: Cross-table role migration (Nurse -> Admin)
         if ($dbOriginalRole === 'Nurse' && $newRole === 'Admin') {
             $srcStmt = $pdo->prepare("SELECT passwordHash, nursePhotoURL, createdByAdminID FROM nurses WHERE nurseID = ? LIMIT 1");
             $srcStmt->execute([$rawId]);
@@ -481,4 +470,3 @@ function updateStaffAccount($pdo) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }
-?>

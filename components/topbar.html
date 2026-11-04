@@ -175,10 +175,11 @@
             // Unauthenticated: clear simulated user view
             if (nameEl) nameEl.textContent = 'Not Logged In';
             userBtn.innerHTML = buildInitialsCapsule('Guest');
+            /*
             // If on a protected portal page, redirect to login
             if (!window.location.pathname.includes('/loginNsignup/')) {
               window.location.href = '/StepCare/loginNsignup/login.php';
-            }
+            } */
             return null;
           }
           return response.json();
