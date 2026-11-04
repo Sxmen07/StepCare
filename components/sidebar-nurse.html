@@ -2,7 +2,7 @@
 <aside id="nurse-sidebar" class="w-52 bg-white border-r border-neutral-200/80 flex flex-col justify-between h-full transition-[width] duration-300 ease-in-out shrink-0 select-none overflow-hidden font-sans">
   
   <div class="flex flex-col min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-    <!-- Brand Logo: 无横线，固定 px-6 -->
+    <!-- Brand Logo -->
     <div class="h-16 px-6 flex items-center shrink-0">
       <a href="/StepCare/nurse/dashboard/nurse-dashboard.html" class="flex items-center overflow-hidden">
         <span class="w-6 h-6 shrink-0 flex items-center justify-center">
@@ -14,7 +14,7 @@
       </a>
     </div>
 
-    <!-- Navigation List: 固定 px-6，图标绝对不抖动 -->
+    <!-- Navigation List -->
     <div class="py-2 space-y-1">
       <div class="px-6 py-1.5 overflow-hidden">
         <p class="sidebar-text text-[11px] font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
@@ -35,9 +35,9 @@
       </a>
 
       <!-- 2. Appointments -->
-      <a href="/StepCare/nurse/appointments/nurse-appointments.html" 
+      <a href="/StepCare/nurse/appointment/appointment.php" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="appointments" title="Appointments">
+         data-page="appointment.php" title="Appointments">
         <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
           <i data-lucide="calendar" class="w-5 h-5"></i>
           <span id="dot-nurse-appointments" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
@@ -48,7 +48,19 @@
         </div>
       </a>
 
-      <!-- 3. Applications (换为 notebook-pen) -->
+      <!-- 3. Appointment History -->
+      <a href="/StepCare/nurse/appointment/appointmentHistory.php" 
+         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
+         data-page="appointmenthistory" title="History">
+        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
+          <i data-lucide="history" class="w-5 h-5"></i>
+        </span>
+        <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
+          History
+        </span>
+      </a>
+
+      <!-- 4. Applications -->
       <a href="/StepCare/nurse/leave-applications/nurse-applications.html" 
          class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
          data-page="applications" title="Applications">
@@ -59,20 +71,6 @@
         <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
           <span>Applications</span>
           <span id="badge-nurse-applications" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
-        </div>
-      </a>
-
-      <!-- 4. Care Log (新增专属护理记录) -->
-      <a href="/StepCare/nurse/care-log/nurse-care-log.html" 
-         class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-         data-page="care-log" title="Care Log">
-        <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
-          <i data-lucide="clipboard-check" class="w-5 h-5"></i>
-          <span id="dot-nurse-care-log" class="sidebar-dot absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#3C52C3] ring-2 ring-white hidden"></span>
-        </span>
-        <div class="sidebar-text ml-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-          <span>Care Log</span>
-          <span id="badge-nurse-care-log" class="sidebar-count-badge hidden px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-blue-50 text-[#3C52C3] border border-blue-200 select-none">0</span>
         </div>
       </a>
 
@@ -90,20 +88,8 @@
     </div>
   </div>
 
-  <!-- Bottom Utility Section: 无横线，固定 px-6 -->
+  <!-- Bottom Utility Section -->
   <div class="py-4 space-y-1 shrink-0">
-    <!-- Settings -->
-    <a href="/StepCare/nurse/settings/nurse-settings.html" 
-       class="sidebar-item group flex items-center px-6 py-3 text-sm font-semibold text-neutral-600 hover:text-[#3C52C3] hover:bg-[#EEF2FF] transition-colors"
-       data-page="settings" title="Settings">
-      <span class="relative w-6 h-6 shrink-0 flex items-center justify-center">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-      </span>
-      <span class="sidebar-text ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden">
-        Settings
-      </span>
-    </a>
-
     <!-- Collapsible Toggle -->
     <button id="toggle-nurse-sidebar-btn" 
             type="button" 
@@ -128,7 +114,7 @@
     const iconWrap = document.getElementById('toggle-nurse-sidebar-icon-wrap');
     const textLabels = sidebar.querySelectorAll('.sidebar-text');
 
-    // 1. 当前路由高亮
+    // 1. 
     const currentPath = window.location.pathname.toLowerCase();
     sidebar.querySelectorAll('.sidebar-item').forEach(item => {
       const pageKey = item.getAttribute('data-page');
@@ -138,10 +124,10 @@
       }
     });
 
-    // 2. 动态同步 Nurse 专属 Badges
+    // 2. Nurse badges
     window.syncNurseBadgesAndDots = async function() {
       const isCollapsed = sidebar.classList.contains('w-[72px]');
-      let counts = { 'appointments': 0, 'applications': 0, 'care-log': 0 };
+      let counts = { 'appointments': 0, 'applications': 0 };
 
       try {
         const res = await fetch('/StepCare/components/sidebar-badges-nurse.php');
@@ -155,8 +141,7 @@
 
       const mappings = [
         { key: 'appointments', badgeId: 'badge-nurse-appointments', dotId: 'dot-nurse-appointments' },
-        { key: 'applications', badgeId: 'badge-nurse-applications', dotId: 'dot-nurse-applications' },
-        { key: 'care-log', badgeId: 'badge-nurse-care-log', dotId: 'dot-nurse-care-log' }
+        { key: 'applications', badgeId: 'badge-nurse-applications', dotId: 'dot-nurse-applications' }
       ];
 
       mappings.forEach(item => {
@@ -179,7 +164,7 @@
       });
     };
 
-    // 3. 整栏收起 / 展开控制器（保持固定 px-6，完全锁定左侧坐标）
+    // 3. Hide and show controller
     function applyCollapse(collapse) {
       if (collapse) {
         sidebar.classList.remove('w-52');

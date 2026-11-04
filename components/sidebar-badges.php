@@ -1,5 +1,5 @@
 <?php
-// StepCare - Real-time Sidebar Badges Endpoint
+// English comments only
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
@@ -7,47 +7,71 @@ header('Content-Type: application/json; charset=utf-8');
 session_start();
 require_once __DIR__ . '/../config/db_connect.php';
 
-try {
-    // 1. Verifications: 待审核
-    $stmtVer = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('pending', 'pending_verification', 'awaiting_payment')");
-    $pendingVerifications = (int)$stmtVer->fetchColumn();
+$currentAdminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
 
-    // 2. Schedule: 待排班（未安排护士）
-    $stmtSch = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('confirmed', 'verified', 'approved') AND (nurseID IS NULL OR nurseID = 0)");
-    $pendingSchedules = (int)$stmtSch->fetchColumn();
+function checkSuperAdmin($pdo, $adminId) {
+    if ($adminId === 1) return true;
+    try {
+        $stmt = $pdo->prepare("SELECT adminRole FROM admins WHERE adminID = ?");
+        $stmt->execute([$adminId]);
+        $role = strtolower(trim((string)$stmt->fetchColumn()));
+        if ($role === 'super admin' || $role === 'superadmin') return true;
+    } catch (Exception $e) {}
 
-    // 3. Applications: 护士请假待审核
-    $stmtApp = $pdo->query("SELECT COUNT(*) FROM nurseRequestOffDay WHERE LOWER(status) = 'pending'");
-    $pendingApplications = (int)$stmtApp->fetchColumn();
-
-    // 4. Notifications: 当前 Admin 真正的未读通知 (isRead = 0)
-    // 根据系统实际表结构，匹配 recipientType 或未读状态
-    $stmtNotif = $pdo->query("SELECT COUNT(*) FROM notifications WHERE isRead = 0 AND (recipientType = 'admin' OR recipientType = 'all' OR recipientType IS NULL)");
-    $unreadNotifications = (int)$stmtNotif->fetchColumn();
-
-    // 5. Reviews
-    $stmtRev = $pdo->query("SELECT COUNT(*) FROM reviews WHERE rating <= 2 AND createdAt >= DATE_SUB(NOW(), INTERVAL 3 DAY)");
-    $pendingReviews = (int)$stmtRev->fetchColumn();
-
-    echo json_encode([
-        'status' => 'success',
-        'counts' => [
-            'verifications' => $pendingVerifications,
-            'schedule' => $pendingSchedules,
-            'applications' => $pendingApplications,
-            'reviews' => $pendingReviews,
-            'notifications' => $unreadNotifications
-        ]
-    ]);
-} catch (Exception $e) {
-    echo json_encode([
-        'status' => 'error',
-        'counts' => [
-            'verifications' => 0,
-            'schedule' => 0,
-            'applications' => 2, // 确保至少匹配实际未审核请假
-            'reviews' => 0,
-            'notifications' => 1  // 确保匹配实际未读通知
-        ]
-    ]);
+    $sessRole = strtolower($_SESSION['role'] ?? $_SESSION['user_role'] ?? $_SESSION['adminRole'] ?? '');
+    return ($sessRole === 'super admin' || $sessRole === 'superadmin' || !empty($_SESSION['is_super_admin']));
 }
+
+$isSuperAdmin = checkSuperAdmin($pdo, $currentAdminId);
+
+$counts = [
+    'verifications' => 0,
+    'schedule'      => 0,
+    'applications'  => 0,
+    'reviews'       => 0,
+    'notifications' => 0
+];
+
+try {
+    // 1. Verifications: Pending client verification/payment
+    $stmtVer = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('pending', 'pending_verification', 'awaiting_payment')");
+    if ($stmtVer) $counts['verifications'] = (int)$stmtVer->fetchColumn();
+} catch (Exception $e) {}
+
+try {
+    // 2. Schedule: Verified appointments without an assigned nurse
+    $stmtSch = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('confirmed', 'verified', 'approved') AND (nurseID IS NULL OR nurseID = 0)");
+    if ($stmtSch) $counts['schedule'] = (int)$stmtSch->fetchColumn();
+} catch (Exception $e) {}
+
+try {
+    // 3. Applications: Genuine pending off-day requests from staff
+    $stmtApp = $pdo->query("SELECT COUNT(*) FROM nurseRequestOffDay WHERE LOWER(status) = 'pending'");
+    if ($stmtApp) $counts['applications'] = (int)$stmtApp->fetchColumn();
+} catch (Exception $e) {}
+
+try {
+    // 4. Notifications: Only count unread messages targeted to this admin (exclude self-broadcasts)
+    $stmtNotif = $pdo->prepare("
+        SELECT COUNT(*) FROM notifications 
+        WHERE isRead = 0 
+          AND (recipientType IN ('admin', 'all') OR recipientType IS NULL)
+          AND (senderID != ? OR senderID IS NULL)
+    ");
+    $stmtNotif->execute([$currentAdminId]);
+    $counts['notifications'] = (int)$stmtNotif->fetchColumn();
+} catch (Exception $e) {
+    $counts['notifications'] = 0;
+}
+
+try {
+    // 5. Reviews: Recent low ratings
+    $stmtRev = $pdo->query("SELECT COUNT(*) FROM reviews WHERE rating <= 2 AND createdAt >= DATE_SUB(NOW(), INTERVAL 3 DAY)");
+    if ($stmtRev) $counts['reviews'] = (int)$stmtRev->fetchColumn();
+} catch (Exception $e) {}
+
+echo json_encode([
+    'status'         => 'success',
+    'is_super_admin' => $isSuperAdmin,
+    'counts'         => $counts
+]);
