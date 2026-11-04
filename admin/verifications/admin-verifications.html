@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verifications — StepCare Admin Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-white h-screen w-screen flex text-neutral-800 antialiased overflow-hidden font-sans">
+
+  <!-- Admin Sidebar Container -->
+  <div id="sidebar-container" class="shrink-0 h-full"></div>
+
+  <!-- Main View -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+    <!-- Topbar Container -->
+    <div id="topbar-container" class="w-full shrink-0"></div>
+
+    <!-- Filter & Sub-bar -->
+    <section class="sticky top-0 z-20 bg-white border-b border-neutral-200 px-8 py-3.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 flex-1">
+        <!-- Search Input -->
+        <div class="relative w-80">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+          <input type="text" id="verification-search" placeholder="Search by appointment ID, client or ref..." class="w-full pl-9 pr-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-xl text-xs focus:outline-none focus:border-[#3C52C3] font-medium" />
+        </div>
+
+        <!-- Filter By Payment Status -->
+        <div class="flex items-center gap-1.5 text-xs text-neutral-500">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span class="font-medium">Status:</span>
+          <select id="filter-payment-status" class="bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#3C52C3]">
+            <option value="all">All Payments</option>
+            <option value="pending_verification" selected>Pending Verification</option>
+            <option value="paid">Approved (Paid)</option>
+            <option value="failed">Rejected (Failed)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-neutral-400">Auto-synced with appointment timeline</span>
+      </div>
+    </section>
+
+    <!-- Table Header (12 cols) -->
+    <div class="grid grid-cols-12 px-8 py-3.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-200 bg-neutral-50/60 items-center">
+      <div class="col-span-2 text-left pl-2">Appointment / Client</div>
+      <div class="col-span-3 text-left">Service & Schedule</div>
+      <div class="col-span-2 text-left">Amount & Method</div>
+      <div class="col-span-2 text-center">Payment Proof</div>
+      <div class="col-span-1 text-center">Status</div>
+      <div class="col-span-2 text-center">Actions</div>
+    </div>
+
+    <!-- Scrollable Stream Container -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="verifications-container" class="divide-y divide-neutral-100 w-full">
+        <!-- Dynamically rendered rows -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Proof Preview & Decision Modal -->
+  <div id="proof-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 items-center justify-center hidden p-4">
+    <div class="bg-white rounded-[2rem] p-6 w-full max-w-xl shadow-2xl border border-neutral-200 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-neutral-100">
+        <div>
+          <h3 class="text-lg font-bold text-neutral-900" id="modal-title">Payment Verification</h3>
+          <p class="text-xs text-neutral-400" id="modal-subtitle">Review bank slip and client transfer details</p>
+        </div>
+        <button type="button" id="close-modal-x" class="text-neutral-400 hover:text-black cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Proof Image Preview Frame -->
+      <div class="w-full h-80 bg-neutral-50 border border-neutral-200 rounded-2xl overflow-hidden flex items-center justify-center relative">
+        <img id="modal-proof-img" src="" alt="Proof Preview" class="max-h-full max-w-full object-contain" />
+        <div id="modal-proof-empty" class="text-center text-neutral-400 hidden">
+          <i data-lucide="file-question" class="w-10 h-10 mx-auto mb-1"></i>
+          <p class="text-xs font-semibold">No proof file preview available</p>
+        </div>
+      </div>
+
+      <!-- Quick Details Card -->
+      <div class="grid grid-cols-2 gap-3 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-neutral-400 block">Total Amount</span>
+          <span class="text-sm font-black text-neutral-900" id="modal-amount">RM 0.00</span>
+        </div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-neutral-400 block">Transaction Reference</span>
+          <span class="text-xs font-mono font-semibold text-neutral-700" id="modal-tx-ref">N/A</span>
+        </div>
+      </div>
+
+      <!-- Optional Admin Note / Rejection Reason -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1">Admin Remark / Rejection Reason</label>
+        <input type="text" id="modal-admin-note" placeholder="Enter reason if rejecting, or leave blank if approving..." class="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#3C52C3]" />
+      </div>
+
+      <!-- Modal Bottom Actions -->
+      <div class="flex items-center justify-between pt-3 border-t border-neutral-100">
+        <a id="modal-open-raw-link" href="#" target="_blank" class="text-xs font-semibold text-[#3C52C3] hover:underline flex items-center gap-1">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          <span>Open Full Original</span>
+        </a>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="modal-reject-btn" class="px-4 py-2 border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-xl transition cursor-pointer">
+            Reject Payment
+          </button>
+          <button type="button" id="modal-approve-btn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-sm">
+            Approve & Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      let verificationsList = [];
+      let currentActivePaymentId = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Robust mounting for sidebar
+        loadComponent('sidebar-container', [
+          '/StepCare/components/sidebar-admin.html',
+          '/StepCare/components/sidebar.html',
+          '../../components/sidebar-admin.html',
+          '../../components/sidebar.html'
+        ]);
+
+        // Robust mounting for topbar
+        loadComponent('topbar-container', [
+          '/StepCare/components/topbar.html',
+          '../../components/topbar.html'
+        ], () => {
+          const title = document.getElementById('topbar-page-title');
+          if (title) title.textContent = 'Verifications';
+        });
+
+        loadVerifications();
+        initControls();
+      });
+
+      // Component loader with fallback paths and 404 safety guard
+      async function loadComponent(containerId, paths, callback) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        for (const path of paths) {
+          try {
+            const res = await fetch(path);
+            if (res.ok) {
+              const html = await res.text();
+              // Prevent mounting 404 HTML error templates
+              if (!html.toLowerCase().includes('<title>404 not found') && !html.toLowerCase().includes('not found')) {
+                container.innerHTML = html;
+                container.querySelectorAll('script').forEach(s => {
+                  const ns = document.createElement('script');
+                  ns.textContent = s.textContent;
+                  document.body.appendChild(ns);
+                });
+                if (callback) callback();
+                if (window.lucide) lucide.createIcons();
+                return;
+              }
+            }
+          } catch (e) {
+            // try next path
+          }
+        }
+      }
+
+      async function loadVerifications() {
+        try {
+          const filter = document.getElementById('filter-payment-status').value;
+          const res = await fetch(`./verification_actions.php?action=fetch_verifications&status=${filter}`);
+          const json = await res.json();
+          if (json.status === 'success') {
+            verificationsList = json.data || [];
+            renderTable();
+          } else {
+            console.error(json.message);
+            verificationsList = [];
+            renderTable();
+          }
+        } catch (e) {
+          console.error(e);
+          verificationsList = [];
+          renderTable();
+        }
+      }
+
+      function renderTable() {
+        const container = document.getElementById('verifications-container');
+        const search = (document.getElementById('verification-search')?.value || '').trim().toLowerCase();
+
+        const filtered = verificationsList.filter(item => {
+          const matchAppt = String(item.formattedApptId || '').toLowerCase().includes(search);
+          const matchClient = String(item.clientName || '').toLowerCase().includes(search);
+          const matchService = String(item.serviceName || '').toLowerCase().includes(search);
+          const matchTx = String(item.transactionId || '').toLowerCase().includes(search);
+          return matchAppt || matchClient || matchService || matchTx;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="py-24 text-center">
+              <div class="w-12 h-12 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-neutral-600">No payment verification requests</p>
+              <p class="text-xs text-neutral-400 mt-1">All transactions are settled or no records match your filter.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+          let statusBadge = '';
+          const st = String(item.paymentStatus || '').toLowerCase();
+          if (st === 'paid') {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Paid</span>';
+          } else if (st === 'pending_verification') {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending Review</span>';
+          } else if (st === 'failed') {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Failed</span>';
+          } else {
+            statusBadge = '<span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200">' + st + '</span>';
+          }
+
+          const proofBtn = item.paymentProofURL
+            ? `<button type="button" onclick="window.openProofModal(${item.paymentId})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EEF2FF] hover:bg-blue-100 text-[#3C52C3] text-xs font-semibold transition cursor-pointer">
+                 <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                 <span>View Proof</span>
+               </button>`
+            : `<span class="text-neutral-300 text-xs">—</span>`;
+
+          let actions = '';
+          if (st === 'pending_verification') {
+            actions = `
+              <div class="flex items-center justify-center gap-2">
+                <button type="button" onclick="window.handleVerify(${item.paymentId}, 'approve')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer">
+                  Approve
+                </button>
+                <button type="button" onclick="window.handleVerify(${item.paymentId}, 'reject')" class="px-3 py-1.5 border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-lg transition cursor-pointer">
+                  Reject
+                </button>
+              </div>
+            `;
+          } else {
+            actions = `<span class="text-xs text-neutral-400 font-medium">Settled</span>`;
+          }
+
+          return `
+            <div class="grid grid-cols-12 items-center px-8 py-4 hover:bg-neutral-50/60 transition">
+              <!-- Col 1: Appt & Client -->
+              <div class="col-span-2 pl-2">
+                <span class="text-xs font-mono font-bold text-[#3C52C3] block">${item.formattedApptId}</span>
+                <span class="text-xs font-bold text-neutral-900 block truncate">${item.clientName}</span>
+                <span class="text-[10px] text-neutral-400 block">${item.clientPhone}</span>
+              </div>
+
+              <!-- Col 2: Service & Schedule -->
+              <div class="col-span-3 pr-2">
+                <span class="text-xs font-semibold text-neutral-800 block truncate">${item.serviceName}</span>
+                <span class="text-[11px] text-neutral-500 block">${item.scheduleTime}</span>
+                <span class="text-[10px] text-neutral-400 block truncate">Nurse: ${item.nurseName}</span>
+              </div>
+
+              <!-- Col 3: Amount & Method -->
+              <div class="col-span-2">
+                <span class="text-sm font-black text-neutral-900 block">RM ${item.totalAmount}</span>
+                <span class="text-[11px] text-neutral-500 block font-medium">${item.paymentMethod}</span>
+                <span class="text-[10px] text-neutral-400 block truncate font-mono">Ref: ${item.transactionId}</span>
+              </div>
+
+              <!-- Col 4: Proof -->
+              <div class="col-span-2 text-center">
+                ${proofBtn}
+              </div>
+
+              <!-- Col 5: Status -->
+              <div class="col-span-1 text-center">
+                ${statusBadge}
+              </div>
+
+              <!-- Col 6: Actions -->
+              <div class="col-span-2 text-center">
+                ${actions}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      window.openProofModal = function (paymentId) {
+        const item = verificationsList.find(p => p.paymentId === paymentId);
+        if (!item) return;
+
+        currentActivePaymentId = paymentId;
+
+        document.getElementById('modal-title').textContent = `Verify Payment — ${item.formattedApptId}`;
+        document.getElementById('modal-subtitle').textContent = `Submitted by ${item.clientName} (${item.submittedAt})`;
+        document.getElementById('modal-amount').textContent = `RM ${item.totalAmount}`;
+        document.getElementById('modal-tx-ref').textContent = item.transactionId || 'N/A';
+        document.getElementById('modal-admin-note').value = '';
+
+        const img = document.getElementById('modal-proof-img');
+        const empty = document.getElementById('modal-proof-empty');
+        const rawLink = document.getElementById('modal-open-raw-link');
+
+        if (item.paymentProofURL) {
+          img.src = item.paymentProofURL;
+          img.classList.remove('hidden');
+          empty.classList.add('hidden');
+          rawLink.href = item.paymentProofURL;
+          rawLink.classList.remove('hidden');
+        } else {
+          img.src = '';
+          img.classList.add('hidden');
+          empty.classList.remove('hidden');
+          rawLink.classList.add('hidden');
+        }
+
+        const modal = document.getElementById('proof-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+      };
+
+      window.handleVerify = async function (paymentId, decision, customNote = '') {
+        const confirmMsg = decision === 'approve'
+          ? 'Confirm and approve this payment? This will update the appointment status to Confirmed and log the timeline.'
+          : 'Reject this payment verification?';
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          const res = await fetch('./verification_actions.php?action=verify_payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: paymentId,
+              decision: decision,
+              note: customNote
+            })
+          });
+
+          const json = await res.json();
+          if (json.status === 'success') {
+            closeModal();
+            await loadVerifications();
+          } else {
+            alert(json.message || 'Action failed');
+          }
+        } catch (e) {
+          alert('Network Error: ' + e.message);
+        }
+      };
+
+      function closeModal() {
+        const modal = document.getElementById('proof-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        currentActivePaymentId = null;
+      }
+
+      function initControls() {
+        document.getElementById('verification-search').addEventListener('input', renderTable);
+        document.getElementById('filter-payment-status').addEventListener('change', loadVerifications);
+
+        document.getElementById('close-modal-x').onclick = closeModal;
+
+        document.getElementById('modal-approve-btn').onclick = () => {
+          if (currentActivePaymentId) {
+            const note = document.getElementById('modal-admin-note').value.trim();
+            window.handleVerify(currentActivePaymentId, 'approve', note);
+          }
+        };
+
+        document.getElementById('modal-reject-btn').onclick = () => {
+          if (currentActivePaymentId) {
+            const note = document.getElementById('modal-admin-note').value.trim();
+            window.handleVerify(currentActivePaymentId, 'reject', note);
+          }
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

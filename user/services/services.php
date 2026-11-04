@@ -16,7 +16,7 @@ $sql = "
     GROUP BY s.serviceID
     ORDER BY s.isTopRecommendation DESC, s.average_rating DESC
 ";
-$services = $pdo->query($sql)->fetchAll();
+$services = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
 /* ---------- Categories ---------- */
 $categories = $pdo->query(
@@ -36,44 +36,77 @@ try {
         WHERE c.isHidden = 0
         ORDER BY c.createdAt DESC
     ");
-    $allReviews = $stmt->fetchAll();
+    $allReviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     foreach ($allReviews as $r) {
         $reviewsByService[$r['serviceID']][] = $r;
     }
 } catch (Exception $e) {
-    // Table might not exist yet, fail silently
+    // Fail silently if table not populated
 }
 
-/* ---------- Time slots (fixed) ---------- */
-$timeSlots = [
-    '08:00:00' => ['label' => '8:00 AM',  'period' => 'Morning'],
-    '10:00:00' => ['label' => '10:00 AM', 'period' => 'Morning'],
-    '11:00:00' => ['label' => '11:00 AM', 'period' => 'Morning'],
-    '14:00:00' => ['label' => '2:00 PM',  'period' => 'Afternoon'],
-    '16:00:00' => ['label' => '4:00 PM',  'period' => 'Afternoon'],
-];
+/* ---------- Time Slots per Service from Database ---------- */
+$serviceSlotsMap = [];
+$slotStmt = $pdo->query("
+    SELECT serviceID, timeSlotLabel, maxCapacity 
+    FROM serviceTimeSlots 
+    WHERE isAvailable = 1 
+    ORDER BY slotID ASC
+");
+$rawSlots = $slotStmt->fetchAll(PDO::FETCH_ASSOC);
 
-/* ---------- Nurses available ---------- */
-$totalNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
-if ($totalNurses <= 0) $totalNurses = 3;
+foreach ($rawSlots as $slotRow) {
+    $svcId = (int)$slotRow['serviceID'];
+    $label = trim($slotRow['timeSlotLabel']);
+    
+    // Normalize time to 24-hour format HH:MM:SS
+    $dt = DateTime::createFromFormat('g:i A', $label) ?: DateTime::createFromFormat('H:i', $label);
+    if (!$dt) {
+        try { $dt = new DateTime($label); } catch (Exception $e) { continue; }
+    }
+    
+    $time24 = $dt->format('H:i:s');
+    $hour = (int)$dt->format('H');
+    $period = ($hour < 12) ? 'Morning' : 'Afternoon';
 
-/* ---------- Availability for next 30 days ---------- */
+    if (!isset($serviceSlotsMap[$svcId])) {
+        $serviceSlotsMap[$svcId] = [];
+    }
+
+    $serviceSlotsMap[$svcId][$time24] = [
+        'label' => $dt->format('g:i A'),
+        'period' => $period,
+        'maxCapacity' => (int)($slotRow['maxCapacity'] ?? 5)
+    ];
+}
+
+/* ---------- Dynamic Availability per Service for Next 30 Days ---------- */
 $availability = [];
 $cursor = new DateTime('today');
+
 for ($i = 0; $i < 30; $i++) {
     $d = $cursor->format('Y-m-d');
     $availability[$d] = [];
-    foreach ($timeSlots as $time => $meta) {
-        $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM appointments
-             WHERE DATE(startDateTime) = ?
-               AND TIME(startDateTime) = ?
-               AND appointmentStatus IN ('pending','confirmed','in_progress')"
-        );
-        $stmt->execute([$d, $time]);
-        $booked = (int)$stmt->fetchColumn();
-        $availability[$d][$time] = max(0, $totalNurses - $booked);
+
+    foreach ($services as $svc) {
+        $svcId = (int)$svc['serviceID'];
+        $availability[$d][$svcId] = [];
+        $svcTimeSlots = $serviceSlotsMap[$svcId] ?? [];
+
+        foreach ($svcTimeSlots as $time24 => $slotMeta) {
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM appointments
+                 WHERE serviceID = ?
+                   AND DATE(startDateTime) = ?
+                   AND TIME(startDateTime) = ?
+                   AND appointmentStatus IN ('pending','confirmed','in_progress')"
+            );
+            $stmt->execute([$svcId, $d, $time24]);
+            $bookedCount = (int)$stmt->fetchColumn();
+
+            $maxCap = $slotMeta['maxCapacity'];
+            $availability[$d][$svcId][$time24] = max(0, $maxCap - $bookedCount);
+        }
     }
     $cursor->modify('+1 day');
 }
@@ -83,18 +116,18 @@ $defaultPatientName = '';
 if (!empty($_SESSION['userID'])) {
     $stmt = $pdo->prepare('SELECT firstName, lastName FROM users WHERE userID = ?');
     $stmt->execute([$_SESSION['userID']]);
-    $u = $stmt->fetch();
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($u) $defaultPatientName = trim($u['firstName'] . ' ' . $u['lastName']);
 }
 
-/* ---------- Encode for JS ---------- */
+/* ---------- JSON Exports for JS ---------- */
 $servicesJson     = json_encode($services, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $reviewsJson      = json_encode($reviewsByService, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $availabilityJson = json_encode($availability);
-$timeSlotsJson    = json_encode($timeSlots);
+$serviceSlotsJson = json_encode($serviceSlotsMap);
 $serverTimeNow    = date('H:i:s');
 
-/* ---------- Flash ---------- */
+/* ---------- Flash & Success Message ---------- */
 $flash = $_SESSION['booking_flash'] ?? null;
 unset($_SESSION['booking_flash']);
 
