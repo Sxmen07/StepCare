@@ -1,4 +1,4 @@
-<!-- Global Self-Contained Topbar Component for Both Admin & Nurse -->
+<!-- Global Self-Contained Topbar Component (Strict Session & Staff Management Capsule Avatar) -->
 <header id="topbar" class="bg-white border-b border-neutral-200 h-20 px-8 flex items-center justify-between sticky top-0 z-30 select-none">
   
   <!-- Left: Dynamic Title -->
@@ -13,7 +13,7 @@
     
     <!-- Notification Bell Button -->
     <div class="relative flex items-center">
-      <button id="topbar-notif-btn" type="button" class="relative p-2 text-neutral-600 hover:text-black transition cursor-pointer flex items-center justify-center focus:outline-none">
+      <button id="topbar-notif-btn" type="button" class="relative p-2 text-neutral-600 hover:text-black transition cursor-pointer flex items-center justify-center focus:outline-none" title="Notifications">
         <i data-lucide="bell" class="w-5 h-5"></i>
         <!-- Indicator Dot -->
         <span id="topbar-notif-dot" style="display: none;" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#3C52C3] rounded-full ring-2 ring-white"></span>
@@ -46,15 +46,18 @@
 
     <!-- User Profile Dropdown Anchor -->
     <div class="relative flex items-center">
-      <button id="user-menu-btn" type="button" class="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm hover:ring-4 hover:ring-neutral-100 transition cursor-pointer overflow-hidden border border-neutral-300">
-        <span id="topbar-avatar-initials">A</span>
+      <button id="user-menu-btn" type="button" class="w-10 h-10 rounded-full flex items-center justify-center transition cursor-pointer overflow-hidden p-0 border-0 focus:outline-none hover:ring-2 hover:ring-[#3C52C3]/30">
+        <!-- Rendered Initials Capsule or Image -->
+        <div id="topbar-avatar-placeholder" class="w-full h-full rounded-full flex items-center justify-center font-bold text-xs bg-[#E6F4EA] text-[#0D652D] border border-emerald-100/90">
+          --
+        </div>
       </button>
 
       <!-- Dropdown Card -->
       <div id="user-dropdown-menu" class="hidden absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-xl border border-neutral-200 py-2.5 z-50">
         <div class="px-4 py-2.5 border-b border-neutral-100">
           <p class="text-[11px] font-medium text-neutral-400">Signed in as</p>
-          <p id="topbar-user-name" class="text-sm font-bold text-neutral-800 truncate mt-0.5">User</p>
+          <p id="topbar-user-name" class="text-sm font-bold text-neutral-800 truncate mt-0.5">Guest</p>
         </div>
 
         <div class="py-1">
@@ -112,45 +115,110 @@
     const markAllBtn    = document.getElementById('topbar-mark-all-read');
 
     const nameEl        = document.getElementById('topbar-user-name');
-    const initialEl     = document.getElementById('topbar-avatar-initials');
     const profileLink   = document.getElementById('topbar-profile-link');
     const settingsLink  = document.getElementById('topbar-settings-link');
     const seeAllNotif   = document.getElementById('topbar-see-all-notif');
 
-    // Detect portal context (Nurse or Admin) based on current path
     const currentPath = window.location.pathname.toLowerCase();
     const isNurseContext = currentPath.includes('/nurse/');
     const roleParam = isNurseContext ? 'nurse' : 'admin';
 
-    // Synchronize identity from centralized backend API
+    // Generates the Staff Management dual-letter initials soft-capsule HTML
+    function buildInitialsCapsule(name) {
+      const cleanName = (name || '').trim();
+      if (!cleanName) return `<div class="w-full h-full rounded-full flex items-center justify-center font-bold text-xs bg-[#E6F4EA] text-[#0D652D] border border-emerald-100/90">--</div>`;
+
+      const parts = cleanName.split(/\s+/).filter(Boolean);
+      let initials = '';
+
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      } else if (parts.length === 1 && parts[0].length >= 2) {
+        initials = parts[0].substring(0, 2).toUpperCase();
+      } else {
+        initials = (cleanName[0] || 'U').toUpperCase();
+      }
+
+      // Staff Management style soft palettes
+      const palette = [
+        { bg: 'bg-[#E6F4EA]', text: 'text-[#0D652D]', border: 'border-emerald-100/90' }, // Mint emerald (e.g. TO, OY)
+        { bg: 'bg-[#EEF2FF]', text: 'text-[#3C52C3]', border: 'border-indigo-100/90' }   // Soft indigo (e.g. SL)
+      ];
+
+      let hash = 0;
+      for (let i = 0; i < cleanName.length; i++) {
+        hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const c = palette[Math.abs(hash) % palette.length];
+
+      return `<div class="w-full h-full rounded-full flex items-center justify-center font-bold tracking-tight text-xs ${c.bg} ${c.text} border ${c.border}">${initials}</div>`;
+    }
+
+    // Resolves avatar strictly inside images/avatars/{role}/
+    function getRoleAvatarSrc(photoURL, role) {
+      if (!photoURL || typeof photoURL !== 'string') return null;
+      const trimmed = photoURL.trim();
+      if (!trimmed || trimmed === 'default.png') return null;
+
+      // Extract filename only to ensure strict isolation inside images/avatars/{role}/
+      const filename = trimmed.split('/').pop().split('\\').pop();
+      if (!filename) return null;
+
+      return `/StepCare/images/avatars/${role}/${filename}`;
+    }
+
+    // Fetch authenticated user info strictly
     function syncRoleIdentity() {
       fetch(`/StepCare/auth/get_current_user.php?role=${roleParam}`)
-        .then(r => r.json())
+        .then(async (response) => {
+          if (response.status === 401) {
+            // Unauthenticated: clear simulated user view
+            if (nameEl) nameEl.textContent = 'Not Logged In';
+            userBtn.innerHTML = buildInitialsCapsule('Guest');
+            // If on a protected portal page, redirect to login
+            if (!window.location.pathname.includes('/loginNsignup/')) {
+              window.location.href = '/StepCare/loginNsignup/login.php';
+            }
+            return null;
+          }
+          return response.json();
+        })
         .then(res => {
-          if (res.status === 'success' && res.user) {
-            const u = res.user;
+          if (!res || res.status !== 'success' || !res.user) return;
+          const u = res.user;
+          const displayName = u.fullName || 'User';
 
-            // Update Name
-            if (nameEl) nameEl.textContent = u.fullName || 'User';
-            
-            // Update Destination Links
-            if (profileLink && u.profileLink) profileLink.href = u.profileLink;
-            if (settingsLink && u.settingsLink) settingsLink.href = u.settingsLink;
-            if (seeAllNotif) {
-              seeAllNotif.href = isNurseContext 
-                ? '/StepCare/nurse/notifications/notifications.html' 
-                : '/StepCare/admin/notifications/notifications.html';
-            }
+          if (nameEl) nameEl.textContent = displayName;
+          if (profileLink && u.profileLink) profileLink.href = u.profileLink;
+          if (settingsLink && u.settingsLink) settingsLink.href = u.settingsLink;
+          if (seeAllNotif) {
+            seeAllNotif.href = isNurseContext 
+              ? '/StepCare/nurse/notifications/notifications.html' 
+              : '/StepCare/admin/notifications/notifications.html';
+          }
 
-            // Update Avatar / Initial
-            if (u.photoURL) {
-              userBtn.innerHTML = `<img src="/StepCare/${u.photoURL}?t=${Date.now()}" class="w-full h-full object-cover rounded-full">`;
-            } else {
-              userBtn.innerHTML = `<span id="topbar-avatar-initials">${(u.fullName || 'U').charAt(0).toUpperCase()}</span>`;
-            }
+          const avatarUrl = getRoleAvatarSrc(u.photoURL, roleParam);
+
+          if (avatarUrl) {
+            const img = new Image();
+            img.src = `${avatarUrl}?v=${Date.now()}`;
+            img.className = 'w-full h-full object-cover rounded-full';
+            img.onload = () => {
+              userBtn.innerHTML = '';
+              userBtn.appendChild(img);
+            };
+            img.onerror = () => {
+              // Fallback to Staff-Management initials capsule when photo file does not exist
+              userBtn.innerHTML = buildInitialsCapsule(displayName);
+            };
+          } else {
+            userBtn.innerHTML = buildInitialsCapsule(displayName);
           }
         })
-        .catch(err => console.error("Identity sync failed:", err));
+        .catch(err => {
+          console.error("Identity sync error:", err);
+          userBtn.innerHTML = buildInitialsCapsule('User');
+        });
     }
 
     syncRoleIdentity();
@@ -199,15 +267,18 @@
       }
       if (confirmLogout) {
         confirmLogout.onclick = function() {
-          localStorage.clear();
-          window.location.href = '/StepCare/loginNsignup/login.php';
+          fetch('/StepCare/auth/logout.php', { method: 'POST' }).finally(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/StepCare/loginNsignup/login.php';
+          });
         };
       }
     }
 
     // Load Notifications for active role
     function loadTopbarNotifications() {
-      fetch(`/StepCare/auth/notification-actions.php?action=fetch_summary&role=${roleParam}&user_id=1`)
+      fetch(`/StepCare/auth/notification-actions.php?action=fetch_summary&role=${roleParam}`)
         .then(r => r.json())
         .then(data => {
           const dot   = document.getElementById('topbar-notif-dot');
@@ -277,7 +348,6 @@
         const fd = new FormData();
         fd.append('action', 'mark_all_read');
         fd.append('role', roleParam);
-        fd.append('user_id', 1);
 
         fetch('/StepCare/auth/notification-actions.php', { method: 'POST', body: fd })
           .then(r => r.json())

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appointment Details - StepCare</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="appointmentDetails.css">
+</head>
+<body class="bg-[#fafafa] min-h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
+
+  <div class="flex-1 flex flex-col h-screen overflow-hidden">
+    
+    <!-- Topbar -->
+    <header class="bg-white border-b border-neutral-200 h-20 px-8 flex items-center justify-between sticky top-0 z-30 select-none shrink-0">
+      <div class="flex items-center gap-4">
+        <!-- Back button dynamically targets history or active appointment list -->
+        <a href="<?= $backUrl ?>" class="w-10 h-10 rounded-full hover:bg-neutral-100 flex items-center justify-center transition text-neutral-600">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+          <h1 class="text-xl font-black text-slate-900 leading-tight" id="header-user-name">Loading...</h1>
+          <p class="text-xs font-semibold text-slate-500" id="header-service-name">Loading...</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div class="max-w-[1400px] mx-auto space-y-8">
+        
+        <!-- FULL WIDTH TOP: Patient Info (No inner lines, clean layout) -->
+        <div class="py-2 px-1 pb-8 border-b border-neutral-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Contact Info -->
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-blue-50 text-[#3C52C3] flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="phone-call" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Phone Number</p>
+                <p class="text-sm font-bold text-slate-900" id="det-phone">-</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="mail" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Email Address</p>
+                <p class="text-sm font-semibold text-slate-700 break-all" id="det-email">-</p>
+              </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-rose-500 uppercase tracking-wider mb-0.5">Emergency Contact</p>
+                <p class="text-sm font-bold text-slate-900" id="det-emg-name">-</p>
+                <p class="text-xs font-semibold text-rose-600 mt-0.5" id="det-emg-phone">-</p>
+              </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="user" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Gender</p>
+                <p class="text-sm font-bold text-slate-900" id="det-gender">-</p>
+              </div>
+            </div>
+
+            <!-- Address -->
+            <div class="col-span-1 sm:col-span-2 flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="map-pin" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Location Address</p>
+                <p class="text-sm font-medium text-slate-800 leading-relaxed" id="det-address">-</p>
+              </div>
+            </div>
+
+            <!-- Special Instructions -->
+            <div class="col-span-1 sm:col-span-2">
+              <div class="bg-amber-50/70 border border-amber-200/60 p-3.5 rounded-2xl flex items-start gap-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                <div>
+                  <p class="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Special Instructions</p>
+                  <p class="text-sm font-medium text-slate-700 leading-relaxed" id="det-instructions">None</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- BOTTOM SECTION: Two Columns (Left: Activity, Right: Notes) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <!-- LEFT: Activity Card (7 cols) -->
+          <div class="lg:col-span-7">
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200/80 h-full">
+              <!-- Header with Title and Single Action Button -->
+              <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                  <span class="w-10 h-10 rounded-full bg-[#EEF2FF] flex items-center justify-center">
+                    <i data-lucide="clock" class="w-5 h-5 text-[#3C52C3]"></i>
+                  </span>
+                  <h3 class="text-lg font-bold text-slate-800">Activity</h3>
+                  <span class="text-xs font-semibold text-slate-400 ml-2" id="update-count">0 updates</span>
+                </div>
+
+                <!-- The Single Action Button -->
+                <button id="actionBtn" class="hidden px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 text-white bg-slate-900 hover:bg-black">
+                  Loading...
+                </button>
+              </div>
+
+              <!-- Timeline List -->
+              <div class="relative pl-6 space-y-6" id="timeline-container">
+                <!-- Rendered by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Nurse Notes (5 cols) -->
+          <div class="lg:col-span-5">
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200/80 sticky top-24 h-full flex flex-col">
+              <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <i data-lucide="clipboard-edit" class="w-5 h-5 text-[#10B981]"></i> Clinical Notes
+              </h3>
+              <p class="text-xs text-slate-500 mb-4">These notes are private and only visible to you and the admin.</p>
+              
+              <textarea id="nurseNotes" rows="12" placeholder="Enter patient vitals, observations, or care summary here..." 
+                        class="w-full flex-1 rounded-2xl border border-neutral-200 p-4 text-sm text-slate-700 focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 outline-none resize-none transition bg-neutral-50 focus:bg-white"></textarea>
+              
+              <div class="mt-4 flex justify-end">
+                <button onclick="saveNotes()" id="saveNotesBtn" class="flex items-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95">
+                  <i data-lucide="save" class="w-4 h-4"></i> Save Notes
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    window.appointmentData = <?= $apptJson ?>;
+    window.timelineData = <?= $timelineJson ?>;
+  </script>
+  <script src="appointmentDetails.js"></script>
+</body>
+</html>

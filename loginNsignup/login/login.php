@@ -13,8 +13,8 @@ function getPortalByEmail(string $email): string
 function getRedirectByPortal(string $portal): string
 {
     switch ($portal) {
-        case 'admin': return '/StepCare/admin/dashboard/dashboard.php';
-        case 'nurse': return '/StepCare/nurse/dashboard/dashboard.php';
+        case 'admin': return '/StepCare/admin/dashboard/admin-dashboard.html';
+        case 'nurse': return '/StepCare/nurse/dashboard/nurse-dashboard.html';
         default:      return '/StepCare/user/aboutUs/aboutUs.php';
     }
 }
