@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../../header/header.css" />
+  <link rel="stylesheet" href="notification.css" />
+  <title>Notifications — StepCare</title>
+</head>
+<body class="min-h-dvh bg-slate-50 antialiased">
+
+  <?php include __DIR__ . '/../../header/header.php'; ?>
+
+  <main class="mx-auto max-w-4xl px-6 py-12">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-extrabold text-[#3C52C3]">Notification Center</h1>
+        <p class="text-slate-500 mt-1">Stay up to date with your appointments and account activity.</p>
+      </div>
+      <button type="button" id="markAllReadBtn" class="hidden text-sm font-semibold text-[#3C52C3] bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition">
+        Mark all as read
+      </button>
+    </div>
+
+    <!-- List Container -->
+    <div id="notificationList" class="space-y-3">
+      <!-- Rendered by JS -->
+    </div>
+
+  </main>
+
+  <script>
+    window.notificationsData = <?= $notificationsJson ?>;
+    window.currentUserID = <?= $userID ?>;
+  </script>
+  <script src="notification.js"></script>
+</body>
+</html>
