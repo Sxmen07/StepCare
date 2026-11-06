@@ -178,7 +178,7 @@
             /*
             // If on a protected portal page, redirect to login
             if (!window.location.pathname.includes('/loginNsignup/')) {
-              window.location.href = '/StepCare/loginNsignup/login.php';
+              window.location.href = '/StepCare/loginNsignup/login/login.html';
             } */
             return null;
           }
@@ -271,7 +271,7 @@
           fetch('/StepCare/auth/logout.php', { method: 'POST' }).finally(() => {
             localStorage.clear();
             sessionStorage.clear();
-            window.location.href = '/StepCare/loginNsignup/login.php';
+            window.location.href = '/StepCare/loginNsignup/login/login.html';
           });
         };
       }
