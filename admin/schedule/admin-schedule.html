@@ -88,7 +88,7 @@
       </div>
       <h3 class="text-lg font-bold text-neutral-900 text-center mb-1">Assign Nurse to Booking</h3>
       <p class="text-xs text-neutral-400 text-center mb-6 leading-relaxed">
-        Select an available nurse to dispatch for this appointment.
+        Only nurses not on approved leave for this date are listed as available.
       </p>
 
       <!-- Booking Brief -->
@@ -106,6 +106,7 @@
           <select id="select-primary-nurse" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-[#3C52C3]">
             <option value="">Select a nurse...</option>
           </select>
+          <p id="leave-hint" class="hidden mt-2 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5"></p>
         </div>
 
         <div>
@@ -193,32 +194,79 @@
         }
       }
 
-      // Load nurses for dropdown
+      // Load nurses for dropdown (base list, no date filter)
       async function loadNurses() {
         try {
           const res = await fetch(`./schedule_actions.php?action=fetch_available_nurses`);
           const json = await res.json();
           if (json.status === 'success') {
             nursesList = json.data || [];
-            populateNurseSelects();
+            populateNurseSelects(nursesList);
           }
         } catch (err) {
           console.error('Failed to load nurses:', err);
         }
       }
 
-      function populateNurseSelects() {
+      // Load date-specific nurses (excludes / flags nurses on approved leave for that date)
+      async function loadNursesForDate(dateStr) {
+        if (!dateStr) return nursesList;
+        try {
+          const res = await fetch(`./schedule_actions.php?action=fetch_available_nurses&date=${encodeURIComponent(dateStr)}`);
+          const json = await res.json();
+          if (json.status === 'success') {
+            return json.data || [];
+          }
+        } catch (err) {
+          console.error('Failed to load nurses for date:', err);
+        }
+        return nursesList;
+      }
+
+      // Populate selects, excluding / disabling nurses on approved leave
+      function populateNurseSelects(list) {
         const primarySelect = document.getElementById('select-primary-nurse');
         const backupSelect = document.getElementById('select-backup-nurse');
+        const leaveHint = document.getElementById('leave-hint');
 
         primarySelect.innerHTML = '<option value="">Select a nurse...</option>';
         backupSelect.innerHTML = '<option value="">None (Optional)</option>';
 
-        nursesList.forEach(n => {
-          const text = `${n.name} (${n.specialization} • ★${n.rating})`;
-          primarySelect.appendChild(new Option(text, n.nurseId));
-          backupSelect.appendChild(new Option(text, n.nurseId));
+        let availableCount = 0;
+        let onLeaveNames = [];
+
+        (list || []).forEach(n => {
+          const label = `${n.name} (${n.specialization} • ★${n.rating})`;
+
+          if (n.onLeave) {
+            onLeaveNames.push(`${n.name} — ${n.leaveName || 'Leave'}`);
+            // Show disabled entry in primary so admin knows the nurse exists but is unavailable
+            const opt = new Option(
+              `${n.name} — On Approved Leave${n.leaveName ? ' (' + n.leaveName + ')' : ''}`,
+              ''
+            );
+            opt.disabled = true;
+            primarySelect.appendChild(opt);
+          } else {
+            availableCount++;
+            primarySelect.appendChild(new Option(label, n.nurseId));
+            backupSelect.appendChild(new Option(label, n.nurseId));
+          }
         });
+
+        if (availableCount === 0) {
+          const opt = new Option('No nurses available on this date', '');
+          opt.disabled = true;
+          primarySelect.appendChild(opt);
+        }
+
+        if (onLeaveNames.length > 0) {
+          leaveHint.textContent = `Unavailable (approved leave): ${onLeaveNames.join(', ')}`;
+          leaveHint.classList.remove('hidden');
+        } else {
+          leaveHint.classList.add('hidden');
+          leaveHint.textContent = '';
+        }
       }
 
       // Render Table
@@ -289,8 +337,8 @@
         if (window.lucide) lucide.createIcons();
       }
 
-      // Modal Triggers
-      window.openAssignModal = function (appointmentId) {
+      // Modal Triggers (async: loads date-specific nurse availability first)
+      window.openAssignModal = async function (appointmentId) {
         const item = schedulesList.find(s => s.appointmentId === appointmentId);
         if (!item) return;
 
@@ -300,8 +348,13 @@
         document.getElementById('modal-date-time').textContent = `${item.date} (${item.timeRange})`;
         document.getElementById('modal-location').textContent = item.location;
 
+        // Load roster for the appointment's date (filters out approved-leave nurses)
+        const dateSpecificNurses = await loadNursesForDate(item.appointmentDate);
+        populateNurseSelects(dateSpecificNurses);
+
+        // Pre-select the currently assigned nurse if still available
         const primarySelect = document.getElementById('select-primary-nurse');
-        primarySelect.value = item.nurseId || '';
+        primarySelect.value = item.nurseId ? String(item.nurseId) : '';
 
         const modal = document.getElementById('assign-modal');
         modal.classList.remove('hidden');
@@ -327,7 +380,14 @@
           const nurseId = document.getElementById('select-primary-nurse').value;
           const backupNurseId = document.getElementById('select-backup-nurse').value;
 
-          if (!currentBookingId || !nurseId) return;
+          if (!currentBookingId || !nurseId) {
+            alert('Please select an available nurse before confirming.');
+            return;
+          }
+
+          const submitBtn = document.getElementById('modal-submit-btn');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Dispatching...';
 
           try {
             const res = await fetch('./schedule_actions.php?action=assign_nurse', {
@@ -348,6 +408,9 @@
             }
           } catch (err) {
             alert('Request error: ' + err.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirm Dispatch';
           }
         };
 
