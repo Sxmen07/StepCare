@@ -19,12 +19,32 @@ $stmt = $pdo->prepare("
         n.lastName  AS nurseLastName
     FROM appointments a
     LEFT JOIN services s ON s.serviceID = a.serviceID
-    LEFT JOIN nurses   n ON n.nurseID   = a.nurseID
+    LEFT JOIN nurses   n ON n.nurseID   = n.nurseID AND a.nurseID = n.nurseID
     WHERE a.userID = ?
     ORDER BY a.appointmentID DESC
 ");
 $stmt->execute([$userID]);
 $appointments = $stmt->fetchAll();
+
+/* Fetch latest timeline status entry for each appointment */
+$latestStatuses = [];
+if (!empty($appointments)) {
+    $apptIDs = array_column($appointments, 'appointmentID');
+    $placeholders = implode(',', array_fill(0, count($apptIDs), '?'));
+    $tStmt = $pdo->prepare("
+        SELECT appointmentID, title, message, createdAt, status
+        FROM appointment_timeline
+        WHERE appointmentID IN ($placeholders)
+        ORDER BY createdAt DESC, timelineID DESC
+    ");
+    $tStmt->execute($apptIDs);
+    foreach ($tStmt->fetchAll() as $row) {
+        $aid = (int)$row['appointmentID'];
+        if (!isset($latestStatuses[$aid])) {
+            $latestStatuses[$aid] = $row;
+        }
+    }
+}
 
 $counts = ['all' => count($appointments),
            'pending' => 0, 'confirmed' => 0,
@@ -38,16 +58,22 @@ foreach ($appointments as $a) {
     elseif (in_array($st, ['cancelled','declined'], true))    $counts['cancelled']++;
 }
 
-/* Which completed appointments has this user already reviewed? */
+/* Fetch existing reviews submitted by this user for completed appointments */
 $reviewedAppts = [];
 $rStmt = $pdo->prepare("
-    SELECT appointmentID, rating
-    FROM serviceComments
-    WHERE userID = ? AND appointmentID IS NOT NULL
+    SELECT sc.appointmentID, sc.rating, sc.comment, nr.rating AS nurseRating, nr.comment AS nurseComment
+    FROM serviceComments sc
+    LEFT JOIN nurseReviews nr ON nr.appointmentID = sc.appointmentID AND nr.userID = sc.userID
+    WHERE sc.userID = ? AND sc.appointmentID IS NOT NULL
 ");
 $rStmt->execute([$userID]);
 foreach ($rStmt->fetchAll() as $r) {
-    $reviewedAppts[(int)$r['appointmentID']] = (int)$r['rating'];
+    $reviewedAppts[(int)$r['appointmentID']] = [
+        'rating' => (int)$r['rating'],
+        'comment' => $r['comment'],
+        'nurseRating' => (int)($r['nurseRating'] ?? $r['rating']),
+        'nurseComment' => $r['nurseComment'] ?? $r['comment']
+    ];
 }
 
 function statusBadge(string $status): array {

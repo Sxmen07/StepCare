@@ -57,6 +57,18 @@
 }
 
 /* ============================================================
+   BOUNCING REVIEW BUTTON (3-second cycle)
+   ============================================================ */
+@keyframes reviewBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.bounce-review-btn {
+  animation: reviewBounce 1.5s ease-in-out infinite;
+}
+
+/* ============================================================
    MODAL ANIMATIONS
    ============================================================ */
 @keyframes successPop {
