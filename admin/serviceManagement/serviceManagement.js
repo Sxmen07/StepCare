@@ -16,17 +16,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 1. Load Components
 function loadComponents() {
+  // --- LOAD SIDEBAR ---
   fetch('../../../components/sidebar-admin.html')
     .then(res => res.ok ? res.text() : fetch('/StepCare/components/sidebar-admin.html').then(r => r.text()))
-    .then(html => { const c = document.getElementById('sidebar-container'); if (c) c.innerHTML = html; })
+    .then(html => { 
+        const c = document.getElementById('sidebar-container'); 
+        if (c) {
+            c.innerHTML = html; 
+            // Execute injected scripts so sidebar initialization runs
+            const scripts = c.querySelectorAll("script");
+            scripts.forEach(oldScript => {
+              const newScript = document.createElement("script");
+              Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+              newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+              oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            if (window.lucide) lucide.createIcons();
+        } 
+    })
     .catch(err => console.error("Sidebar error:", err));
 
+  // --- LOAD TOPBAR ---
   fetch('../../../components/topbar.html')
     .then(res => res.ok ? res.text() : fetch('/StepCare/components/topbar.html').then(r => r.text()))
     .then(html => {
       const c = document.getElementById('topbar-container');
       if (c) {
         c.innerHTML = html;
+        
+        // Execute injected scripts so topbar initialization runs
+        const scripts = c.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
         setTimeout(() => {
           const t = document.getElementById('topbar-page-title');
           if (t) t.textContent = "Service Management";

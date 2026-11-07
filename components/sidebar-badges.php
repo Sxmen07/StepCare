@@ -7,7 +7,7 @@ header('Content-Type: application/json; charset=utf-8');
 session_start();
 require_once __DIR__ . '/../config/db_connect.php';
 
-$currentAdminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
+$currentAdminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? $_SESSION['adminID'] ?? 1);
 
 function checkSuperAdmin($pdo, $adminId) {
     if ($adminId === 1) return true;
@@ -34,13 +34,13 @@ $counts = [
 
 try {
     // 1. Verifications: Pending client verification/payment
-    $stmtVer = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('pending', 'pending_verification', 'awaiting_payment')");
+    $stmtVer = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(appointmentStatus) IN ('pending', 'pending_verification', 'awaiting_payment')");
     if ($stmtVer) $counts['verifications'] = (int)$stmtVer->fetchColumn();
 } catch (Exception $e) {}
 
 try {
     // 2. Schedule: Verified appointments without an assigned nurse
-    $stmtSch = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(status) IN ('confirmed', 'verified', 'approved') AND (nurseID IS NULL OR nurseID = 0)");
+    $stmtSch = $pdo->query("SELECT COUNT(*) FROM appointments WHERE LOWER(appointmentStatus) IN ('confirmed', 'verified', 'approved') AND (nurseID IS NULL OR nurseID = 0)");
     if ($stmtSch) $counts['schedule'] = (int)$stmtSch->fetchColumn();
 } catch (Exception $e) {}
 
@@ -65,7 +65,7 @@ try {
 }
 
 try {
-    // 5. Reviews: Recent low ratings
+    // 5. Reviews: Recent low ratings (fallback to 0 if table doesn't exist)
     $stmtRev = $pdo->query("SELECT COUNT(*) FROM reviews WHERE rating <= 2 AND createdAt >= DATE_SUB(NOW(), INTERVAL 3 DAY)");
     if ($stmtRev) $counts['reviews'] = (int)$stmtRev->fetchColumn();
 } catch (Exception $e) {}
@@ -75,3 +75,4 @@ echo json_encode([
     'is_super_admin' => $isSuperAdmin,
     'counts'         => $counts
 ]);
+?>
