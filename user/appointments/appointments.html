@@ -202,6 +202,23 @@
                 </div>
               <?php endif; ?>
 
+              <!-- PAYMENT FAILED NOTIFICATION BANNER IF APPLICABLE -->
+              <?php if (($appt['paymentStatus'] ?? '') === 'failed' && !in_array($appt['appointmentStatus'], ['cancelled', 'completed', 'declined'])): ?>
+                <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <p class="text-xs font-bold text-red-800 uppercase tracking-wider mb-0.5">⚠️ Payment Failed</p>
+                    <p class="text-xs text-red-600">
+                      <?= !empty($appt['rejectionReason']) ? 'Reason: ' . htmlspecialchars($appt['rejectionReason']) : 'Your payment proof was rejected. Please re-upload at least 2 days before appointment or your booking will be auto-cancelled.' ?>
+                    </p>
+                  </div>
+                  <button type="button"
+                          class="js-reupload-btn rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition flex-shrink-0"
+                          data-appointment-id="<?= (int)$appt['appointmentID'] ?>">
+                    Re-upload Payment Proof
+                  </button>
+                </div>
+              <?php endif; ?>
+
               <div class="mt-auto flex items-end justify-between gap-4 flex-wrap">
                 <div>
                   <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 mb-1">Service fee</p>
@@ -268,11 +285,11 @@
     </div>
   </section>
 
-  <!-- ================= POLICY MODAL ================= -->
+  <!-- ================= POLICY MODAL (UPDATED WITH NOTES) ================= -->
   <div id="policyModal" class="fixed inset-0 z-[150] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
     <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-success-modal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-        <h3 class="text-lg font-bold text-slate-800">Cancellation Policy</h3>
+        <h3 class="text-lg font-bold text-slate-800">Cancellation Policy &amp; Rules</h3>
         <button type="button" id="closePolicyBtn"
                 class="w-9 h-9 rounded-lg hover:bg-slate-200 flex items-center justify-center transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -281,17 +298,65 @@
           </svg>
         </button>
       </div>
-      <div class="p-6 text-sm text-slate-600 leading-relaxed space-y-4">
-        <p>We understand that plans can change. To ensure our nurses can provide the best care to all patients, we have a strict cancellation policy:</p>
+      <div class="p-6 text-sm text-slate-600 leading-relaxed space-y-4 max-h-[75vh] overflow-y-auto">
+        <p>We want to ensure a smooth and reliable care experience. Please note our guidelines and automatic cancellation rules:</p>
         <ul class="list-disc pl-5 space-y-2 font-medium">
           <li>You may cancel your appointment <strong class="text-[#3C52C3]">at least 4 hours</strong> before the scheduled start time.</li>
-          <li>If your appointment is less than 4 hours away, the cancellation button will be disabled.</li>
-          <li>If you must cancel within 4 hours, please contact our support team directly.</li>
+          <li><strong class="text-red-600">Payment Failure &amp; Re-upload Rule:</strong> If your payment status is marked as failed, you must re-upload a valid payment proof <strong class="text-slate-800">at least 2 days (48 hours) before</strong> the appointment time. Otherwise, the system will automatically cancel your appointment.</li>
+          <li><strong class="text-red-600">Nurse Assignment Rule:</strong> If an appointment has not received any nurse assignment before the start day of the appointment, it will be automatically cancelled by the system.</li>
         </ul>
         <div class="bg-blue-50 text-blue-800 p-4 rounded-xl text-xs font-semibold mt-4">
-          Late cancellations or no-shows may be subject to a fee.
+          Late cancellations or unverified payments may be subject to a fee.
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= REUPLOAD PAYMENT PROOF MODAL ================= -->
+  <div id="reuploadModal" class="fixed inset-0 z-[165] hidden items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-success-modal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <h3 class="text-lg font-bold text-slate-800">Re-upload Payment Proof</h3>
+        <button type="button" id="closeReuploadModalBtn" class="w-9 h-9 rounded-lg hover:bg-slate-200 flex items-center justify-center transition">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="reuploadForm" class="p-6 space-y-4">
+        <input type="hidden" id="reuploadAppointmentID" name="appointmentID" value="">
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Select Payment Receipt / Proof</label>
+          
+          <!-- Google-style Drag & Drop Box -->
+          <label id="dropZone" class="group relative flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50 hover:bg-blue-50/50 hover:border-[#3C52C3] transition">
+            <div class="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-400 group-hover:text-[#3C52C3] mb-2 transition">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <p id="dropZoneText" class="text-sm font-semibold text-slate-700 group-hover:text-[#3C52C3] transition">
+                Drag &amp; drop file here, or <span class="text-[#3C52C3] underline">browse</span>
+              </p>
+              <p class="text-xs text-slate-400 mt-1">Supports: JPG, PNG, WEBP, PDF</p>
+            </div>
+            <input type="file" id="paymentProofFile" name="paymentProof" accept="image/*,application/pdf" required class="hidden">
+          </label>
+        </div>
+
+        <div class="text-xs text-amber-700 bg-amber-50 p-3 rounded-xl font-medium">
+          ⚠️ Note: Must be submitted at least 2 days prior to your appointment time to avoid automatic cancellation.
+        </div>
+
+        <div class="flex flex-col gap-3 pt-2">
+          <button type="submit" id="btnSubmitReupload"
+                  class="w-full rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white hover:bg-[#2d3e9c] transition">
+            Upload &amp; Resubmit for Verification
+          </button>
+          <button type="button" id="btnCancelReupload"
+                  class="w-full rounded-xl border border-slate-300 bg-white py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

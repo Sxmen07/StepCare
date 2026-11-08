@@ -109,7 +109,108 @@
   if (policyModal)    policyModal.addEventListener('click', (e) => { if (e.target === policyModal) closePolicy(); });
 
   /* ============================================================
-     4. CANCEL FLOW WITH CHECKBOX REASONS
+     4. REUPLOAD PAYMENT PROOF FLOW
+     ============================================================ */
+  const reuploadModal   = $('#reuploadModal');
+  const closeReupload   = $('#closeReuploadModalBtn');
+  const btnCancelReup   = $('#btnCancelReupload');
+  const reuploadForm    = $('#reuploadForm');
+  const reuploadApptInput = $('#reuploadAppointmentID');
+  const fileInput       = $('#paymentProofFile');
+  const dropZone        = $('#dropZone');
+  const dropZoneText    = $('#dropZoneText');
+
+  function openReuploadModal(apptId) {
+    reuploadApptInput.value = apptId;
+    if (fileInput) fileInput.value = '';
+    if (dropZoneText) {
+      dropZoneText.innerHTML = 'Drag &amp; drop file here, or <span class="text-[#3C52C3] underline">browse</span>';
+    }
+    reuploadModal.classList.remove('hidden');
+    reuploadModal.classList.add('flex');
+  }
+
+  function closeReuploadModal() {
+    reuploadModal.classList.add('hidden');
+    reuploadModal.classList.remove('flex');
+    reuploadForm.reset();
+    if (dropZoneText) {
+      dropZoneText.innerHTML = 'Drag &amp; drop file here, or <span class="text-[#3C52C3] underline">browse</span>';
+    }
+  }
+
+  $$('.js-reupload-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openReuploadModal(btn.dataset.appointmentId);
+    });
+  });
+
+  if (fileInput && dropZoneText) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        dropZoneText.innerHTML = `📄 <strong class="text-slate-800">${fileInput.files[0].name}</strong> selected`;
+      }
+    });
+
+    // Drag and drop visual feedback events
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-[#3C52C3]', 'bg-blue-50/70');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-[#3C52C3]', 'bg-blue-50/70');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        fileInput.files = files;
+        dropZoneText.innerHTML = `📄 <strong class="text-slate-800">${files[0].name}</strong> selected`;
+      }
+    });
+  }
+
+  if (closeReupload) closeReupload.addEventListener('click', closeReuploadModal);
+  if (btnCancelReup) btnCancelReup.addEventListener('click', closeReuploadModal);
+
+  if (reuploadForm) {
+    reuploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = $('#btnSubmitReupload');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Uploading...';
+
+      try {
+        const formData = new FormData(reuploadForm);
+        const res = await fetch('reuploadPayment.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message || 'Failed to re-upload payment proof.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Resubmit for Verification';
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload & Resubmit for Verification';
+      }
+    });
+  }
+
+  /* ============================================================
+     5. CANCEL FLOW WITH CHECKBOX REASONS
      ============================================================ */
   const cancelModal    = $('#cancelConfirmModal');
   const btnConfirm     = $('#btnConfirmCancel');
@@ -203,7 +304,7 @@
   }
 
   /* ============================================================
-     5. RATE & REVIEW & VIEW REVIEW FLOW
+     6. RATE & REVIEW & VIEW REVIEW FLOW
      ============================================================ */
   const reviewModal    = $('#reviewModal');
   const reviewTitle    = $('#reviewServiceTitle');
@@ -381,6 +482,7 @@
     if (policyModal  && !policyModal.classList.contains('hidden'))  closePolicy();
     if (cancelModal  && !cancelModal.classList.contains('hidden'))  closeCancelModal();
     if (reviewModal  && !reviewModal.classList.contains('hidden'))  closeReviewModal();
+    if (reuploadModal && !reuploadModal.classList.contains('hidden')) closeReuploadModal();
   });
 
 })();
