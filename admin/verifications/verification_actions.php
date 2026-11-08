@@ -1,5 +1,4 @@
 <?php
-// English comments only
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -7,6 +6,7 @@ session_start();
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../config/db_connect.php';
+require_once __DIR__ . '/../../config/emailNotifier.php'; // <-- ADDED THIS
 
 $action = $_GET['action'] ?? '';
 
@@ -29,7 +29,6 @@ function fetchVerifications($pdo) {
     try {
         $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
 
-        // Detect rejectionReason column (backwards-compatible)
         $hasRejCol = false;
         try {
             $col = $pdo->query("SHOW COLUMNS FROM payments LIKE 'rejectionReason'");
@@ -117,7 +116,7 @@ function verifyPayment($pdo) {
         $input = json_decode(file_get_contents('php://input'), true);
 
         $paymentId = (int)($input['paymentId'] ?? 0);
-        $decision  = strtolower(trim($input['decision'] ?? '')); // 'approve' or 'reject'
+        $decision  = strtolower(trim($input['decision'] ?? ''));
         $adminNote = trim($input['note'] ?? '');
         $adminId   = (int)($_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
 
@@ -126,7 +125,6 @@ function verifyPayment($pdo) {
             return;
         }
 
-        // === REQUIRE REJECTION REASON ===
         if ($decision === 'reject' && $adminNote === '') {
             echo json_encode([
                 'status'  => 'error',
@@ -135,7 +133,6 @@ function verifyPayment($pdo) {
             return;
         }
 
-        // Fetch payment and linked appointment
         $stmt = $pdo->prepare("SELECT appointmentID, totalAmount, paymentStatus FROM payments WHERE paymentID = ? LIMIT 1");
         $stmt->execute([$paymentId]);
         $payment = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -145,7 +142,6 @@ function verifyPayment($pdo) {
             return;
         }
 
-        // Only pending_verification payments can be acted upon
         if (strtolower($payment['paymentStatus']) !== 'pending_verification') {
             echo json_encode([
                 'status'  => 'error',
@@ -157,25 +153,26 @@ function verifyPayment($pdo) {
         $appointmentId   = (int)$payment['appointmentID'];
         $amountFormatted = number_format((float)$payment['totalAmount'], 2);
 
-        // Detect optional rejectionReason column
         $hasRejCol = false;
         try {
             $col = $pdo->query("SHOW COLUMNS FROM payments LIKE 'rejectionReason'");
             $hasRejCol = ($col && $col->rowCount() > 0);
         } catch (Exception $e) {}
 
+        // Get User ID for the notification
+        $userStmt = $pdo->prepare("SELECT userID FROM appointments WHERE appointmentID = ?");
+        $userStmt->execute([$appointmentId]);
+        $userId = $userStmt->fetchColumn();
+
         $pdo->beginTransaction();
 
         if ($decision === 'approve') {
-            // 1. Mark payment as paid
             $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'paid', paymentDate = NOW() WHERE paymentID = ?");
             $upPay->execute([$paymentId]);
 
-            // 2. Confirm the appointment
             $upApp = $pdo->prepare("UPDATE appointments SET appointmentStatus = 'confirmed' WHERE appointmentID = ?");
             $upApp->execute([$appointmentId]);
 
-            // 3. Timeline entry
             $tlStmt = $pdo->prepare("
                 INSERT INTO appointment_timeline (appointmentID, status, title, message, createdBy, createdByID, createdAt)
                 VALUES (?, 'confirmed', 'Payment Verified', ?, 'admin', ?, NOW())
@@ -186,9 +183,19 @@ function verifyPayment($pdo) {
             }
             $tlStmt->execute([$appointmentId, $msg, $adminId]);
 
+            // TRIGGER NOTIFICATION FOR USER
+            if ($userId) {
+                createNotification(
+                    $pdo, 
+                    'user', 
+                    $userId, 
+                    'Payment Approved', 
+                    "Your payment of RM {$amountFormatted} has been approved. We are now assigning a nurse to your appointment.", 
+                    "/user/appointments/viewDetails/viewDetails.php?id={$appointmentId}"
+                );
+            }
+
         } else {
-            // === REJECT BRANCH ===
-            // 1. Mark payment as failed and record rejectionReason
             if ($hasRejCol) {
                 $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'failed', rejectionReason = ? WHERE paymentID = ?");
                 $upPay->execute([$adminNote, $paymentId]);
@@ -197,13 +204,24 @@ function verifyPayment($pdo) {
                 $upPay->execute([$paymentId]);
             }
 
-            // 2. Timeline entry
             $tlStmt = $pdo->prepare("
                 INSERT INTO appointment_timeline (appointmentID, status, title, message, createdBy, createdByID, createdAt)
                 VALUES (?, 'declined', 'Payment Verification Failed', ?, 'admin', ?, NOW())
             ");
             $msg = "Payment of RM {$amountFormatted} was declined. Reason: " . $adminNote;
             $tlStmt->execute([$appointmentId, $msg, $adminId]);
+
+            // TRIGGER NOTIFICATION FOR USER
+            if ($userId) {
+                createNotification(
+                    $pdo, 
+                    'user', 
+                    $userId, 
+                    'Payment Verification Failed', 
+                    "Your payment of RM {$amountFormatted} was rejected. Reason: {$adminNote}. Please re-upload a valid receipt.", 
+                    "/user/appointments/viewDetails/viewDetails.php?id={$appointmentId}"
+                );
+            }
         }
 
         $pdo->commit();

@@ -2,7 +2,7 @@
 // nurse/appointmentDetails/updateActivity.php
 session_start();
 header('Content-Type: application/json');
-require __DIR__ . '/../../config/db_connect.php';
+require __DIR__ . '/../../../config/db_connect.php';
 
 if (empty($_SESSION['nurseID'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit;

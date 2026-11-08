@@ -1,5 +1,4 @@
 <?php
-// English comments only
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -7,6 +6,7 @@ session_start();
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../config/db_connect.php';
+require_once __DIR__ . '/../../config/emailNotifier.php'; // <-- ADDED THIS
 
 $action = $_GET['action'] ?? '';
 
@@ -28,10 +28,6 @@ switch ($action) {
         break;
 }
 
-/**
- * Return a map of nurseID => leave info for all nurses
- * that have an APPROVED leave covering the given Y-m-d date.
- */
 function getApprovedLeaveMapForDate($pdo, $date) {
     $map = [];
     if (empty($date)) return $map;
@@ -62,17 +58,13 @@ function getApprovedLeaveMapForDate($pdo, $date) {
                 'endTime'   => $row['endTime']
             ];
         }
-    } catch (Exception $e) {
-        // silently ignore - leave map empty means "no known leave"
-    }
-
+    } catch (Exception $e) {}
     return $map;
 }
 
-// 1. Fetch appointments for dispatching
 function fetchSchedules($pdo) {
     try {
-        $filter = $_GET['filter'] ?? 'all'; // 'all', 'unscheduled', 'assigned'
+        $filter = $_GET['filter'] ?? 'all'; 
 
         $query = "
             SELECT 
@@ -126,7 +118,7 @@ function fetchSchedules($pdo) {
                 'patientPhone' => $row['patientPhone'] ?? 'N/A',
                 'location' => $row['locationAddress'],
                 'date' => date('M d, Y', strtotime($row['startDateTime'])),
-                'appointmentDate' => date('Y-m-d', strtotime($row['startDateTime'])), // raw date for leave checks
+                'appointmentDate' => date('Y-m-d', strtotime($row['startDateTime'])),
                 'timeRange' => date('H:i', strtotime($row['startDateTime'])) . ' - ' . date('H:i', strtotime($row['endDateTime'])),
                 'status' => $row['appointmentStatus'],
                 'isAssigned' => $isAssigned,
@@ -143,10 +135,8 @@ function fetchSchedules($pdo) {
     }
 }
 
-// 2. Fetch list of available nurses for assignment (optionally scoped to a date)
 function fetchAvailableNurses($pdo) {
     try {
-        // Optional date (Y-m-d). When supplied, nurses with APPROVED leave on that date are flagged.
         $date = trim($_GET['date'] ?? '');
 
         $stmt = $pdo->query("
@@ -180,7 +170,6 @@ function fetchAvailableNurses($pdo) {
     }
 }
 
-// 3. Assign selected nurse to booking and notify nurse
 function assignNurseToBooking($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -199,7 +188,6 @@ function assignNurseToBooking($pdo) {
             return;
         }
 
-        // 1. Fetch appointment details
         $stmt = $pdo->prepare("SELECT serviceID, userID, startDateTime FROM appointments WHERE appointmentID = ?");
         $stmt->execute([$appointmentId]);
         $appt = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -209,7 +197,6 @@ function assignNurseToBooking($pdo) {
             return;
         }
 
-        // 2. Block assignment when the nurse has an APPROVED leave on that date
         $apptDate = date('Y-m-d', strtotime($appt['startDateTime']));
         $leaveMap = getApprovedLeaveMapForDate($pdo, $apptDate);
 
@@ -231,7 +218,6 @@ function assignNurseToBooking($pdo) {
             return;
         }
 
-        // 3. Update appointment
         $updateStmt = $pdo->prepare("
             UPDATE appointments 
             SET nurseID = ?, backupNurseID = ?, appointmentStatus = 'confirmed' 
@@ -239,14 +225,13 @@ function assignNurseToBooking($pdo) {
         ");
         $updateStmt->execute([$nurseId, $backupNurseId, $appointmentId]);
 
-        // 4. Record tracking timeline
         $trackStmt = $pdo->prepare("
             INSERT INTO trackServiceStatus (appointmentID, serviceID, userID, nurseID, status, message)
             VALUES (?, ?, ?, ?, 'assigned', 'Nurse assigned to your appointment by administration.')
         ");
         $trackStmt->execute([$appointmentId, $appt['serviceID'], $appt['userID'], $nurseId]);
 
-        // 5. Send notification to assigned nurse
+        // Notify the Nurse
         $readableDate = date('M d, Y H:i', strtotime($appt['startDateTime']));
         $notifStmt = $pdo->prepare("
             INSERT INTO notifications (recipientType, recipientID, title, message, type, isRead)
@@ -256,6 +241,23 @@ function assignNurseToBooking($pdo) {
             $nurseId,
             "You have been assigned to Booking #{$appointmentId} scheduled on {$readableDate}."
         ]);
+
+        // NOTIFY THE USER (CLIENT)
+        if (!empty($appt['userID'])) {
+            // Get nurse name for the message
+            $nurseNameStmt = $pdo->prepare("SELECT CONCAT(firstName, ' ', lastName) FROM nurses WHERE nurseID = ?");
+            $nurseNameStmt->execute([$nurseId]);
+            $nurseName = $nurseNameStmt->fetchColumn();
+
+            createNotification(
+                $pdo, 
+                'user', 
+                $appt['userID'], 
+                'Nurse Assigned', 
+                "A nurse ({$nurseName}) has been assigned to your appointment scheduled on {$readableDate}.", 
+                "/user/appointments/viewDetails/viewDetails.php?id={$appointmentId}"
+            );
+        }
 
         echo json_encode(['status' => 'success', 'message' => 'Nurse successfully assigned to booking']);
     } catch (Exception $e) {

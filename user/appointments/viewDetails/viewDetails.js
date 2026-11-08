@@ -76,4 +76,18 @@
     }
   });
 
+    // Auto-refresh the timeline every 20 seconds
+  const timelineContainer = document.getElementById('timelineContainer');
+  const appointmentID = new URLSearchParams(window.location.search).get('id');
+  
+  if (timelineContainer && appointmentID) {
+    setInterval(() => {
+      fetch(`fetch_timeline.php?id=${appointmentID}`)
+        .then(res => res.text())
+        .then(html => {
+          timelineContainer.innerHTML = html;
+        }).catch(e => console.error("Timeline auto-refresh failed", e));
+    }, 20000);
+  }
+
 })();
