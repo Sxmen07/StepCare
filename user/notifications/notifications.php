@@ -1,4 +1,5 @@
 <?php
+// user/notifications/notifications.php
 session_start();
 require __DIR__ . '/../../config/db_connect.php';
 
@@ -8,9 +9,9 @@ if (empty($_SESSION['userID'])) {
 }
 
 $userID = (int)$_SESSION['userID'];
-$currentPage = 'notifications'; // For header highlighting
+$currentPage = 'notifications';
 
-// Fetch all notifications
+// Fetch all notifications for this user
 $stmt = $pdo->prepare("
     SELECT notificationID, title, message, linkURL, isRead, createdAt 
     FROM notifications 
@@ -20,12 +21,11 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userID]);
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Count unread for the filter badges
+// Count unread notifications
 $unreadCount = 0;
 foreach ($notifications as $n) {
-    if (!$n['isRead']) $unreadCount++;
+    if (!(int)$n['isRead']) $unreadCount++;
 }
 
-// Load the view
 include __DIR__ . '/notifications.html';
 ?>

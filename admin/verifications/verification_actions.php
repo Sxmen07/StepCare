@@ -1,5 +1,4 @@
 <?php
-// English comments only
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -7,6 +6,7 @@ session_start();
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../config/db_connect.php';
+require_once __DIR__ . '/../../config/emailNotifier.php'; // <-- ADDED THIS
 
 $action = $_GET['action'] ?? '';
 
@@ -29,6 +29,13 @@ function fetchVerifications($pdo) {
     try {
         $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
 
+        $hasRejCol = false;
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM payments LIKE 'rejectionReason'");
+            $hasRejCol = ($col && $col->rowCount() > 0);
+        } catch (Exception $e) {}
+        $rejSelect = $hasRejCol ? "p.rejectionReason," : "NULL AS rejectionReason,";
+
         $query = "
             SELECT 
                 p.paymentID,
@@ -38,6 +45,7 @@ function fetchVerifications($pdo) {
                 p.paymentMethod,
                 p.transactionID,
                 p.paymentStatus,
+                $rejSelect
                 p.paymentProofURL,
                 p.createdAt AS paymentCreatedAt,
                 a.startDateTime,
@@ -88,6 +96,7 @@ function fetchVerifications($pdo) {
                 'paymentMethod'   => $row['paymentMethod'] ?: 'Manual Transfer',
                 'transactionId'   => $row['transactionID'] ?: 'N/A',
                 'paymentStatus'   => strtolower($row['paymentStatus']),
+                'rejectionReason' => $row['rejectionReason'] ?? '',
                 'appointmentStatus' => strtolower($row['appointmentStatus'] ?? 'pending'),
                 'paymentProofURL' => $row['paymentProofURL'] ?? null,
                 'scheduleTime'    => !empty($row['startDateTime']) ? date('M d, Y h:i A', strtotime($row['startDateTime'])) : 'TBD',
@@ -107,16 +116,23 @@ function verifyPayment($pdo) {
         $input = json_decode(file_get_contents('php://input'), true);
 
         $paymentId = (int)($input['paymentId'] ?? 0);
-        $decision  = strtolower(trim($input['decision'] ?? '')); // 'approve' or 'reject'
+        $decision  = strtolower(trim($input['decision'] ?? ''));
         $adminNote = trim($input['note'] ?? '');
-        $adminId   = $_SESSION['adminID'] ?? 1;
+        $adminId   = (int)($_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1);
 
         if (!$paymentId || !in_array($decision, ['approve', 'reject'])) {
             echo json_encode(['status' => 'error', 'message' => 'Invalid parameters provided.']);
             return;
         }
 
-        // Fetch payment and linked appointment
+        if ($decision === 'reject' && $adminNote === '') {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'A rejection reason is required. The payment remains pending verification.'
+            ]);
+            return;
+        }
+
         $stmt = $pdo->prepare("SELECT appointmentID, totalAmount, paymentStatus FROM payments WHERE paymentID = ? LIMIT 1");
         $stmt->execute([$paymentId]);
         $payment = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -126,52 +142,95 @@ function verifyPayment($pdo) {
             return;
         }
 
-        $appointmentId = (int)$payment['appointmentID'];
+        if (strtolower($payment['paymentStatus']) !== 'pending_verification') {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'This payment is no longer awaiting verification.'
+            ]);
+            return;
+        }
+
+        $appointmentId   = (int)$payment['appointmentID'];
         $amountFormatted = number_format((float)$payment['totalAmount'], 2);
+
+        $hasRejCol = false;
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM payments LIKE 'rejectionReason'");
+            $hasRejCol = ($col && $col->rowCount() > 0);
+        } catch (Exception $e) {}
+
+        // Get User ID for the notification
+        $userStmt = $pdo->prepare("SELECT userID FROM appointments WHERE appointmentID = ?");
+        $userStmt->execute([$appointmentId]);
+        $userId = $userStmt->fetchColumn();
 
         $pdo->beginTransaction();
 
         if ($decision === 'approve') {
-            // 1. Update payments table to 'paid'
             $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'paid', paymentDate = NOW() WHERE paymentID = ?");
             $upPay->execute([$paymentId]);
 
-            // 2. Update appointments table to 'confirmed'
             $upApp = $pdo->prepare("UPDATE appointments SET appointmentStatus = 'confirmed' WHERE appointmentID = ?");
             $upApp->execute([$appointmentId]);
 
-            // 3. Insert into appointment_timeline
             $tlStmt = $pdo->prepare("
                 INSERT INTO appointment_timeline (appointmentID, status, title, message, createdBy, createdByID, createdAt)
                 VALUES (?, 'confirmed', 'Payment Verified', ?, 'admin', ?, NOW())
             ");
             $msg = "Payment of RM {$amountFormatted} verified by Administrator. Booking confirmed.";
-            if (!empty($adminNote)) {
+            if ($adminNote !== '') {
                 $msg .= " Note: " . $adminNote;
             }
             $tlStmt->execute([$appointmentId, $msg, $adminId]);
 
-        } else {
-            // Reject branch
-            // 1. Update payments table to 'failed'
-            $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'failed' WHERE paymentID = ?");
-            $upPay->execute([$paymentId]);
+            // TRIGGER NOTIFICATION FOR USER
+            if ($userId) {
+                createNotification(
+                    $pdo, 
+                    'user', 
+                    $userId, 
+                    'Payment Approved', 
+                    "Your payment of RM {$amountFormatted} has been approved. We are now assigning a nurse to your appointment.", 
+                    "/user/appointments/viewDetails/viewDetails.php?id={$appointmentId}"
+                );
+            }
 
-            // 2. Insert into appointment_timeline
+        } else {
+            if ($hasRejCol) {
+                $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'failed', rejectionReason = ? WHERE paymentID = ?");
+                $upPay->execute([$adminNote, $paymentId]);
+            } else {
+                $upPay = $pdo->prepare("UPDATE payments SET paymentStatus = 'failed' WHERE paymentID = ?");
+                $upPay->execute([$paymentId]);
+            }
+
             $tlStmt = $pdo->prepare("
                 INSERT INTO appointment_timeline (appointmentID, status, title, message, createdBy, createdByID, createdAt)
                 VALUES (?, 'declined', 'Payment Verification Failed', ?, 'admin', ?, NOW())
             ");
-            $reasonMsg = !empty($adminNote) ? $adminNote : "Uploaded proof document was invalid or transaction unverified.";
-            $msg = "Payment of RM {$amountFormatted} was declined. Reason: " . $reasonMsg;
+            $msg = "Payment of RM {$amountFormatted} was declined. Reason: " . $adminNote;
             $tlStmt->execute([$appointmentId, $msg, $adminId]);
+
+            // TRIGGER NOTIFICATION FOR USER
+            if ($userId) {
+                createNotification(
+                    $pdo, 
+                    'user', 
+                    $userId, 
+                    'Payment Verification Failed', 
+                    "Your payment of RM {$amountFormatted} was rejected. Reason: {$adminNote}. Please re-upload a valid receipt.", 
+                    "/user/appointments/viewDetails/viewDetails.php?id={$appointmentId}"
+                );
+            }
         }
 
         $pdo->commit();
 
         echo json_encode([
             'status'  => 'success',
-            'message' => $decision === 'approve' ? 'Payment approved and appointment confirmed.' : 'Payment marked as rejected.'
+            'message' => $decision === 'approve'
+                ? 'Payment approved and appointment confirmed.'
+                : 'Payment rejected.'
         ]);
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {

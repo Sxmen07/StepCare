@@ -16,17 +16,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 1. Load Components
 function loadComponents() {
+  // --- LOAD SIDEBAR ---
   fetch('../../../components/sidebar-admin.html')
     .then(res => res.ok ? res.text() : fetch('/StepCare/components/sidebar-admin.html').then(r => r.text()))
-    .then(html => { const c = document.getElementById('sidebar-container'); if (c) c.innerHTML = html; })
+    .then(html => { 
+        const c = document.getElementById('sidebar-container'); 
+        if (c) {
+            c.innerHTML = html; 
+            const scripts = c.querySelectorAll("script");
+            scripts.forEach(oldScript => {
+              const newScript = document.createElement("script");
+              Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+              newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+              oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            if (window.lucide) lucide.createIcons();
+        } 
+    })
     .catch(err => console.error("Sidebar error:", err));
 
+  // --- LOAD TOPBAR ---
   fetch('../../../components/topbar.html')
     .then(res => res.ok ? res.text() : fetch('/StepCare/components/topbar.html').then(r => r.text()))
     .then(html => {
       const c = document.getElementById('topbar-container');
       if (c) {
         c.innerHTML = html;
+        const scripts = c.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
         setTimeout(() => {
           const t = document.getElementById('topbar-page-title');
           if (t) t.textContent = "Service Management";
@@ -93,7 +116,7 @@ function renderServices() {
 
     if (viewMode === 'list') {
       return `
-        <div class="relative group bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition flex items-center justify-between gap-4">
+        <div class="relative group bg-white rounded-2xl border border-neutral-200/80 p-4 card-white-shadow flex items-center justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
             <img src="${imagePath}" alt="${service.serviceName}" class="w-16 h-16 rounded-xl object-cover shrink-0" onerror="this.src='/StepCare/images/services/elderly.png'">
             <div class="min-w-0">
@@ -111,7 +134,7 @@ function renderServices() {
     }
 
     return `
-      <div class="relative group rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-end h-[460px] bg-neutral-900 border border-neutral-200/50 select-none">
+      <div class="relative group rounded-3xl overflow-hidden card-white-shadow flex flex-col justify-end h-[460px] bg-neutral-900 border border-neutral-200/50 select-none">
         <div class="absolute inset-0 z-0 overflow-hidden">
           <img src="${imagePath}" alt="${service.serviceName}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" onerror="this.src='/StepCare/images/services/elderly.png'">
         </div>
@@ -329,7 +352,6 @@ function setupModalHandlers() {
       const features = Array.from(document.querySelectorAll('.feature-input')).map(i => i.value).filter(Boolean);
       formData.append('features', JSON.stringify(features));
 
-      // Collect time slots along with their max capacities
       const timeSlots = Array.from(document.querySelectorAll('.slot-picker-item')).map(item => {
         const timeInput = item.querySelector('.slot-time-input');
         const capInput = item.querySelector('.slot-capacity-input');
@@ -544,7 +566,6 @@ function openEditModal(serviceID) {
   slotContainer.innerHTML = '';
   if (service.timeSlots && service.timeSlots.length > 0) {
     service.timeSlots.forEach(s => {
-      // Support object or string representation
       const label = typeof s === 'object' ? s.timeSlotLabel : s;
       const cap = typeof s === 'object' ? (s.maxCapacity || 5) : 5;
       addSlotPicker(label, cap);

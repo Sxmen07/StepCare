@@ -32,11 +32,16 @@ $stmt = $pdo->prepare("
         n.phoneNumber    AS nursePhone,
         n.specialization AS nurseSpecialization,
         n.nursePhotoURL  AS nursePhoto,
-        n.averageRating  AS nurseRating
+        n.averageRating  AS nurseRating,
+        p.paymentProofURL,
+        p.paymentStatus,
+        p.paymentDate,
+        p.rejectionReason
     FROM appointments a
     LEFT JOIN services s ON s.serviceID = a.serviceID
     LEFT JOIN users    u ON u.userID    = a.userID
     LEFT JOIN nurses   n ON n.nurseID   = a.nurseID
+    LEFT JOIN payments p ON p.appointmentID = a.appointmentID
     WHERE a.appointmentID = ? AND a.userID = ?
 ");
 $stmt->execute([$appointmentID, $userID]);

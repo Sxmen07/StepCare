@@ -2,10 +2,40 @@
 // StepCare - Service Management Entry & Backend Controller
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
+session_start();
 require_once __DIR__ . '/../../config/db_connect.php';
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+// 1. Super Admin Access Check
+$currentAdminId = (int)($_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? $_SESSION['adminID'] ?? 1);
 
+function checkSuperAdmin($pdo, $adminId) {
+    if ($adminId === 1) return true; // Fallback for default super admin
+    try {
+        $stmt = $pdo->prepare("SELECT adminRole FROM admins WHERE adminID = ?");
+        $stmt->execute([$adminId]);
+        $role = strtolower(trim((string)$stmt->fetchColumn()));
+        if ($role === 'super admin' || $role === 'superadmin') return true;
+    } catch (Exception $e) {}
+    return false;
+}
+
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+$isAjax = !empty($action);
+
+if ($isAjax) {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!checkSuperAdmin($pdo, $currentAdminId)) {
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Super Admin access required.']);
+        exit;
+    }
+} else {
+    if (!checkSuperAdmin($pdo, $currentAdminId)) {
+        header('Location: /StepCare/admin/dashboard/admin-dashboard.html');
+        exit;
+    }
+}
+
+// 2. Fetch Services Logic
 if ($action === 'fetch_services') {
     header('Content-Type: application/json; charset=utf-8');
     try {
@@ -38,7 +68,7 @@ if ($action === 'fetch_services') {
     exit;
 }
 
-// Handle Add or Edit Form Submission with Buffer Overlap Validation & Capacity Limits
+// 3. Handle Add or Edit Form Submission with Buffer Overlap Validation & Capacity Limits
 if ($action === 'save_service') {
     header('Content-Type: application/json; charset=utf-8');
     try {
@@ -157,3 +187,4 @@ if ($action === 'save_service') {
 }
 
 require_once __DIR__ . '/serviceManagement.html';
+?>

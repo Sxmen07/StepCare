@@ -19,7 +19,7 @@
       <div>
         <h1 class="text-4xl md:text-5xl font-extrabold text-[#3C52C3] mb-3">Notifications</h1>
         <p class="text-slate-600 max-w-2xl leading-relaxed">
-          Stay updated with your appointments and account activity.
+          Stay updated with your appointments, payment proofs, and account activity.
         </p>
       </div>
       
@@ -37,7 +37,7 @@
         All
       </button>
       <button type="button" class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition" data-filter="unread">
-        Unread (<?= $unreadCount ?>)
+        Unread (<span id="unreadBadgeCount"><?= $unreadCount ?></span>)
       </button>
       <button type="button" class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition" data-filter="read">
         Read
@@ -59,7 +59,6 @@
       <?php else: ?>
         <?php foreach ($notifications as $notif): ?>
           <?php
-            // Calculate time ago
             $notifTime = strtotime($notif['createdAt']);
             $timeDiff  = time() - $notifTime;
             
@@ -78,16 +77,14 @@
             $url     = $notif['linkURL'] ?: '/StepCare/user/appointments/appointments.php';
           ?>
           
-          <!-- Notification Card -->
           <div class="notif-item flex items-center justify-between p-4 rounded-2xl border border-slate-200 <?= $bgClass ?> transition hover:shadow-md"
-               id="notif-row-<?= $notif['notificationID'] ?>"
+               id="notif-row-<?= (int)$notif['notificationID'] ?>"
                data-status="<?= $isRead ? 'read' : 'unread' ?>">
             
             <a href="<?= htmlspecialchars($url) ?>" 
                class="flex-1 flex items-start gap-4 min-w-0 pr-4"
-               onclick="markAsReadBeforeNav(<?= $notif['notificationID'] ?>)">
+               onclick="markAsReadBeforeNav(<?= (int)$notif['notificationID'] ?>)">
               
-              <!-- Unread Dot -->
               <div class="flex-shrink-0 mt-1.5 unread-dot <?= $isRead ? 'hidden' : '' ?>">
                 <span class="block w-2.5 h-2.5 rounded-full bg-[#3C52C3]"></span>
               </div>
@@ -108,10 +105,9 @@
               </div>
             </a>
 
-            <!-- Toggle Button -->
             <button type="button" 
-                    class="notif-toggle-btn flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-[#3C52C3] hover:bg-slate-200 transition"
-                    data-id="<?= $notif['notificationID'] ?>"
+                    class="notif-toggle-btn flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-[#3C52C3] hover:bg-slate-200 transition cursor-pointer"
+                    data-id="<?= (int)$notif['notificationID'] ?>"
                     data-isread="<?= $isRead ?>"
                     title="<?= $isRead ? 'Mark as unread' : 'Mark as read' ?>">
               

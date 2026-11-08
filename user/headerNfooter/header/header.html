@@ -1,34 +1,29 @@
-<header class=" site-header sticky top-0 z-50 flex items-center justify-between px-6 py-4">
+<header class="site-header sticky top-0 z-50 flex items-center justify-between px-6 py-4 w-full">
 
     <!-- Logo -->
-    <a href="/StepCare/user/aboutUs/aboutUs.php" class="flex items-center gap-2 text-4xl font-bold">
+    <a href="/StepCare/user/aboutUs/aboutUs.php" class="flex items-center gap-2.5 text-3xl font-bold tracking-tight">
         <img src="/StepCare/images/StepCare.png" alt="StepCare" class="w-10 h-10">
         <span>
             <span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span>
         </span>
     </a>
 
-    <!-- Nav links -->
-    <ul class="flex gap-12 list-none p-0 m-0">
-        <li>
-            <a href="/StepCare/user/aboutUs/aboutUs.php"
-               class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>">
-                About Us
-            </a>
-        </li>
-        <li>
-            <a href="/StepCare/user/services/services.php"
-               class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>">
-                Services
-            </a>
-        </li>
-        <li>
-            <a href="/StepCare/user/familyCare/familyCare.php"
-               class="nav-link <?= $currentPage === 'familyCare' ? 'active' : '' ?>">
-                Family Care
-            </a>
-        </li>
-    </ul>
+    <!-- Navigation Links with Sliding Underline Animation -->
+    <div id="nav-pills-wrapper">
+        <div id="nav-pill-highlight" class="opacity-0 transition-opacity duration-300"></div>
+        <a href="/StepCare/user/aboutUs/aboutUs.php"
+           class="nav-link <?= $currentPage === 'aboutUs' ? 'active' : '' ?>" data-nav="aboutUs">
+            About Us
+        </a>
+        <a href="/StepCare/user/services/services.php"
+           class="nav-link <?= $currentPage === 'services' ? 'active' : '' ?>" data-nav="services">
+            Services
+        </a>
+        <a href="/StepCare/user/familyCare/familyCare.php"
+           class="nav-link <?= $currentPage === 'familyCare' ? 'active' : '' ?>" data-nav="familyCare">
+            Family Care
+        </a>
+    </div>
 
     <!-- Right side -->
     <?php if ($isLoggedIn): ?>
@@ -56,7 +51,7 @@
                 <!-- Notification dropdown -->
                 <div id="notificationDropdown"
                      class="hidden absolute right-0 mt-2 w-80 rounded-xl bg-white
-                            ring-1 ring-slate-200 shadow-lg overflow-hidden">
+                            ring-1 ring-slate-200 shadow-lg overflow-hidden z-50">
                     
                     <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                         <p class="text-sm font-bold text-slate-800">Notifications</p>
@@ -88,10 +83,8 @@
                                     $bgClass = $isRead ? 'bg-white' : 'bg-slate-50/80';
                                     $url     = $notif['linkURL'] ?: '/StepCare/user/appointments/appointments.php';
                                 ?>
-                                <!-- Notification Item -->
                                 <div class="relative group border-b border-slate-100 hover:bg-slate-50 transition <?= $bgClass ?>" 
                                      id="notif-row-<?= $notif['notificationID'] ?>">
-                                    
                                     <a href="<?= htmlspecialchars($url) ?>" 
                                        class="block px-4 py-3 pr-12"
                                        onclick="markAsReadBeforeNav(<?= $notif['notificationID'] ?>)">
@@ -99,7 +92,6 @@
                                             <div class="flex-shrink-0 mt-1 unread-dot <?= $isRead ? 'hidden' : '' ?>">
                                                 <span class="block w-2 h-2 rounded-full bg-[#3C52C3]"></span>
                                             </div>
-                                            
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-bold text-slate-800 leading-snug truncate">
                                                     <?= htmlspecialchars($notif['title']) ?>
@@ -117,9 +109,7 @@
                                     <button type="button" 
                                             class="notif-toggle-btn absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-[#3C52C3] hover:bg-slate-200 transition"
                                             data-id="<?= $notif['notificationID'] ?>"
-                                            data-isread="<?= $isRead ?>"
-                                            title="<?= $isRead ? 'Mark as unread' : 'Mark as read' ?>">
-                                        
+                                            data-isread="<?= $isRead ?>">
                                         <?php if ($isRead): ?>
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>
                                         <?php else: ?>
@@ -155,7 +145,6 @@
                     <span class="text-base font-semibold text-slate-700">
                         <?= htmlspecialchars($firstName) ?>
                     </span>
-                    <!-- 增加 id="profileArrow" 和 transition-transform -->
                     <svg id="profileArrow" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500 transition-transform duration-300"
                          fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -163,12 +152,11 @@
                     </svg>
                 </button>
 
-                <!-- 移除 hidden 类，使用 opacity, scale, translate 来实现平滑动画 -->
                 <div id="profileDropdown"
                      class="absolute right-0 mt-2 w-52 rounded-xl bg-white
                             ring-1 ring-slate-200 shadow-lg overflow-hidden origin-top-right
                             transition-all duration-300 ease-out
-                            opacity-0 scale-95 -translate-y-2 pointer-events-none">
+                            opacity-0 scale-95 -translate-y-2 pointer-events-none z-50">
 
                     <a href="/StepCare/user/profile/user-profile.php"
                        class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
@@ -209,7 +197,54 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     /* ============================================================
-       1. 个人资料下拉动画控制
+       0. Sliding Underline Animation Logic (Conditional Check)
+       ============================================================ */
+    const navWrapper = document.getElementById('nav-pills-wrapper');
+    const navHighlight = document.getElementById('nav-pill-highlight');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const activeLink = document.querySelector('.nav-link.active');
+
+    function moveHighlight(targetElement) {
+        if (!targetElement || !navWrapper || !navHighlight) return;
+        const wrapperRect = navWrapper.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+
+        navHighlight.style.width = `${targetRect.width - 32}px`;
+        navHighlight.style.left = `${(targetRect.left - wrapperRect.left) + 16}px`;
+        navHighlight.classList.remove('opacity-0');
+        navHighlight.classList.add('opacity-100');
+    }
+
+    // Only display and animate the underline if an active main nav item exists on this page
+    if (activeLink) {
+        moveHighlight(activeLink);
+
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => moveHighlight(link));
+        });
+
+        if (navWrapper) {
+            navWrapper.addEventListener('mouseleave', () => {
+                moveHighlight(activeLink);
+            });
+        }
+    } else {
+        // Hide underline completely on secondary pages like Profile, Appointments, etc.
+        if (navHighlight) {
+            navHighlight.classList.add('opacity-0');
+        }
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => moveHighlight(link));
+        });
+        if (navWrapper) {
+            navWrapper.addEventListener('mouseleave', () => {
+                navHighlight.classList.add('opacity-0');
+            });
+        }
+    }
+
+    /* ============================================================
+       1. Profile Dropdown Animation Control
        ============================================================ */
     const profileToggle   = document.getElementById('profileToggle');
     const profileDropdown = document.getElementById('profileDropdown');
@@ -240,25 +275,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeProfile();
             } else {
                 openProfile();
-                // 如果通知菜单是打开的，顺手关掉它
                 if (notificationDropdown) notificationDropdown.classList.add('hidden');
             }
         });
     }
 
     /* ============================================================
-       2. 通知菜单控制 (保持原有逻辑)
+       2. Notification Menu Control
        ============================================================ */
     if (notificationToggle && notificationDropdown) {
         notificationToggle.addEventListener('click', function (e) {
             e.stopPropagation();
-            // 关掉个人资料菜单
             closeProfile();
             notificationDropdown.classList.toggle('hidden');
         });
     }
 
-    // 点击外部关闭所有菜单
     document.addEventListener('click', function (e) {
         if (profileMenu && !profileMenu.contains(e.target)) {
             closeProfile();
@@ -268,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 按 ESC 关闭所有菜单
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             closeProfile();
@@ -277,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     /* ============================================================
-       3. 通知的已读/未读逻辑
+       3. Notification Read/Unread Logic
        ============================================================ */
     const markAllBtn = document.getElementById('markAllReadBtn');
     const notifList  = document.getElementById('notificationList');
@@ -317,14 +348,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.classList.remove('bg-slate-50/80');
                     row.classList.add('bg-white');
                     dot.classList.add('hidden');
-                    toggleBtn.title = 'Mark as unread';
-                    toggleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>';
                 } else {
                     row.classList.remove('bg-white');
                     row.classList.add('bg-slate-50/80');
                     dot.classList.remove('hidden');
-                    toggleBtn.title = 'Mark as read';
-                    toggleBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>';
                 }
                 
                 if (headerBadge) {
@@ -354,15 +381,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     document.querySelectorAll('.notif-toggle-btn').forEach(btn => {
                         btn.dataset.isread = 1;
-                        btn.title = 'Mark as unread';
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98v7.491z" /></svg>';
                     });
                     document.querySelectorAll('.unread-dot').forEach(dot => dot.classList.add('hidden'));
                     document.querySelectorAll('[id^="notif-row-"]').forEach(row => {
                         row.classList.remove('bg-slate-50/80');
                         row.classList.add('bg-white');
                     });
-                    
                     markAllBtn.remove();
                     if (headerBadge) headerBadge.classList.add('hidden');
                 }

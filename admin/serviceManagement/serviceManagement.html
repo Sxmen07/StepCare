@@ -11,6 +11,18 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="/StepCare/admin/serviceManagement/serviceManagement.css">
+  
+  <style>
+    /* Animated Clockwise Light Blue Border */
+    .cancel-btn-svg rect {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      transition: stroke-dashoffset 0.4s linear;
+    }
+    .cancel-btn-svg:hover rect {
+      stroke-dashoffset: 0;
+    }
+  </style>
 </head>
 <body class="bg-slate-50 text-neutral-800 font-sans flex h-screen overflow-hidden antialiased">
 
@@ -28,14 +40,14 @@
       
       <!-- Search Bar Section -->
       <section class="max-w-5xl mx-auto pt-2">
-        <div class="relative w-full shadow-sm rounded-2xl group">
+        <div class="relative w-full rounded-2xl group card-white-shadow bg-white">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#3C52C3] transition-colors">
             <i data-lucide="search" class="w-5 h-5"></i>
           </div>
           <input type="text" 
                  id="service-search-input" 
                  placeholder="Search by service title, description, or category..." 
-                 class="w-full pl-11 pr-10 py-3.5 bg-white border border-neutral-200 rounded-2xl text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] transition-all">
+                 class="w-full pl-11 pr-10 py-3.5 bg-transparent border border-neutral-200 rounded-2xl text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3] transition-all">
           <button type="button" 
                   id="clear-search-btn" 
                   class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 transition">
@@ -99,8 +111,8 @@
   </div>
 
   <!-- ADD / EDIT SERVICE MANAGEMENT MODAL -->
-  <div id="service-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-3xl w-full max-w-7xl h-[90vh] shadow-2xl border border-neutral-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+  <div id="service-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl w-full max-w-7xl h-[90vh] modal-white-shadow border border-neutral-200/50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       
       <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
         <div class="flex items-center gap-3">
@@ -269,93 +281,107 @@
             <button type="button" onclick="switchModalTab('inner')" id="tab-btn-inner" class="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition cursor-pointer">2. Inner Page Details</button>
           </div>
 
-          <form id="service-form" class="flex-1 overflow-y-auto p-6 space-y-5">
+          <form id="service-form" class="flex-1 flex flex-col min-h-0">
             <input type="hidden" id="form-service-id" name="serviceID">
             <input type="hidden" id="form-existing-image" name="existingImage">
 
-            <!-- TAB 1: OUTER PAGE DETAILS -->
-            <div id="modal-tab-outer" class="space-y-4">
+            <!-- Scrollable Form Content -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-5">
               
-              <div>
-                <label class="block text-xs font-bold text-neutral-700 mb-1.5">Service Image (Top Placement)</label>
-                <div id="drop-zone" class="border-2 border-dashed border-neutral-300 rounded-2xl p-4 text-center hover:border-[#3C52C3] transition bg-neutral-50 cursor-pointer relative flex flex-col items-center justify-center">
-                  <input type="file" id="form-service-image" name="serviceImage" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                  <div class="flex flex-col items-center space-y-1">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-[#3C52C3] flex items-center justify-center">
-                      <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+              <!-- TAB 1: OUTER PAGE DETAILS -->
+              <div id="modal-tab-outer" class="space-y-4">
+                
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1.5">Service Image (Top Placement)</label>
+                  <div id="drop-zone" class="border-2 border-dashed border-neutral-300 rounded-2xl p-4 text-center hover:border-[#3C52C3] transition bg-neutral-50 cursor-pointer relative flex flex-col items-center justify-center">
+                    <input type="file" id="form-service-image" name="serviceImage" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                    <div class="flex flex-col items-center space-y-1">
+                      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-[#3C52C3] flex items-center justify-center">
+                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                      </div>
+                      <p class="text-xs font-bold text-neutral-700">Drag & drop image here, or <span class="text-[#3C52C3] underline">browse</span></p>
+                      <p class="text-[10px] text-neutral-400">Supports PNG, JPG, WEBP</p>
                     </div>
-                    <p class="text-xs font-bold text-neutral-700">Drag & drop image here, or <span class="text-[#3C52C3] underline">browse</span></p>
-                    <p class="text-[10px] text-neutral-400">Supports PNG, JPG, WEBP</p>
                   </div>
                 </div>
-              </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-bold text-neutral-700 mb-1">Service Title *</label>
-                  <input type="text" id="form-service-name" name="serviceName" required placeholder="e.g., Post-Operative Wound Care" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-neutral-700 mb-1">Category *</label>
-                  <select id="form-category" name="category" required class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                    <option value="Elderly">Elderly Care</option>
-                    <option value="Post-op">Post-Op</option>
-                    <option value="Neuro">Neuro Care</option>
-                    <option value="Postnatal">Postnatal</option>
-                    <option value="Hospice">Hospice</option>
-                    <option value="Chronic">Chronic Care</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-xs font-bold text-neutral-700 mb-1">Service Fee (RM) *</label>
-                  <input type="number" step="0.01" id="form-price" name="price" required placeholder="85.00" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-neutral-700 mb-1">Min Duration (Mins)</label>
-                  <input type="number" id="form-duration-min" name="durationMin" value="45" oninput="updateSlotBuffers()" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-neutral-700 mb-1">Max Duration (Mins)</label>
-                  <input type="number" id="form-duration-max" name="durationMax" value="60" oninput="updateSlotBuffers()" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs font-bold text-neutral-700">What's Included (Features)</label>
-                  <button type="button" onclick="addFeatureInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Feature</button>
-                </div>
-                <div id="features-container" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
-              </div>
-            </div>
-
-            <!-- TAB 2: INNER PAGE DETAILS -->
-            <div id="modal-tab-inner" class="space-y-4 hidden">
-              <div>
-                <label class="block text-xs font-bold text-neutral-700 mb-1">Detailed Description (Inner Page Content)</label>
-                <textarea id="form-description" name="description" rows="5" placeholder="Provide comprehensive details about this healthcare service..." class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]"></textarea>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-bold text-neutral-700">Available Time Slots & Capacity Limits</label>
-                    <p class="text-[10px] text-neutral-400">Buffers: +1 hr setup before & +1 hr travel/cleaning after</p>
+                    <label class="block text-xs font-bold text-neutral-700 mb-1">Service Title *</label>
+                    <input type="text" id="form-service-name" name="serviceName" required placeholder="e.g., Post-Operative Wound Care" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
                   </div>
-                  <button type="button" onclick="addSlotPicker()" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#3C52C3] hover:underline cursor-pointer">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                    <span>Add Slot</span>
-                  </button>
+                  <div>
+                    <label class="block text-xs font-bold text-neutral-700 mb-1">Category *</label>
+                    <select id="form-category" name="category" required class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                      <option value="Elderly">Elderly Care</option>
+                      <option value="Post-op">Post-Op</option>
+                      <option value="Neuro">Neuro Care</option>
+                      <option value="Postnatal">Postnatal</option>
+                      <option value="Hospice">Hospice</option>
+                      <option value="Chronic">Chronic Care</option>
+                    </select>
+                  </div>
                 </div>
-                <div id="timeslots-container" class="space-y-2.5 max-h-48 overflow-y-auto pr-1"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-bold text-neutral-700 mb-1">Service Fee (RM) *</label>
+                    <input type="number" step="0.01" id="form-price" name="price" required placeholder="85.00" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-neutral-700 mb-1">Min Duration (Mins)</label>
+                    <input type="number" id="form-duration-min" name="durationMin" value="45" oninput="updateSlotBuffers()" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-neutral-700 mb-1">Max Duration (Mins)</label>
+                    <input type="number" id="form-duration-max" name="durationMax" value="60" oninput="updateSlotBuffers()" class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]">
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-neutral-700">What's Included (Features)</label>
+                    <button type="button" onclick="addFeatureInput()" class="text-[11px] font-bold text-[#3C52C3] hover:underline">+ Add Feature</button>
+                  </div>
+                  <div id="features-container" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
+                </div>
               </div>
+
+              <!-- TAB 2: INNER PAGE DETAILS -->
+              <div id="modal-tab-inner" class="space-y-4 hidden">
+                <div>
+                  <label class="block text-xs font-bold text-neutral-700 mb-1">Detailed Description (Inner Page Content)</label>
+                  <textarea id="form-description" name="description" rows="5" placeholder="Provide comprehensive details about this healthcare service..." class="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3C52C3]/20 focus:border-[#3C52C3]"></textarea>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <div>
+                      <label class="block text-xs font-bold text-neutral-700">Available Time Slots & Capacity Limits</label>
+                      <p class="text-[10px] text-neutral-400">Buffers: +1 hr setup before & +1 hr travel/cleaning after</p>
+                    </div>
+                    <button type="button" onclick="addSlotPicker()" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#3C52C3] hover:underline cursor-pointer">
+                      <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                      <span>Add Slot</span>
+                    </button>
+                  </div>
+                  <div id="timeslots-container" class="space-y-2.5 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+              </div>
+
             </div>
 
-            <div class="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3 shrink-0">
-              <button type="button" id="cancel-service-modal" class="px-5 py-2.5 rounded-xl border border-neutral-200 text-neutral-700 text-xs font-bold hover:bg-neutral-50 transition cursor-pointer">Cancel</button>
+            <!-- Sticky Bottom Footer -->
+            <div class="pt-4 pb-4 px-6 border-t border-neutral-100 flex items-center justify-end gap-3 shrink-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+              
+              <!-- Clean SVG Border Clockwise Animation Cancel Button (No White Square Background) -->
+              <button type="button" id="cancel-service-modal" class="cancel-btn-svg relative inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-transparent text-neutral-700 text-xs font-bold hover:text-[#7C8CE8] transition-colors cursor-pointer border-0 outline-none shadow-none group">
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="12" ry="12" fill="none" stroke="#7C8CE8" stroke-width="2" />
+                </svg>
+                <span class="relative z-10 pointer-events-none">Cancel</span>
+              </button>
+
               <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#3C52C3] hover:bg-[#3244a8] text-white text-xs font-bold transition shadow-sm cursor-pointer">Save Service</button>
             </div>
           </form>

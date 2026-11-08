@@ -5,18 +5,17 @@
    ============================================================ */
 @keyframes scrollVertical {
   0%   { transform: translateY(0); }
-  100% { transform: translateY(-50%); } /* Scrolls exactly half the height (the duplicated set) */
+  100% { transform: translateY(-50%); } /* Scrolls exactly half the height */
 }
 
 .marquee-container {
   position: relative;
-  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
 }
 
 .marquee-content {
-  animation: scrollVertical 15s linear infinite;
-  /* Pause on hover to let the user look */
+  animation: scrollVertical 22s linear infinite;
   will-change: transform;
 }
 
@@ -24,17 +23,39 @@
   animation-play-state: paused;
 }
 
+/* Dynamic Image Card Zoom */
+.marquee-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+.marquee-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
 /* ============================================================
-   SECTION 3: BOUNCE-IN ANIMATION
+   SECTION 2: STAT CARDS & COUNTERS
+   ============================================================ */
+.stat-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.35s ease, 
+              border-color 0.35s ease;
+}
+.stat-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(60, 82, 195, 0.3);
+  box-shadow: 0 12px 24px -4px rgba(60, 82, 195, 0.12);
+}
+
+/* ============================================================
+   SECTION 3: BOUNCE-IN ANIMATION & SERVICE CARDS
    ============================================================ */
 @keyframes bounceIn {
   0%   { opacity: 0; transform: translateY(28px); }
-  55%  { opacity: 1; transform: translateY(-12px); }
-  78%  { transform: translateY(4px); }
+  55%  { opacity: 1; transform: translateY(-8px); }
+  78%  { transform: translateY(3px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* Hidden until parent gets .is-revealed */
 .bounce-wrapper {
   opacity: 0;
   transform: translateY(28px);
@@ -43,25 +64,29 @@
 
 .reveal-on-scroll.is-revealed .bounce-wrapper {
   animation: bounceIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: calc(var(--i, 0) * 80ms);
+  animation-delay: calc(var(--i, 0) * 90ms);
 }
 
-/* Subtle lift on hover (separate from entrance bounce) */
-.service-card {
-  transition: transform 0.25s ease,
+.service-card-item {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
               background-color 0.3s ease,
               border-color 0.3s ease,
               box-shadow 0.3s ease;
 }
-.service-card:hover {
-  transform: translateY(-4px);
+.service-card-item:hover {
+  transform: translateX(6px);
+  background-color: #ffffff;
+  box-shadow: 0 10px 20px -3px rgba(60, 82, 195, 0.08);
 }
 
 .benefit-item {
-  transition: transform 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.3s ease,
+              box-shadow 0.3s ease;
 }
 .benefit-item:hover {
-  transform: translateX(4px);
+  transform: translateX(6px);
+  box-shadow: 0 8px 16px -2px rgba(16, 185, 129, 0.12);
 }
 
 /* ============================================================
@@ -69,16 +94,16 @@
    ============================================================ */
 @keyframes scrollHorizontal {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-33.333%); } /* Scrolls one full set (since there are 3 copies) */
+  100% { transform: translateX(-33.333%); }
 }
 
 .marquee-container-horizontal {
-  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
 }
 
 .marquee-content-horizontal {
-  animation: scrollHorizontal 30s linear infinite;
+  animation: scrollHorizontal 35s linear infinite;
   will-change: transform;
 }
 
@@ -86,14 +111,24 @@
   animation-play-state: paused;
 }
 
+.review-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.35s ease, 
+              box-shadow 0.35s ease;
+}
+.review-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
 /* ============================================================
-   GENERAL SCROLL BEHAVIOR
+   GENERAL SCROLL BEHAVIOR & CUSTOM SCROLLBAR
    ============================================================ */
 html {
   scroll-behavior: smooth;
 }
 
-/* Utility to hide scrollbar but keep scrolling */
 body::-webkit-scrollbar {
   width: 8px;
 }

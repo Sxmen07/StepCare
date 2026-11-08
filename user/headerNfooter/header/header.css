@@ -1,38 +1,64 @@
+/* StepCare Header & Topbar Styling */
 .site-header {
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px; /* optional – adjust or remove for full-width */
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .topbar {
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Navigation Menu with Sliding Underline Indicator */
+#nav-pills-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    padding: 0;
+}
+
+#nav-pill-highlight {
+    position: absolute;
+    bottom: -4px;
+    height: 3px;
+    background-color: #3C52C3;
+    border-radius: 9999px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 10;
 }
 
 .nav-link {
-    color: #374151;
-    font-size: large;
-    font-weight: 700;
-    transition: color 0.2s;
-    padding-bottom: 4px;
-    border-bottom: 2px solid transparent;
+    position: relative;
+    z-index: 5;
+    color: #4b5563;
+    font-size: 1.05rem; /* Professional and legible font sizing */
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    padding: 8px 16px;
+    transition: color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
 }
-.nav-link:hover { color: #007FFF; }
+
+.nav-link:hover { 
+    color: #3C52C3; 
+}
+
 .nav-link.active {
-    color: #007FFF;
-    font-weight: 800;
-    border-bottom: 2px solid #007FFF;
+    color: #3C52C3;
+    font-weight: 700;
 }
 
 /* ---------- Notification bell ---------- */
-/* Shakes for ~40% of the cycle, rests the rest — like a soft alert */
 @keyframes bellPulse {
     0%,  40%, 100% { transform: rotate(0deg);    }
     5%,  15%, 25%, 35% { transform: rotate(-9deg); }
@@ -41,10 +67,9 @@
 
 .bell-shake {
     animation: bellPulse 2s ease-in-out 3;
-    transform-origin: 50% 6px;   /* pivot near the top of the bell */
+    transform-origin: 50% 6px;
 }
 
-/* Slight enlargement of the profile name area */
 #profileToggle {
     padding-top: 6px;
     padding-bottom: 6px;

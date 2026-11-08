@@ -2,9 +2,6 @@
 (function () {
   'use strict';
 
-  /* ============================================================
-     SHORTCUT HELPERS
-     ============================================================ */
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
@@ -43,7 +40,6 @@
     }
   }
 
-  /* Restore filter from sessionStorage (when returning from viewDetails) */
   try {
     const saved = sessionStorage.getItem('apptActiveFilter');
     if (saved && saved !== 'all') {
@@ -54,7 +50,7 @@
         activeStatus = saved;
       }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -69,36 +65,10 @@
   applyFilter();
 
   /* ============================================================
-     2. FADE-IN ON RETURN FROM viewDetails
-     ============================================================ */
-  try {
-    if (sessionStorage.getItem('apptCardsFadeIn') === '1') {
-      sessionStorage.removeItem('apptCardsFadeIn');
-
-      const visible = cards.filter(c => !c.classList.contains('hidden'));
-      visible.forEach((card, i) => {
-        card.style.opacity    = '0';
-        card.style.transform  = 'translateX(-40px)';
-        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-        setTimeout(() => {
-          card.style.opacity   = '1';
-          card.style.transform = 'translateX(0)';
-          setTimeout(() => {
-            card.style.opacity    = '';
-            card.style.transform  = '';
-            card.style.transition = '';
-          }, 500);
-        }, i * 55);
-      });
-    }
-  } catch (e) { /* ignore */ }
-
-  /* ============================================================
-     3. NAVIGATE → viewDetails WITH STAIRCASE FADE-OUT
+     2. NAVIGATION & DETAILS
      ============================================================ */
   function navigateToDetails(id) {
     if (!id) return;
-
     const visible = cards.filter(c => !c.classList.contains('hidden'));
     visible.forEach((card, i) => {
       setTimeout(() => card.classList.add('fade-left'), i * 55);
@@ -117,7 +87,6 @@
     });
   });
 
-  /* Clicking the card body also opens details (except buttons/links) */
   cards.forEach(card => {
     card.addEventListener('click', (e) => {
       if (e.target.closest('button, a, input, select, textarea')) return;
@@ -126,7 +95,7 @@
   });
 
   /* ============================================================
-     4. POLICY MODAL
+     3. POLICY MODAL
      ============================================================ */
   const policyModal    = $('#policyModal');
   const openPolicyBtn  = $('#openPolicyBtn');
@@ -140,19 +109,124 @@
   if (policyModal)    policyModal.addEventListener('click', (e) => { if (e.target === policyModal) closePolicy(); });
 
   /* ============================================================
-     5. CANCEL FLOW
+     4. REUPLOAD PAYMENT PROOF FLOW
+     ============================================================ */
+  const reuploadModal   = $('#reuploadModal');
+  const closeReupload   = $('#closeReuploadModalBtn');
+  const btnCancelReup   = $('#btnCancelReupload');
+  const reuploadForm    = $('#reuploadForm');
+  const reuploadApptInput = $('#reuploadAppointmentID');
+  const fileInput       = $('#paymentProofFile');
+  const dropZone        = $('#dropZone');
+  const dropZoneText    = $('#dropZoneText');
+
+  function openReuploadModal(apptId) {
+    reuploadApptInput.value = apptId;
+    if (fileInput) fileInput.value = '';
+    if (dropZoneText) {
+      dropZoneText.innerHTML = 'Drag &amp; drop file here, or <span class="text-[#3C52C3] underline">browse</span>';
+    }
+    reuploadModal.classList.remove('hidden');
+    reuploadModal.classList.add('flex');
+  }
+
+  function closeReuploadModal() {
+    reuploadModal.classList.add('hidden');
+    reuploadModal.classList.remove('flex');
+    reuploadForm.reset();
+    if (dropZoneText) {
+      dropZoneText.innerHTML = 'Drag &amp; drop file here, or <span class="text-[#3C52C3] underline">browse</span>';
+    }
+  }
+
+  $$('.js-reupload-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openReuploadModal(btn.dataset.appointmentId);
+    });
+  });
+
+  if (fileInput && dropZoneText) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        dropZoneText.innerHTML = `📄 <strong class="text-slate-800">${fileInput.files[0].name}</strong> selected`;
+      }
+    });
+
+    // Drag and drop visual feedback events
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-[#3C52C3]', 'bg-blue-50/70');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-[#3C52C3]', 'bg-blue-50/70');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        fileInput.files = files;
+        dropZoneText.innerHTML = `📄 <strong class="text-slate-800">${files[0].name}</strong> selected`;
+      }
+    });
+  }
+
+  if (closeReupload) closeReupload.addEventListener('click', closeReuploadModal);
+  if (btnCancelReup) btnCancelReup.addEventListener('click', closeReuploadModal);
+
+  if (reuploadForm) {
+    reuploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = $('#btnSubmitReupload');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Uploading...';
+
+      try {
+        const formData = new FormData(reuploadForm);
+        const res = await fetch('reuploadPayment.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message || 'Failed to re-upload payment proof.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Resubmit for Verification';
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload & Resubmit for Verification';
+      }
+    });
+  }
+
+  /* ============================================================
+     5. CANCEL FLOW WITH CHECKBOX REASONS
      ============================================================ */
   const cancelModal    = $('#cancelConfirmModal');
   const btnConfirm     = $('#btnConfirmCancel');
   const btnKeep        = $('#btnKeepAppt');
+  const closeCancelBtn = $('#closeCancelModalBtn');
+  const cancelOther    = $('#cancelOtherReason');
+  const cancelCheckboxes = $$('input[name="cancelReason"]');
 
   let pendingCancelId  = null;
   let cancelCountdown  = null;
 
   function openCancelModal(apptId) {
     pendingCancelId = apptId;
+    cancelCheckboxes.forEach(cb => cb.checked = false);
+    if (cancelOther) cancelOther.value = '';
 
-    /* Reset button to disabled + countdown */
     btnConfirm.disabled     = true;
     btnConfirm.textContent  = 'Wait 10s...';
     btnConfirm.className    = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
@@ -160,7 +234,6 @@
     cancelModal.classList.remove('hidden');
     cancelModal.classList.add('flex');
 
-    /* 10-second safety countdown */
     let seconds = 10;
     clearInterval(cancelCountdown);
     cancelCountdown = setInterval(() => {
@@ -191,10 +264,17 @@
   });
 
   if (btnKeep) btnKeep.addEventListener('click', closeCancelModal);
+  if (closeCancelBtn) closeCancelBtn.addEventListener('click', closeCancelModal);
 
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
       if (!pendingCancelId) return;
+
+      const checkedReasons = cancelCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+      const otherTxt = cancelOther ? cancelOther.value.trim() : '';
+      if (otherTxt) checkedReasons.push(otherTxt);
+
+      const finalReason = checkedReasons.length > 0 ? checkedReasons.join('; ') : 'Cancelled by user';
 
       btnConfirm.disabled    = true;
       btnConfirm.textContent = 'Cancelling…';
@@ -202,6 +282,7 @@
       try {
         const form = new FormData();
         form.append('appointmentID', pendingCancelId);
+        form.append('cancellationReason', finalReason);
 
         const res  = await fetch('cancelBooking.php', { method: 'POST', body: form });
         const data = await res.json();
@@ -223,96 +304,138 @@
   }
 
   /* ============================================================
-     6. RATE & REVIEW FLOW
+     6. RATE & REVIEW & VIEW REVIEW FLOW
      ============================================================ */
   const reviewModal    = $('#reviewModal');
   const reviewTitle    = $('#reviewServiceTitle');
+  const reviewNurseTitle = $('#reviewNurseTitle');
   const reviewSubmit   = $('#reviewSubmitBtn');
-  const reviewLater    = $('#reviewLaterBtn');
   const reviewClose    = $('#closeReviewModal');
   const reviewComment  = $('#reviewComment');
-  const reviewChar     = $('#reviewCharCount');
-  const reviewStars    = $$('.review-star');
-  const reviewLabel    = $('#reviewRatingLabel');
+  const nurseComment   = $('#nurseComment');
+  const reviewStars    = $$('.service-star');
+  const nurseStars     = $$('.nurse-star');
+  const serviceLabel   = $('#serviceRatingLabel');
+  const nurseLabel     = $('#nurseRatingLabel');
+  const modalHeaderTitle = $('#reviewModalHeaderTitle');
+  const modalHeaderSub = $('#reviewModalHeaderSub');
 
   let activeReviewId = null;
-  let activeRating   = 0;
+  let serviceRating   = 0;
+  let nurseRating     = 0;
 
-  const RATING_LABELS = {
-    1: 'Poor 😞',
-    2: 'Fair 😕',
-    3: 'Good 🙂',
-    4: 'Great 😃',
-    5: 'Excellent 🤩',
-  };
+  const LABELS = { 1: 'Poor 😞', 2: 'Fair 😕', 3: 'Good 🙂', 4: 'Great 😃', 5: 'Excellent 🤩' };
 
-  function updateStars(n) {
-    reviewStars.forEach(btn => {
+  function paintStars(stars, count) {
+    stars.forEach(btn => {
       const val = Number(btn.dataset.value);
-      btn.style.color = val <= n ? '#f59e0b' : '#cbd5e1';
+      btn.style.color = val <= count ? '#f59e0b' : '#cbd5e1';
     });
   }
 
   function updateSubmitState() {
-    const ready = activeRating > 0 && activeReviewId;
+    const ready = serviceRating > 0 && nurseRating > 0 && activeReviewId;
     reviewSubmit.disabled    = !ready;
     reviewSubmit.className   = ready
-      ? 'w-full rounded-xl bg-[#3C52C3] py-3.5 text-sm font-bold text-white hover:bg-[#2d3e9c] active:scale-95 transition'
-      : 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 cursor-not-allowed transition';
+      ? 'w-full rounded-xl bg-[#3C52C3] py-3 text-sm font-bold text-white hover:bg-[#2d3e9c] active:scale-95 transition'
+      : 'w-full rounded-xl bg-slate-300 py-3 text-sm font-bold text-slate-500 cursor-not-allowed transition';
   }
 
-  function openReviewModal(apptId, serviceName) {
-    activeReviewId = apptId;
-    activeRating   = 0;
-
-    reviewTitle.textContent   = serviceName || 'Your service';
-    reviewComment.value       = '';
-    reviewChar.textContent    = '0';
-    reviewLabel.textContent   = 'Select a rating';
-    reviewLabel.className     = 'text-center text-sm text-slate-400 mb-6 h-5';
-
-    updateStars(0);
-    updateSubmitState();
-
-    reviewModal.classList.remove('hidden');
-    reviewModal.classList.add('flex');
-  }
-
-  function closeReviewModal() {
-    reviewModal.classList.add('hidden');
-    reviewModal.classList.remove('flex');
-    activeReviewId = null;
-    activeRating   = 0;
-  }
-
+  /* Open Rate & Review (Editable) */
   $$('.js-review-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const card      = btn.closest('.appt-card');
-      const titleEl   = card ? card.querySelector('h3') : null;
-      const serviceNm = titleEl ? titleEl.textContent.trim() : '';
-      openReviewModal(btn.dataset.reviewId, serviceNm);
+      activeReviewId = btn.dataset.reviewId;
+      serviceRating = 0;
+      nurseRating = 0;
+
+      modalHeaderTitle.textContent = 'Rate & Review';
+      modalHeaderSub.textContent = 'Your feedback helps us improve care';
+      reviewTitle.textContent = btn.dataset.serviceName || 'Service';
+      reviewNurseTitle.textContent = btn.dataset.nurseName || 'Nurse';
+
+      reviewComment.value = '';
+      nurseComment.value = '';
+      reviewComment.disabled = false;
+      nurseComment.disabled = false;
+      reviewComment.classList.remove('bg-slate-100');
+      nurseComment.classList.remove('bg-slate-100');
+
+      paintStars(reviewStars, 0);
+      paintStars(nurseStars, 0);
+      serviceLabel.textContent = 'Select service rating';
+      nurseLabel.textContent = 'Select nurse rating';
+
+      reviewSubmit.classList.remove('hidden');
+      updateSubmitState();
+
+      reviewModal.classList.remove('hidden');
+      reviewModal.classList.add('flex');
+    });
+  });
+
+  /* Open View Review (Read-only) */
+  $$('.js-view-review-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeReviewId = null;
+
+      modalHeaderTitle.textContent = 'Submitted Review';
+      modalHeaderSub.textContent = 'View your feedback for this appointment';
+      reviewTitle.textContent = btn.dataset.serviceName || 'Service';
+      reviewNurseTitle.textContent = btn.dataset.nurseName || 'Nurse';
+
+      serviceRating = Number(btn.dataset.serviceRating) || 5;
+      nurseRating = Number(btn.dataset.nurseRating) || 5;
+
+      paintStars(reviewStars, serviceRating);
+      paintStars(nurseStars, nurseRating);
+
+      serviceLabel.textContent = LABELS[serviceRating] || '';
+      nurseLabel.textContent = LABELS[nurseRating] || '';
+
+      reviewComment.value = btn.dataset.serviceComment || 'No comment provided.';
+      nurseComment.value = btn.dataset.nurseComment || 'No comment provided.';
+
+      reviewComment.disabled = true;
+      nurseComment.disabled = true;
+      reviewComment.classList.add('bg-slate-100');
+      nurseComment.classList.add('bg-slate-100');
+
+      reviewSubmit.classList.add('hidden');
+
+      reviewModal.classList.remove('hidden');
+      reviewModal.classList.add('flex');
     });
   });
 
   reviewStars.forEach(btn => {
     btn.addEventListener('click', () => {
-      activeRating = Number(btn.dataset.value);
-      updateStars(activeRating);
-      reviewLabel.textContent = RATING_LABELS[activeRating] || '';
-      reviewLabel.className   = 'text-center text-sm font-semibold text-amber-600 mb-6 h-5';
+      if (reviewComment.disabled) return;
+      serviceRating = Number(btn.dataset.value);
+      paintStars(reviewStars, serviceRating);
+      serviceLabel.textContent = LABELS[serviceRating] || '';
       updateSubmitState();
     });
   });
 
-  if (reviewComment) {
-    reviewComment.addEventListener('input', () => {
-      reviewChar.textContent = reviewComment.value.length;
+  nurseStars.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (nurseComment.disabled) return;
+      nurseRating = Number(btn.dataset.value);
+      paintStars(nurseStars, nurseRating);
+      nurseLabel.textContent = LABELS[nurseRating] || '';
+      updateSubmitState();
     });
+  });
+
+  function closeReviewModal() {
+    reviewModal.classList.add('hidden');
+    reviewModal.classList.remove('flex');
+    activeReviewId = null;
   }
 
   if (reviewClose) reviewClose.addEventListener('click', closeReviewModal);
-  if (reviewLater) reviewLater.addEventListener('click', closeReviewModal);
 
   if (reviewModal) {
     reviewModal.addEventListener('click', (e) => {
@@ -322,7 +445,7 @@
 
   if (reviewSubmit) {
     reviewSubmit.addEventListener('click', async () => {
-      if (!activeReviewId || activeRating < 1) return;
+      if (!activeReviewId || serviceRating < 1 || nurseRating < 1) return;
 
       reviewSubmit.disabled    = true;
       reviewSubmit.textContent = 'Submitting…';
@@ -330,8 +453,10 @@
       try {
         const form = new FormData();
         form.append('appointmentID', activeReviewId);
-        form.append('rating',        activeRating);
-        form.append('comment',       reviewComment.value.trim());
+        form.append('serviceRating', serviceRating);
+        form.append('serviceComment', reviewComment.value.trim());
+        form.append('nurseRating', nurseRating);
+        form.append('nurseComment', nurseComment.value.trim());
 
         const res  = await fetch('submitReview.php', { method: 'POST', body: form });
         const data = await res.json();
@@ -352,14 +477,12 @@
     });
   }
 
-  /* ============================================================
-     7. ESCAPE KEY → close any open modal
-     ============================================================ */
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (policyModal  && !policyModal.classList.contains('hidden'))  closePolicy();
     if (cancelModal  && !cancelModal.classList.contains('hidden'))  closeCancelModal();
     if (reviewModal  && !reviewModal.classList.contains('hidden'))  closeReviewModal();
+    if (reuploadModal && !reuploadModal.classList.contains('hidden')) closeReuploadModal();
   });
 
 })();

@@ -8,20 +8,18 @@ if (empty($_SESSION['userID'])) {
     exit;
 }
 
-$userID        = (int)$_SESSION['userID'];
-$appointmentID = (int)($_POST['appointmentID'] ?? 0);
-$rating        = (int)($_POST['rating'] ?? 0);
-$comment       = trim($_POST['comment'] ?? '');
+$userID         = (int)$_SESSION['userID'];
+$appointmentID  = (int)($_POST['appointmentID'] ?? 0);
+$serviceRating  = (int)($_POST['serviceRating'] ?? 0);
+$serviceComment = trim($_POST['serviceComment'] ?? '');
+$nurseRating    = (int)($_POST['nurseRating'] ?? 0);
+$nurseComment   = trim($_POST['nurseComment'] ?? '');
 
-if ($appointmentID <= 0 || $rating < 1 || $rating > 5) {
-    echo json_encode(['success' => false, 'message' => 'Invalid input']);
+if ($appointmentID <= 0 || $serviceRating < 1 || $serviceRating > 5 || $nurseRating < 1 || $nurseRating > 5) {
+    echo json_encode(['success' => false, 'message' => 'Invalid review rating input']);
     exit;
 }
-if (mb_strlen($comment) > 1000) {
-    $comment = mb_substr($comment, 0, 1000);
-}
 
-/* 1. Verify appointment belongs to user and is completed */
 $stmt = $pdo->prepare("
     SELECT appointmentID, serviceID, nurseID, appointmentStatus
     FROM appointments
@@ -39,7 +37,6 @@ if ($appt['appointmentStatus'] !== 'completed') {
     exit;
 }
 
-/* 2. Prevent duplicate reviews */
 $dup = $pdo->prepare("SELECT 1 FROM serviceComments WHERE appointmentID = ? AND userID = ?");
 $dup->execute([$appointmentID, $userID]);
 if ($dup->fetch()) {
@@ -50,7 +47,7 @@ if ($dup->fetch()) {
 try {
     $pdo->beginTransaction();
 
-    /* 3a. Insert service comment */
+    /* 1. Insert service comment */
     $stmt = $pdo->prepare("
         INSERT INTO serviceComments (serviceID, userID, appointmentID, rating, comment)
         VALUES (?, ?, ?, ?, ?)
@@ -59,11 +56,11 @@ try {
         $appt['serviceID'],
         $userID,
         $appointmentID,
-        $rating,
-        $comment !== '' ? $comment : null,
+        $serviceRating,
+        $serviceComment !== '' ? $serviceComment : null,
     ]);
 
-    /* 3b. Insert nurse review + recompute nurse average */
+    /* 2. Insert nurse review + update nurse average */
     if (!empty($appt['nurseID'])) {
         $stmt = $pdo->prepare("
             INSERT INTO nurseReviews (nurseID, appointmentID, userID, rating, comment)
@@ -73,8 +70,8 @@ try {
             $appt['nurseID'],
             $appointmentID,
             $userID,
-            $rating,
-            $comment !== '' ? $comment : null,
+            $nurseRating,
+            $nurseComment !== '' ? $nurseComment : null,
         ]);
 
         $stmt = $pdo->prepare("
@@ -89,7 +86,7 @@ try {
         $stmt->execute([$appt['nurseID'], $appt['nurseID']]);
     }
 
-    /* 3c. Recompute service average + review count */
+    /* 3. Recompute service average + review count */
     $stmt = $pdo->prepare("
         UPDATE services
         SET average_rating = (
