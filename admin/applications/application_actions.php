@@ -46,6 +46,19 @@ function cleanProofUrl($raw) {
     return '/StepCare/' . ltrim($raw, '/');
 }
 
+// Helper: Send automated system notification
+function sendSystemNotification($pdo, $recipientType, $recipientId, $title, $message, $type = 'system_alert') {
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO notifications (recipientType, recipientID, senderType, senderID, title, message, type, isRead, createdAt)
+            VALUES (?, ?, 'system', 0, ?, ?, ?, 0, NOW())
+        ");
+        $stmt->execute([$recipientType, (int)$recipientId, $title, $message, $type]);
+    } catch (Exception $e) {
+        // Silently catch to prevent blocking main business execution
+    }
+}
+
 // Smart detect category for historical legacy rows
 function detectLeaveCategory($assignedName, $reason) {
     if (!empty($assignedName)) return $assignedName;
@@ -462,6 +475,20 @@ function submitAdminLeave($pdo) {
         ");
         $stmt->execute([$adminId, $leaveTypeID, $requestDate, $startTime, $endTime, $reason, $proofDocURL]);
 
+        // Trigger Notification: Broadcast to Admins that a new request arrived
+        $adminNameStmt = $pdo->prepare("SELECT CONCAT(firstName, ' ', lastName) FROM admins WHERE adminID = ?");
+        $adminNameStmt->execute([$adminId]);
+        $applicantName = $adminNameStmt->fetchColumn() ?: "Administrator #{$adminId}";
+
+        sendSystemNotification(
+            $pdo,
+            'admin',
+            0, // Broadcast to all admins
+            'New Leave Application Submitted',
+            "{$applicantName} has submitted a new leave request for {$requestDate}.",
+            'leave_application'
+        );
+
         echo json_encode(['status' => 'success', 'message' => 'Application submitted successfully.']);
     } catch (Exception $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -543,7 +570,7 @@ function deleteLeaveType($pdo) {
     }
 }
 
-// 8. Approve or Reject application (Triggering quota deduction when approved)
+// 8. Approve or Reject application (Triggering quota deduction & Unicast Notification to applicant)
 function updateApplicationStatus($pdo) {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -562,17 +589,58 @@ function updateApplicationStatus($pdo) {
 
         $reasonToStore = ($newStatus === 'rejected') ? ($rejectionReason ?: 'Operational scheduling conflict') : null;
 
+        $targetRecipientId = 0;
+        $targetRecipientType = strtolower($applicantType);
+        $targetDate = '';
+
         if ($applicantType === 'Admin') {
             if (!$isSuper) {
                 echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Only Super Admin can review Admin requests.']);
                 return;
             }
 
+            // Extract target admin ID and date for direct personal notification
+            $infoStmt = $pdo->prepare("SELECT adminID, requestDate FROM adminRequestOffDay WHERE requestID = ?");
+            $infoStmt->execute([$requestId]);
+            $info = $infoStmt->fetch(PDO::FETCH_ASSOC);
+            if ($info) {
+                $targetRecipientId = (int)$info['adminID'];
+                $targetDate = $info['requestDate'];
+            }
+
             $updateStmt = $pdo->prepare("UPDATE adminRequestOffDay SET status = ?, rejectionReason = ?, reviewedBySuperAdminID = ? WHERE requestID = ?");
             $updateStmt->execute([$newStatus, $reasonToStore, $adminId, $requestId]);
         } else {
+            // Extract target nurse ID and date for direct personal notification
+            $infoStmt = $pdo->prepare("SELECT nurseID, requestDate FROM nurseRequestOffDay WHERE requestID = ?");
+            $infoStmt->execute([$requestId]);
+            $info = $infoStmt->fetch(PDO::FETCH_ASSOC);
+            if ($info) {
+                $targetRecipientId = (int)$info['nurseID'];
+                $targetDate = $info['requestDate'];
+            }
+
             $updateStmt = $pdo->prepare("UPDATE nurseRequestOffDay SET status = ?, rejectionReason = ?, adminID = ? WHERE requestID = ?");
             $updateStmt->execute([$newStatus, $reasonToStore, $adminId, $requestId]);
+        }
+
+        // Trigger Notification: Send ONLY to the applicant themselves
+        if ($targetRecipientId > 0) {
+            $statusText = ($newStatus === 'approved') ? 'Approved' : 'Declined';
+            $notifTitle = "Off-Day Request {$statusText}";
+            $notifMsg = "Your off-day request for {$targetDate} was {$statusText}.";
+            if ($newStatus === 'rejected' && !empty($reasonToStore)) {
+                $notifMsg .= " Reason: {$reasonToStore}";
+            }
+
+            sendSystemNotification(
+                $pdo,
+                $targetRecipientType,
+                $targetRecipientId, // Specific ID so only they see it
+                $notifTitle,
+                $notifMsg,
+                'leave_status'
+            );
         }
 
         echo json_encode([
@@ -632,4 +700,3 @@ function exportApplicationsToExcel($pdo) {
     fclose($output);
     exit;
 }
-?>

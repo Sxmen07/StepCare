@@ -28,6 +28,8 @@ try {
 
         $orderSql = ($sortBy === 'oldest') ? "ASC" : "DESC";
 
+        // Segregated fetch: Broadcast (recipientID = 0) OR Personal (recipientID = currentUserID)
+        // Or notifications authored by this user
         $sql = "SELECT n.*, 
                        CASE 
                          WHEN n.senderType = 'admin' THEN (SELECT CONCAT(firstName, ' ', lastName) FROM admins WHERE adminID = n.senderID)
@@ -41,9 +43,10 @@ try {
                        END AS senderPhoto
                 FROM notifications n
                 WHERE (
-                    FIND_IN_SET(?, n.recipientType) > 0 
-                    OR n.recipientType LIKE CONCAT('%', ?, '%')
-                    OR n.recipientType = 'all'
+                    (
+                        (FIND_IN_SET(?, n.recipientType) > 0 OR n.recipientType LIKE CONCAT('%', ?, '%') OR n.recipientType = 'all')
+                        AND (n.recipientID = 0 OR n.recipientID = ?)
+                    )
                     OR (n.senderType = ? AND n.senderID = ?)
                 )
                 $whereRole
@@ -54,7 +57,7 @@ try {
             throw new Exception("SQL Prepare Error: " . $conn->error);
         }
 
-        $stmt->bind_param("sssi", $currentRole, $currentRole, $currentRole, $currentUserID);
+        $stmt->bind_param("ssisi", $currentRole, $currentRole, $currentUserID, $currentRole, $currentUserID);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -229,12 +232,13 @@ try {
     elseif ($action === 'mark_all_read') {
         $upd = $conn->prepare("UPDATE notifications SET isRead = 1 
                                WHERE (
-                                   FIND_IN_SET(?, recipientType) > 0 
-                                   OR recipientType LIKE CONCAT('%', ?, '%') 
-                                   OR recipientType = 'all'
+                                   (
+                                       (FIND_IN_SET(?, recipientType) > 0 OR recipientType LIKE CONCAT('%', ?, '%') OR recipientType = 'all')
+                                       AND (recipientID = 0 OR recipientID = ?)
+                                   )
                                    OR (senderType = ? AND senderID = ?)
                                )");
-        $upd->bind_param("sssi", $currentRole, $currentRole, $currentRole, $currentUserID);
+        $upd->bind_param("ssisi", $currentRole, $currentRole, $currentUserID, $currentRole, $currentUserID);
         
         if (!$upd->execute()) {
             throw new Exception("Failed to mark all as read: " . $upd->error);
