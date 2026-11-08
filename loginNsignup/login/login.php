@@ -33,13 +33,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $table = 'users'; $idColumn = 'userID'; $photoColumn = 'userPhotoURL';
     }
 
-    $stmt = $conn->prepare("SELECT $idColumn, firstName, $photoColumn, passwordHash, failedAttempt, lockedUntil FROM $table WHERE email = ?");
+    // Include accountStatus in the query (admins/nurses tables can default to 'Active' or handle gracefully if column only exists in users)
+    // For safety across tables, we check if accountStatus exists or select it conditionally. Assuming 'users' has accountStatus:
+    if ($table === 'users') {
+        $stmt = $conn->prepare("SELECT $idColumn, firstName, $photoColumn, passwordHash, failedAttempt, lockedUntil, accountStatus FROM $table WHERE email = ?");
+    } else {
+        $stmt = $conn->prepare("SELECT $idColumn, firstName, $photoColumn, passwordHash, failedAttempt, lockedUntil, 'Active' AS accountStatus FROM $table WHERE email = ?");
+    }
+
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
+
+        // ★ Check if the account has been banned by an admin
+        if (isset($user['accountStatus']) && $user['accountStatus'] === 'Banned') {
+            header("Location: login.html?error=banned");
+            exit();
+        }
 
         // Lock check
         if ($user['lockedUntil'] !== null) {
@@ -68,7 +81,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['userPhotoURL'] = $user[$photoColumn] ?? '';
             $_SESSION['role']         = $portal;
 
-            // ★ 修复：根据角色设置专属的 Session 变量
             if ($portal === 'admin') {
                 $_SESSION['adminID'] = $user['adminID'];
             } elseif ($portal === 'nurse') {

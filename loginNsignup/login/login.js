@@ -411,6 +411,15 @@ document.addEventListener("DOMContentLoaded", function () {
       const mins = parseInt(params.get('time'), 10) || 3;
       showLockoutToast({ minutes: mins });
 
+    // ★ Added Banned Account Handler Here
+    } else if (error === 'banned') {
+      showLogin();
+      showToast({
+        title: 'Account Banned',
+        message: 'Your account has been suspended by an administrator.',
+        tone: 'error',
+      });
+
     } else if (error === 'wrong_email') {
       showLogin();
       showToast({
