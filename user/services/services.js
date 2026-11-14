@@ -488,6 +488,7 @@
 
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
+    /* ---------- BOOKING SUBMIT (SAFE JSON HANDLING) ---------- */
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const picked = form.querySelector('input[name="startTime"]:checked');
@@ -495,7 +496,7 @@
         alert('Please select a time slot.');
         return;
       }
-      
+
       const originalText = submitBtn.innerHTML;
       submitBtn.disabled = true;
       submitBtn.textContent = 'Processing…';
@@ -507,28 +508,48 @@
           body: formData,
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        const data = await res.json();
+
+        const raw = await res.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          console.error('saveBooking.php returned non-JSON:', res.status, raw);
+          alert('The server returned an unexpected response. Please try again.');
+          return;
+        }
 
         if (data.success) {
-          document.getElementById('payAmount').textContent = `RM ${data.price}`;
           window._currentBooking = data;
-          
+          document.getElementById('payAmount').textContent = 'RM ' + data.price;
+
+          // Attach the new appointmentID to the payment form
+          let apptInput = paymentForm.querySelector('input[name="appointmentID"]');
+          if (!apptInput) {
+            apptInput = document.createElement('input');
+            apptInput.type = 'hidden';
+            apptInput.name = 'appointmentID';
+            paymentForm.appendChild(apptInput);
+          }
+          apptInput.value = data.appointmentID;
+
           payFileInput.value = '';
           payPreviewContainer.classList.add('hidden');
           payImagePreview.src = '';
           paySubmitBtn.disabled = true;
 
           slideToPayment();
-
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
         } else {
           alert(data.message || 'Booking failed.');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
+          if (res.status === 409) {
+            // Slot conflict → refresh remaining counts for the selected date
+            dateEl.dispatchEvent(new Event('change'));
+          }
         }
       } catch (err) {
-        alert('Network error occurred.');
+        console.error('saveBooking fetch failed:', err);
+        alert('Could not reach the server. Please check your connection and try again.');
+      } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
       }
@@ -536,7 +557,7 @@
   }
 
   /* ============================================================
-     PAYMENT LOGIC
+     PAYMENT LOGIC (FILE PREVIEW / DND)
      ============================================================ */
   if (payFileInput) {
     payFileInput.addEventListener('change', function(e) {
@@ -585,9 +606,11 @@
     backToBooking.addEventListener('click', () => { slideToBooking(); });
   }
 
+  /* ---------- PAYMENT SUBMIT (SAFE JSON HANDLING) ---------- */
   if (paymentForm) {
-    paymentForm.addEventListener('submit', async function(e) {
+    paymentForm.addEventListener('submit', async function (e) {
       e.preventDefault();
+
       const originalText = paySubmitBtn.textContent;
       paySubmitBtn.disabled = true;
       paySubmitBtn.textContent = 'Verifying…';
@@ -599,25 +622,35 @@
           body: formData,
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        const data = await res.json();
+
+        const raw = await res.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          console.error('processPayment.php returned non-JSON:', res.status, raw);
+          alert('The server returned an unexpected response. Please try again.');
+          return;
+        }
 
         if (data.success) {
           const b = window._currentBooking || {};
           const urlParams = new URLSearchParams({
             booked: 1,
-            ref: '#SC' + String(data.appointmentID).padStart(6, '0'),
+            ref: data.reference || ('#SC' + String(data.appointmentID).padStart(6, '0')),
             date: b.prettyDate || '',
             time: b.prettyTime || '',
             service: b.serviceName || ''
           });
           window.location.href = 'services.php?' + urlParams.toString();
-        } else {
-          alert(data.message || 'Payment upload failed.');
-          paySubmitBtn.disabled = false;
-          paySubmitBtn.textContent = originalText;
+          return;
         }
+
+        alert(data.message || 'Payment upload failed.');
       } catch (err) {
-        alert('Network error occurred.');
+        console.error('processPayment fetch failed:', err);
+        alert('Could not reach the server. Please try again.');
+      } finally {
         paySubmitBtn.disabled = false;
         paySubmitBtn.textContent = originalText;
       }
@@ -631,7 +664,7 @@
     btnConfirmCancel.disabled = true;
     btnConfirmCancel.textContent = 'Wait 5s...';
     btnConfirmCancel.className = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
-    
+
     cancelModal.classList.remove('hidden');
     cancelModal.classList.add('flex');
 
@@ -659,18 +692,32 @@
   if (cancelBookingBtn) { cancelBookingBtn.addEventListener('click', openCancelModal); }
   if (btnKeepAppt) { btnKeepAppt.addEventListener('click', closeCancelModal); }
 
+  /* ---------- CANCEL SUBMIT (NOW SENDS appointmentID) ---------- */
   if (btnConfirmCancel) {
     btnConfirmCancel.addEventListener('click', async () => {
       btnConfirmCancel.disabled = true;
       btnConfirmCancel.textContent = 'Cancelling...';
-      
+
+      const apptId = (window._currentBooking && window._currentBooking.appointmentID) || 0;
+
       try {
-        await fetch('cancelPendingBooking.php', { method: 'POST' });
-      } catch (e) {}
+        await fetch('cancelPendingBooking.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: 'appointmentID=' + encodeURIComponent(apptId)
+        });
+      } catch (err) {
+        console.error('cancel failed:', err);
+      }
+
+      window._currentBooking = null;
 
       closeCancelModal();
       closeModal();
-      
+
       if (bookingContainer) bookingContainer.innerHTML = '';
       payFileInput.value = '';
       payPreviewContainer.classList.add('hidden');

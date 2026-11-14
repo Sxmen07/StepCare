@@ -1,139 +1,141 @@
 <?php
+/* user/services/processPayment.php
+   Attaches payment proof to an existing pending appointment.
+   ALWAYS returns JSON. */
+
 session_start();
-require __DIR__ . '/../../config/db_connect.php';
 
-$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
-if (empty($_SESSION['userID'])) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Session expired.']); exit; }
-    header('Location: ../../loginNsignup/login/login.html');
-    exit;
-}
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Invalid request.']); exit; }
-    header('Location: services.php');
-    exit;
-}
-
-$userID = (int)$_SESSION['userID'];
-
-if (empty($_SESSION['pending_booking'])) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'No pending booking found. Please fill the form again.']); exit; }
-    header('Location: services.php');
+function jsonOut(array $payload, int $status = 200): void
+{
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    echo ($json === false) ? '{"success":false,"message":"Server encoding error."}' : $json;
     exit;
 }
 
-if (!isset($_FILES['paymentProof']) || $_FILES['paymentProof']['error'] !== UPLOAD_ERR_OK) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Please upload a valid payment proof image.']); exit; }
-    header('Location: services.php');
-    exit;
-}
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode(['success' => false, 'message' => 'Server error. Please try again.']);
+    }
+});
 
-$file = $_FILES['paymentProof'];
-$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-$allowed = ['jpg', 'jpeg', 'png'];
-
-if (!in_array($ext, $allowed)) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Only JPG and PNG images are allowed.']); exit; }
-    header('Location: services.php');
-    exit;
-}
-
-if ($file['size'] > 5 * 1024 * 1024) {
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Maximum file size is 5MB.']); exit; }
-    header('Location: services.php');
-    exit;
-}
-
-$booking = $_SESSION['pending_booking'];
-
-// 再次检查库存（防止用户停留在支付页太久被别人抢掉）
-$totalNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
-if ($totalNurses <= 0) $totalNurses = 3;
-
-$stmt = $pdo->prepare(
-    "SELECT COUNT(*) FROM appointments
-     WHERE DATE(startDateTime) = ? AND TIME(startDateTime) = ?
-       AND appointmentStatus IN ('pending','confirmed','in_progress')"
-);
-$stmt->execute([$booking['startDate'], $booking['startTime']]);
-if ((int)$stmt->fetchColumn() >= $totalNurses) {
-    unset($_SESSION['pending_booking']);
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Sorry, that slot was just taken. Please book again.']); exit; }
-    header('Location: services.php');
-    exit;
-}
+$uploadPath = null;
 
 try {
+    require __DIR__ . '/../../config/db_connect.php';
+
+    if (empty($_SESSION['userID'])) {
+        jsonOut(['success' => false, 'message' => 'Session expired. Please log in again.'], 401);
+    }
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        jsonOut(['success' => false, 'message' => 'Invalid request method.'], 405);
+    }
+
+    $userID        = (int)$_SESSION['userID'];
+    $appointmentID = (int)($_POST['appointmentID'] ?? 0);
+
+    if ($appointmentID <= 0) {
+        jsonOut(['success' => false, 'message' => 'Invalid appointment.'], 422);
+    }
+
+    /* -------- validate the upload -------- */
+    if (!isset($_FILES['paymentProof']) || $_FILES['paymentProof']['error'] !== UPLOAD_ERR_OK) {
+        jsonOut(['success' => false, 'message' => 'Please upload a valid payment proof image.'], 422);
+    }
+
+    $file = $_FILES['paymentProof'];
+    $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+        jsonOut(['success' => false, 'message' => 'Only JPG and PNG images are allowed.'], 422);
+    }
+    if ($file['size'] > 5 * 1024 * 1024) {
+        jsonOut(['success' => false, 'message' => 'Maximum file size is 5MB.'], 422);
+    }
+
     $pdo->beginTransaction();
 
-    // 1. 生成真实的 appointment
+    /* -------- verify ownership + state, and lock the rows -------- */
     $stmt = $pdo->prepare(
-        'INSERT INTO appointments
-            (serviceID, userID, patientName, startDateTime, endDateTime,
-             locationAddress, specialInstructions, appointmentStatus)
-         VALUES (?, ?, ?, ?, ?, ?, ?, "pending")'
+        "SELECT a.appointmentID, a.serviceID, a.appointmentStatus,
+                p.paymentID, p.paymentStatus
+         FROM appointments a
+         JOIN payments p ON p.appointmentID = a.appointmentID
+         WHERE a.appointmentID = ? AND a.userID = ?
+         FOR UPDATE"
     );
-    $stmt->execute([
-        $booking['serviceID'], $userID, $booking['patientName'],
-        $booking['startDateTime'], $booking['endDateTime'], $booking['address'],
-        $booking['specialInstructions']
-    ]);
-    $appointmentID = $pdo->lastInsertId();
+    $stmt->execute([$appointmentID, $userID]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 2. 生成 payments 记录
-    $stmt = $pdo->prepare("
-        INSERT INTO payments (appointmentID, totalAmount, paymentStatus)
-        VALUES (?, ?, 'pending_verification')
-    ");
-    $stmt->execute([$appointmentID, $booking['price']]);
-    $paymentID = $pdo->lastInsertId();
+    if (!$row) {
+        $pdo->rollBack();
+        jsonOut(['success' => false, 'message' => 'Appointment not found.'], 404);
+    }
+    if ($row['appointmentStatus'] !== 'pending') {
+        $pdo->rollBack();
+        jsonOut(['success' => false, 'message' => 'This booking can no longer be paid.'], 409);
+    }
+    if (!in_array($row['paymentStatus'], ['pending', 'failed'], true)) {
+        $pdo->rollBack();
+        jsonOut(['success' => false, 'message' => 'Payment proof has already been submitted.'], 409);
+    }
 
-    // 3. 保存图片
+    $paymentID = (int)$row['paymentID'];
+    $serviceID = (int)$row['serviceID'];
+
+    /* -------- store the file -------- */
     $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+        throw new RuntimeException('Could not create the upload directory.');
     }
-    $fileName = 'pay_' . $appointmentID . '_' . time() . '.' . $ext;
+
+    $fileName   = 'pay_' . $appointmentID . '_' . time() . '.' . $ext;
     $uploadPath = $uploadDir . $fileName;
-    $dbPath = '../../uploads/payment_proofs/' . $fileName;
+    $dbPath     = '../../uploads/payment_proofs/' . $fileName;
 
-    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-        // 4. 更新图片路径
-        $stmt = $pdo->prepare("
-            UPDATE payments 
-            SET paymentProofURL = ?, paymentMethod = 'Bank Transfer' 
-            WHERE paymentID = ?
-        ");
-        $stmt->execute([$dbPath, $paymentID]);
-
-        // 5. 记录 Timeline
-        try {
-            $stmt = $pdo->prepare("
-                INSERT INTO trackServiceStatus (appointmentID, serviceID, userID, status, message)
-                VALUES (?, ?, ?, 'pending', 'Payment proof uploaded. Awaiting verification.')
-            ");
-            $stmt->execute([$appointmentID, $booking['serviceID'], $userID]);
-        } catch (Exception $e) {}
-
-        $pdo->commit();
-        
-        // 清除暂存数据
-        unset($_SESSION['pending_booking']);
-
-        if ($isAjax) {
-            echo json_encode(['success' => true, 'appointmentID' => $appointmentID]);
-            exit;
-        }
-        header('Location: services.php');
-        exit;
-    } else {
-        throw new Exception('Could not save the uploaded file.');
+    if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        throw new RuntimeException('Could not save the uploaded file.');
     }
-} catch (Exception $e) {
-    $pdo->rollBack();
-    error_log($e->getMessage());
-    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Database or file error.']); exit; }
-    header('Location: services.php');
-    exit;
+
+    /* -------- update payment -------- */
+    $pdo->prepare(
+        "UPDATE payments
+         SET paymentProofURL = ?, paymentMethod = 'Bank Transfer', paymentStatus = 'pending_verification'
+         WHERE paymentID = ?"
+    )->execute([$dbPath, $paymentID]);
+
+    /* -------- timeline entry (non critical) -------- */
+    try {
+        $pdo->prepare(
+            "INSERT INTO trackServiceStatus (appointmentID, serviceID, userID, status, message)
+             VALUES (?, ?, ?, 'pending', 'Payment proof uploaded. Awaiting verification.')"
+        )->execute([$appointmentID, $serviceID, $userID]);
+    } catch (Throwable $ignore) {}
+
+    $pdo->commit();
+
+    jsonOut([
+        'success'       => true,
+        'appointmentID' => $appointmentID,
+        'reference'     => '#SC' . str_pad((string)$appointmentID, 6, '0', STR_PAD_LEFT)
+    ]);
+
+} catch (Throwable $e) {
+    if (isset($pdo) && $pdo instanceof PDO) {
+        try { if ($pdo->inTransaction()) $pdo->rollBack(); } catch (Throwable $ignore) {}
+    }
+    if ($uploadPath && is_file($uploadPath)) { @unlink($uploadPath); }
+    error_log('[processPayment] ' . $e->getMessage());
+    jsonOut(['success' => false, 'message' => 'Could not upload your payment proof. Please try again.'], 500);
 }
