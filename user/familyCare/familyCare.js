@@ -60,6 +60,12 @@
      STATE
      ============================================================ */
   let activeMemberID = self ? self.userID : null;
+  let isEditMode = false;
+  let selectedConnIDs = new Set();
+
+  // SVG Icons for JS swapping
+  const iconEdit = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>`;
+  const iconDone = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
 
   /* ============================================================
      LEFT: MEMBER LIST
@@ -67,31 +73,59 @@
   const memberList  = document.getElementById('memberList');
   const memberCount = document.getElementById('memberCount');
   const noMembers   = document.getElementById('noMembers');
+  const btnEditMembers = document.getElementById('btnEditMembers');
+  const editToolbar = document.getElementById('editToolbar');
 
   function memberRow(m) {
     const isActive = String(m.userID) === String(activeMemberID);
     const role = m.iAm === 'owner' ? 'Can view you' : 'You can view';
+    const isChecked = selectedConnIDs.has(String(m.connectionID));
+    const isPinned = m.isPinned == 1;
 
     return `
-      <button type="button"
-              data-member-id="${m.userID}"
-              class="member-card w-full flex items-center gap-3 p-3 rounded-xl
-                     text-left transition
-                     ${isActive
-                       ? 'bg-[#3C52C3]/5 ring-2 ring-[#3C52C3]'
-                       : 'ring-1 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300'}">
-        <img src="${esc(m.photoURL)}" alt=""
-             class="w-11 h-11 rounded-full object-cover flex-shrink-0
-                    border-2 ${isActive ? 'border-[#3C52C3]' : 'border-slate-200'}">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-bold text-slate-800 truncate">
-            ${esc(m.firstName)} ${esc(m.lastName)}
-          </p>
-          <p class="text-xs text-slate-500 truncate">
-            ${esc(m.relationship || role)}
-          </p>
-        </div>
-      </button>
+      <div class="relative group">
+        <button type="button"
+                data-member-id="${m.userID}"
+                data-conn-id="${m.connectionID}"
+                class="member-card w-full flex items-center gap-3 p-3 rounded-xl
+                       text-left transition pr-10
+                       ${isActive && !isEditMode
+                         ? 'bg-[#3C52C3]/5 ring-2 ring-[#3C52C3]'
+                         : isChecked && isEditMode
+                           ? 'bg-blue-50 ring-2 ring-blue-500'
+                           : 'ring-1 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300'}">
+          
+          ${isEditMode ? `
+            <div class="flex-shrink-0">
+              <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition
+                          ${isChecked ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 bg-white'}">
+                ${isChecked ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="relative flex-shrink-0">
+            <img src="${esc(m.photoURL)}" alt=""
+                 class="w-11 h-11 rounded-full object-cover border-2 ${isActive && !isEditMode ? 'border-[#3C52C3]' : 'border-slate-200'}">
+            ${isPinned ? `
+              <div class="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm ring-1 ring-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 text-amber-500">
+                  <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-slate-800 truncate">
+              ${esc(m.firstName)} ${esc(m.lastName)}
+            </p>
+            <p class="text-xs text-slate-500 truncate">
+              ${esc(m.relationship || role)}
+            </p>
+          </div>
+        </button>
+      </div>
     `;
   }
 
@@ -104,12 +138,12 @@
               data-member-id="${self.userID}"
               class="member-card w-full flex items-center gap-3 p-3 rounded-xl
                      text-left transition
-                     ${isActive
+                     ${isActive && !isEditMode
                        ? 'bg-[#3C52C3]/5 ring-2 ring-[#3C52C3]'
                        : 'ring-1 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300'}">
         <img src="${esc(self.userPhotoURL || '../../images/default-user.png')}" alt=""
              class="w-11 h-11 rounded-full object-cover flex-shrink-0
-                    border-2 ${isActive ? 'border-[#3C52C3]' : 'border-slate-200'}">
+                    border-2 ${isActive && !isEditMode ? 'border-[#3C52C3]' : 'border-slate-200'}">
         <div class="min-w-0 flex-1">
           <p class="text-sm font-bold text-slate-800 truncate">
             ${esc(self.firstName)} ${esc(self.lastName)}
@@ -124,16 +158,157 @@
     memberList.innerHTML = selfRow() + members.map(memberRow).join('');
     memberCount.textContent = members.length + (self ? 1 : 0);
     noMembers.classList.toggle('hidden', members.length > 0);
-
-    memberList.querySelectorAll('.member-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeMemberID = parseInt(btn.dataset.memberId, 10);
-        renderMembers();
-        updateActiveHeader();
-        renderActivity();
-      });
-    });
   }
+
+  /* ============================================================
+     EDIT MODE TOGGLE
+     ============================================================ */
+  btnEditMembers.addEventListener('click', () => {
+    isEditMode = !isEditMode;
+    selectedConnIDs.clear(); // Reset selections
+    
+    if (isEditMode) {
+      btnEditMembers.innerHTML = iconDone;
+      btnEditMembers.title = 'Done Editing';
+      btnEditMembers.classList.replace('text-[#3C52C3]', 'text-emerald-600');
+      btnEditMembers.classList.replace('hover:text-[#2f41a0]', 'hover:text-emerald-700');
+      btnEditMembers.classList.replace('hover:bg-blue-50', 'hover:bg-emerald-50');
+      editToolbar.classList.remove('hidden');
+    } else {
+      btnEditMembers.innerHTML = iconEdit;
+      btnEditMembers.title = 'Edit Members';
+      btnEditMembers.classList.replace('text-emerald-600', 'text-[#3C52C3]');
+      btnEditMembers.classList.replace('hover:text-emerald-700', 'hover:text-[#2f41a0]');
+      btnEditMembers.classList.replace('hover:bg-emerald-50', 'hover:bg-blue-50');
+      editToolbar.classList.add('hidden');
+    }
+    
+    renderMembers();
+  });
+
+  /* ============================================================
+     MEMBER LIST CLICK HANDLER
+     ============================================================ */
+  memberList.addEventListener('click', (e) => {
+    const card = e.target.closest('.member-card');
+    if (!card) return;
+
+    const userID = card.dataset.memberId;
+    const connID = card.dataset.connId;
+
+    // If in Edit Mode, toggle selection (Only allow selecting actual members, not self)
+    if (isEditMode) {
+      if (!connID) return; // Prevent selecting yourself
+
+      if (selectedConnIDs.has(connID)) {
+        selectedConnIDs.delete(connID);
+      } else {
+        selectedConnIDs.add(connID);
+      }
+      renderMembers();
+      return;
+    }
+
+    // Normal Mode: View activity
+    activeMemberID = parseInt(userID, 10);
+    renderMembers();
+    updateActiveHeader();
+    renderActivity();
+  });
+
+  /* ============================================================
+     PIN & DELETE ACTIONS
+     ============================================================ */
+  document.getElementById('btnPinSelected').addEventListener('click', async () => {
+    if (selectedConnIDs.size === 0) {
+      alert('Please select at least one family member to pin.');
+      return;
+    }
+
+    try {
+      const res = await fetch('familyCareActions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pin', connectionIDs: Array.from(selectedConnIDs) })
+      });
+      const json = await res.json();
+      if (json.ok) {
+        window.location.reload(); // Reload to reflect new sort order
+      } else {
+        alert(json.message || 'Failed to pin.');
+      }
+    } catch (err) {
+      alert('Network error.');
+    }
+  });
+
+  // DELETE FLOW
+  const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+  const btnConfirmDelete   = document.getElementById('btnConfirmDelete');
+  const btnCancelDelete    = document.getElementById('btnCancelDelete');
+  let deleteCountdown      = null;
+
+  document.getElementById('btnDeleteSelected').addEventListener('click', () => {
+    if (selectedConnIDs.size === 0) {
+      alert('Please select at least one family member to delete.');
+      return;
+    }
+
+    btnConfirmDelete.disabled = true;
+    btnConfirmDelete.textContent = 'Wait 5s...';
+    btnConfirmDelete.className = 'w-full rounded-xl bg-slate-300 py-3.5 text-sm font-bold text-slate-500 transition cursor-not-allowed';
+    
+    deleteConfirmModal.classList.remove('hidden');
+    deleteConfirmModal.classList.add('flex');
+
+    let seconds = 5;
+    clearInterval(deleteCountdown);
+    deleteCountdown = setInterval(() => {
+      seconds--;
+      if (seconds > 0) {
+        btnConfirmDelete.textContent = `Wait ${seconds}s...`;
+      } else {
+        clearInterval(deleteCountdown);
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.textContent = 'Yes, Remove Member';
+        btnConfirmDelete.className = 'w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white hover:bg-red-700 active:scale-95 transition';
+      }
+    }, 1000);
+  });
+
+  function closeDeleteModal() {
+    clearInterval(deleteCountdown);
+    deleteConfirmModal.classList.add('hidden');
+    deleteConfirmModal.classList.remove('flex');
+  }
+
+  btnCancelDelete.addEventListener('click', closeDeleteModal);
+
+  btnConfirmDelete.addEventListener('click', async () => {
+    btnConfirmDelete.disabled = true;
+    btnConfirmDelete.textContent = 'Removing...';
+
+    try {
+      const res = await fetch('familyCareActions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', connectionIDs: Array.from(selectedConnIDs) })
+      });
+      const json = await res.json();
+      
+      if (json.ok) {
+        window.location.reload(); // Reload to apply deletions cleanly
+      } else {
+        alert(json.message || 'Failed to delete.');
+        closeDeleteModal();
+        btnConfirmDelete.disabled = false;
+      }
+    } catch (err) {
+      alert('Network error.');
+      closeDeleteModal();
+      btnConfirmDelete.disabled = false;
+    }
+  });
 
   /* ============================================================
      RIGHT: HEADER + FILTERS + LIST
@@ -281,7 +456,7 @@
   });
 
   /* ============================================================
-     APPOINTMENT DETAIL MODAL LOGIC (升级版)
+     APPOINTMENT DETAIL MODAL LOGIC
      ============================================================ */
   const apptDetailModal = document.getElementById('apptDetailModal');
   const closeApptDetail = document.getElementById('closeApptDetail');
@@ -313,7 +488,6 @@
   function openApptDetail(a) {
     const meta = statusMeta(a.appointmentStatus);
 
-    // 1. Fill basic info
     detUserName.textContent  = `${a.userFirstName || ''} ${a.userLastName || ''}`.trim() || '—';
     detUserEmail.textContent = a.userEmail || '—';
     detUserPhone.textContent = a.userPhone || '—';
@@ -340,7 +514,6 @@
       detInstructionsWrapper.classList.add('hidden');
     }
 
-    // 2. Render Timeline
     detTimelineCount.textContent = `${a.timeline.length} update${a.timeline.length === 1 ? '' : 's'}`;
     detTimeline.innerHTML = '';
     
@@ -349,9 +522,9 @@
       a.timeline.forEach((t, i) => {
         const isLast = (i === lastIdx);
         const dotColor = statusMeta(t.status).color;
-        const colorClass = colorMap[dotColor].split(' ')[0].replace('-100', '-500'); // e.g., bg-amber-500
+        const colorClass = colorMap[dotColor].split(' ')[0].replace('-100', '-500');
         
-        const tDate = fmtDate(t.createdAt).replace(/^\w+, /, ''); // "30 Oct 2026"
+        const tDate = fmtDate(t.createdAt).replace(/^\w+, /, '');
         const tTime = fmtTime(t.createdAt);
 
         detTimeline.innerHTML += `
@@ -376,7 +549,6 @@
       });
     }
 
-    // 3. Render Nurse Info
     if (a.nurseID) {
       const nurseImg = a.nursePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.nurseFirstName + ' ' + a.nurseLastName)}&background=3C52C3&color=fff&size=200`;
       const ratingHtml = a.nurseRating ? `<p class="mt-2 text-xs font-semibold text-amber-500">★ ${Number(a.nurseRating).toFixed(1)} rating</p>` : '';
@@ -432,7 +604,6 @@
     document.body.style.overflow = '';
   }
 
-  // 事件委托：点击动态生成的卡片
   activityList.addEventListener('click', (e) => {
     const card = e.target.closest('.appt-detail-trigger');
     if (!card) return;
@@ -514,7 +685,6 @@
     codeLoading.classList.remove('hidden');
     openModal(createModal);
 
-    // If there's already an active code, reuse it (don't burn a new one)
     if (initialCode && initialCode.accessCode) {
       showExistingCode();
       return;
@@ -588,7 +758,6 @@
       const json = await res.json();
       if (!json.ok) throw new Error(json.message || 'Connection failed');
 
-      // Success → reload the page so PHP rebuilds the member list
       window.location.reload();
     } catch (err) {
       enterError.textContent = err.message;
