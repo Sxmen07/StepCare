@@ -25,15 +25,13 @@ $area        = trim($_POST['area'] ?? '');
 $postcode    = trim($_POST['postcode'] ?? '');
 $notes       = trim($_POST['specialInstructions'] ?? '');
 
-$allowedSlots = ['08:00:00','10:00:00','11:00:00','14:00:00','16:00:00'];
-
 $errors = [];
-if ($serviceID <= 0)                             $errors[] = 'Invalid service.';
-if ($startDate === '')                           $errors[] = 'Please choose a date.';
-if (!in_array($startTime, $allowedSlots, true))  $errors[] = 'Please choose a valid time slot.';
-if ($patientName === '')                         $errors[] = 'Recipient name is required.';
-if ($location === '')                            $errors[] = 'Street / building is required.';
-if ($area === '')                                $errors[] = 'Area is required.';
+if ($serviceID <= 0)     $errors[] = 'Invalid service.';
+if ($startDate === '')   $errors[] = 'Please choose a date.';
+if ($startTime === '')   $errors[] = 'Please choose a valid time slot.';
+if ($patientName === '') $errors[] = 'Recipient name is required.';
+if ($location === '')    $errors[] = 'Street / building is required.';
+if ($area === '')        $errors[] = 'Area is required.';
 
 if ($errors) {
     if ($isAjax) { echo json_encode(['success' => false, 'message' => implode(' ', $errors)]); exit; }
@@ -42,7 +40,56 @@ if ($errors) {
     exit;
 }
 
-$startDateTime = date('Y-m-d H:i:s', strtotime("$startDate $startTime"));
+// Normalize startTime format to ensure matching with DB (HH:MM:SS)
+$timeDt = DateTime::createFromFormat('H:i', $startTime) ?: DateTime::createFromFormat('H:i:s', $startTime);
+if (!$timeDt) {
+    if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Invalid time slot format.']); exit; }
+    $_SESSION['booking_flash'] = ['title' => 'Booking failed', 'message' => 'Invalid time slot format.'];
+    header('Location: services.php');
+    exit;
+}
+$normalizedStartTime = $timeDt->format('H:i:s');
+
+// Validate if this time slot is actually configured and available for this service in the database
+$slotCheckStmt = $pdo->prepare("
+    SELECT slotID, maxCapacity FROM serviceTimeSlots 
+    WHERE serviceID = ? AND TIME(STR_TO_DATE(timeSlotLabel, '%h:%i %p')) = ? AND isAvailable = 1
+");
+// Fallback check if timeSlotLabel is stored differently (e.g. 24h format vs 12h format)
+$slotCheckStmt->execute([$serviceID, $normalizedStartTime]);
+$slotRow = $slotCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$slotRow) {
+    // Try alternative query matching string labels directly if needed
+    $slotCheckStmtAlt = $pdo->prepare("
+        SELECT slotID, maxCapacity FROM serviceTimeSlots 
+        WHERE serviceID = ? AND isAvailable = 1
+    ");
+    $slotCheckStmtAlt->execute([$serviceID]);
+    $availableSlots = $slotCheckStmtAlt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $matched = false;
+    $maxCapacity = 5; // default fallback
+    foreach ($availableSlots as $as) {
+        $dbDt = DateTime::createFromFormat('g:i A', $as['timeSlotLabel']) ?: DateTime::createFromFormat('H:i:s', $as['timeSlotLabel']);
+        if ($dbDt && $dbDt->format('H:i:s') === $normalizedStartTime) {
+            $matched = true;
+            $maxCapacity = (int)($as['maxCapacity'] ?? 5);
+            break;
+        }
+    }
+
+    if (!$matched) {
+        if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Please choose a valid time slot.']); exit; }
+        $_SESSION['booking_flash'] = ['title' => 'Booking failed', 'message' => 'Please choose a valid time slot.'];
+        header('Location: services.php');
+        exit;
+    }
+} else {
+    $maxCapacity = (int)($slotRow['maxCapacity'] ?? 5);
+}
+
+$startDateTime = date('Y-m-d H:i:s', strtotime("$startDate $normalizedStartTime"));
 if (strtotime($startDateTime) < time()) {
     if ($isAjax) { echo json_encode(['success' => false, 'message' => 'That time has already passed.']); exit; }
     $_SESSION['booking_flash'] = ['title' => 'Booking failed', 'message' => 'That time has already passed.'];
@@ -58,16 +105,18 @@ if (!$service) {
     header('Location: services.php'); exit; 
 }
 
+// Check slot capacity using the service's configured maxCapacity or total verified nurses
 $totalNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
 if ($totalNurses <= 0) $totalNurses = 3;
+$slotLimit = min($maxCapacity, $totalNurses);
 
 $stmt = $pdo->prepare(
     "SELECT COUNT(*) FROM appointments
-     WHERE DATE(startDateTime) = ? AND TIME(startDateTime) = ?
+     WHERE serviceID = ? AND DATE(startDateTime) = ? AND TIME(startDateTime) = ?
        AND appointmentStatus IN ('pending','confirmed','in_progress')"
 );
-$stmt->execute([$startDate, $startTime]);
-if ((int)$stmt->fetchColumn() >= $totalNurses) {
+$stmt->execute([$serviceID, $startDate, $normalizedStartTime]);
+if ((int)$stmt->fetchColumn() >= $slotLimit) {
     if ($isAjax) { echo json_encode(['success' => false, 'message' => 'Sorry, that slot just filled up. Please pick another.']); exit; }
     $_SESSION['booking_flash'] = ['title' => 'Slot no longer available', 'message' => 'Sorry, that slot just filled up. Please pick another.'];
     header('Location: services.php');
@@ -85,12 +134,11 @@ $endDateTime = date('Y-m-d H:i:s', strtotime("$startDateTime +$durationMin minut
 $prettyDate = date('D, d M Y', strtotime($startDateTime));
 $prettyTime = date('g:i A',     strtotime($startDateTime));
 
-// 验证通过，暂存数据到 Session 中，不再插入数据库
 $_SESSION['pending_booking'] = [
     'serviceID' => $serviceID,
     'patientName' => $patientName,
     'startDate' => $startDate,
-    'startTime' => $startTime,
+    'startTime' => $normalizedStartTime,
     'startDateTime' => $startDateTime,
     'endDateTime' => $endDateTime,
     'address' => $address,
