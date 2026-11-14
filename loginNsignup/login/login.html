@@ -27,6 +27,59 @@
     @media (prefers-reduced-motion: reduce) {
       .toast-in, .toast-out, .toast-bar { animation-duration: .01ms !important; }
     }
+
+    /* ---------- Page-load entrance ---------- */
+    @keyframes enterFromLeft {
+      from { opacity: 0; transform: translateX(-56px) scale(1.12); }
+      to   { opacity: 1; transform: translateX(0)     scale(1);    }
+    }
+    @keyframes enterFromRight {
+      from { opacity: 0; transform: translateX(64px); }
+      to   { opacity: 1; transform: translateX(0);    }
+    }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes riseIn  { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+    .enter-left  { animation: enterFromLeft 1.3s cubic-bezier(.22, 1, .36, 1) backwards; }
+    .enter-right { animation: enterFromRight 1.2s cubic-bezier(.22, 1, .36, 1) .15s backwards; }
+    .enter-fade  { animation: fadeIn .9s ease-out .5s backwards; }
+    .enter-fade-slow { animation: fadeIn 1.1s ease-out backwards; }
+    .enter-rise  { animation: riseIn .9s cubic-bezier(.16, 1, .3, 1) .55s backwards; }
+
+    /* ---------- Signup step transitions ---------- */
+    @keyframes stepOutLeft  { to   { opacity: 0; transform: translateX(-36px); } }
+    @keyframes stepOutRight { to   { opacity: 0; transform: translateX(36px);  } }
+    @keyframes stepInRight  { from { opacity: 0; transform: translateX(36px);  } to { opacity: 1; transform: translateX(0); } }
+    @keyframes stepInLeft   { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes indicatorPop { 0% { transform: scale(.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+    .step-out-left  { animation: stepOutLeft  .22s ease-in forwards; }
+    .step-out-right { animation: stepOutRight .22s ease-in forwards; }
+    .step-in-right  { animation: stepInRight  .45s cubic-bezier(.16, 1, .3, 1) both; }
+    .step-in-left   { animation: stepInLeft   .45s cubic-bezier(.16, 1, .3, 1) both; }
+    .indicator-pop  { animation: indicatorPop .45s cubic-bezier(.34, 1.56, .64, 1); }
+
+    /* ---------- Terms / Privacy pop-up ---------- */
+    @keyframes legalCardIn  { from { opacity: 0; transform: translateY(28px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes legalCardOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(16px) scale(.97); } }
+    @keyframes legalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+    #legalModal.is-open    #legalBackdrop { animation: fadeIn .3s ease-out both; }
+    #legalModal.is-open    #legalCard     { animation: legalCardIn .45s cubic-bezier(.16, 1, .3, 1) both; }
+    #legalModal.is-closing #legalBackdrop { animation: legalFadeOut .22s ease-in forwards; }
+    #legalModal.is-closing #legalCard     { animation: legalCardOut .22s ease-in forwards; }
+    .legal-pane { animation: riseIn .35s cubic-bezier(.16, 1, .3, 1) both; }
+    .legal-body h4 { font-size: .9rem; font-weight: 700; color: #1e293b; margin: 1.25rem 0 .35rem; }
+    .legal-body p, .legal-body li { font-size: .85rem; line-height: 1.6; color: #475569; }
+    .legal-body ul { list-style: disc; padding-left: 1.25rem; margin-top: .25rem; display: grid; gap: .25rem; }
+    .legal-body::-webkit-scrollbar { width: 8px; }
+    .legal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .enter-left, .enter-right, .enter-fade, .enter-fade-slow, .enter-rise,
+      .step-out-left, .step-out-right, .step-in-right, .step-in-left, .indicator-pop,
+      #legalModal .legal-pane, #legalModal #legalCard, #legalModal #legalBackdrop { animation-duration: .01ms !important; animation-delay: 0s !important; }
+    }
   </style>
 </head>
 
@@ -36,9 +89,9 @@
 
     <!-- LEFT SIDE -->
     <div class="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden">
-      <img src="../../images/loginNsignup.jpg" alt="StepCare" class="absolute inset-0 w-full h-full object-cover" />
-      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
-      <div class="relative z-10 flex flex-col justify-end p-12 w-full h-full text-white">
+      <img src="../../images/loginNsignup.jpg" alt="StepCare" class="enter-left absolute inset-0 w-full h-full object-cover" />
+      <div class="enter-fade-slow absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10"></div>
+      <div class="enter-rise relative z-10 flex flex-col justify-end p-12 w-full h-full text-white">
         <div class="flex items-center gap-3 mb-4">
           <img src="../../images/StepCare.png" alt="Logo" class="w-12 h-12 object-contain bg-white/20 p-1 rounded-xl backdrop-blur-sm" />
           <p class="text-4xl font-bold tracking-tight"><span class="text-[#3C52C3]">Step</span><span class="text-[#10B981]">Care</span></p>
@@ -50,7 +103,7 @@
     <!-- RIGHT SIDE -->
     <div class="w-full lg:w-1/2 relative bg-white flex items-center justify-center overflow-y-auto overflow-x-hidden">
       
-      <a id="backHomeBtn" href="../../user/aboutUs/aboutUs.php" class="absolute top-8 left-8 z-20 flex items-center gap-1 text-sm text-slate-500 font-medium hover:text-[#3C52C3] transition">
+      <a id="backHomeBtn" href="../../user/aboutUs/aboutUs.php" class="enter-fade absolute top-8 left-8 z-20 flex items-center gap-1 text-sm text-slate-500 font-medium hover:text-[#3C52C3] transition">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
         Back to Home
       </a>
@@ -60,7 +113,7 @@
         Back to Login
       </button>
       
-      <div class="w-full max-w-lg px-8 relative min-h-full pt-20 pb-10 flex flex-col justify-center">
+      <div class="enter-right w-full max-w-lg px-8 relative min-h-full pt-20 pb-10 flex flex-col justify-center">
 
         <!-- ================================================== -->
         <!-- PANEL 1: LOGIN FORM                                -->
@@ -122,7 +175,7 @@
               <span class="w-7 h-7 rounded-full bg-[#3C52C3] text-white flex items-center justify-center text-xs font-bold transition-colors">1</span>
               <span class="text-xs font-semibold text-[#3C52C3] transition-colors">Your Details</span>
             </div>
-            <div class="flex-1 h-px bg-slate-200"></div>
+            <div class="flex-1 h-0.5 rounded-full bg-slate-200 overflow-hidden"><div id="stepProgress" class="h-full w-0 rounded-full bg-[#10B981] transition-[width] duration-500 ease-out"></div></div>
             <div class="flex items-center gap-2" id="stepIndicator2">
               <span class="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold transition-colors">2</span>
               <span class="text-xs font-semibold text-slate-400 transition-colors">Set Password</span>
@@ -234,7 +287,7 @@
               <div class="flex items-start gap-2">
                 <input type="checkbox" id="terms" name="terms" required class="mt-0.5 w-4 h-4 accent-[#3C52C3] cursor-pointer" />
                 <label for="terms" class="text-xs text-slate-600 leading-tight cursor-pointer">
-                  I agree to the <a href="#" class="text-[#3C52C3] font-semibold hover:underline">Terms of Service</a> and <a href="#" class="text-[#3C52C3] font-semibold hover:underline">Privacy Policy</a>.
+                  I agree to the <a href="#" data-legal="terms" class="text-[#3C52C3] font-semibold hover:underline">Terms of Service</a> and <a href="#" data-legal="privacy" class="text-[#3C52C3] font-semibold hover:underline">Privacy Policy</a>.
                 </label>
               </div>
 
@@ -248,6 +301,150 @@
       </div>
     </div>
   </div>
+
+  <!-- ================================================== -->
+  <!-- TERMS & PRIVACY POP-UP                             -->
+  <!-- ================================================== -->
+  <div id="legalModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div id="legalBackdrop" class="absolute inset-0 bg-slate-900/60"></div>
+
+    <div id="legalCard" class="relative flex w-full max-w-2xl max-h-[88vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 pt-5 pb-4">
+        <div>
+          <h2 id="legalTitle" class="text-xl font-bold text-[#3C52C3]">Terms &amp; Privacy</h2>
+          <p class="mt-0.5 text-xs text-slate-500">StepCare doorstep nursing service &middot; Last updated November 2026</p>
+        </div>
+        <button type="button" id="legalClose" aria-label="Close"
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 px-6 pt-3" role="tablist">
+        <button type="button" role="tab" data-legal-tab="terms"
+                class="legal-tab rounded-full px-4 py-1.5 text-sm font-semibold transition">Terms of Service</button>
+        <button type="button" role="tab" data-legal-tab="privacy"
+                class="legal-tab rounded-full px-4 py-1.5 text-sm font-semibold transition">Privacy Policy</button>
+      </div>
+
+      <!-- Scrollable body -->
+      <div id="legalBody" class="legal-body flex-1 overflow-y-auto px-6 pb-6 pt-2">
+
+        <!-- TERMS -->
+        <div id="legalPane-terms" class="legal-pane">
+          <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+            <p class="!text-amber-900 !text-[13px]"><strong>In an emergency, do not use StepCare.</strong> If someone has chest pain, difficulty breathing, severe bleeding, a suspected stroke or is unconscious, call <strong>999</strong> or go to the nearest hospital immediately.</p>
+          </div>
+
+          <h4>1. About StepCare</h4>
+          <p>StepCare is a platform that connects patients with verified, certified nurses who provide non-emergency nursing care at your home (&ldquo;doorstep nursing&rdquo;), such as wound care, injections, vital-sign monitoring, post-hospital care and elderly care. By creating an account you agree to these Terms.</p>
+
+          <h4>2. Eligibility and your account</h4>
+          <ul>
+            <li>You must be at least 18 years old, or be acting on behalf of a family member you are legally authorised to make care decisions for.</li>
+            <li>The details you give us (name, IC, contact number, address, emergency contact) must be true and kept up to date.</li>
+            <li>You are responsible for keeping your password confidential and for all activity on your account. After 3 failed sign-in attempts your account is temporarily locked for your protection.</li>
+          </ul>
+
+          <h4>3. Scope of nursing care</h4>
+          <p>Our nurses provide care within the limits of their licence and training. A nurse cannot diagnose illness, prescribe medicine or replace your doctor. Where a nurse believes you need a doctor or hospital, they may stop the visit and advise you accordingly. With your consent, vital signs recorded during a visit may be reported to your doctor.</p>
+
+          <h4>4. Booking and scheduling</h4>
+          <ul>
+            <li>A booking is <strong>pending</strong> until a nurse accepts it. You will receive an email confirmation when a nurse is assigned.</li>
+            <li>Time slots are subject to nurse availability. We may need to reschedule a visit because of illness, traffic, weather or an emergency, and will tell you as early as possible.</li>
+            <li>We currently serve selected areas in Penang only. Please make sure your address is within our service area.</li>
+          </ul>
+
+          <h4>5. Cancellations and missed visits</h4>
+          <p>Please cancel or reschedule at least 24 hours before your appointment so that the nurse can be reassigned. Late cancellations or no-shows (nobody available at the address) may be charged in part or in full.</p>
+
+          <h4>6. Your responsibilities during a visit</h4>
+          <ul>
+            <li>Provide accurate information about medical conditions, allergies and current medication.</li>
+            <li>Make sure the patient, or a responsible adult, is at home, and that the home is reasonably safe and accessible. Please secure pets.</li>
+            <li>Treat our nurses with respect. Abuse, harassment, threats or any unsafe behaviour is not tolerated. The nurse may end the visit immediately and we may suspend your account.</li>
+            <li>Do not ask a nurse to perform treatment outside their scope or without a doctor&rsquo;s instruction where one is required.</li>
+          </ul>
+
+          <h4>7. Fees and payment</h4>
+          <p>Prices are shown in Malaysian Ringgit (RM) for each service, and the estimated duration is a guide only. Any extra medical supplies or additional time requested during a visit will be agreed with you before they are charged.</p>
+
+          <h4>8. Reviews</h4>
+          <p>You may rate and review a service after a visit. Reviews must be honest and respectful. We may hide reviews that are abusive, misleading or contain personal information.</p>
+
+          <h4>9. Limitation of liability</h4>
+          <p>We take reasonable care in selecting and verifying nurses, but to the fullest extent permitted by Malaysian law, StepCare is not liable for indirect or consequential loss, or for outcomes that result from inaccurate health information given to us, or from not following medical advice. Nothing in these Terms limits liability that cannot be limited by law.</p>
+
+          <h4>10. Suspension and termination</h4>
+          <p>We may suspend or close an account that breaches these Terms, gives false information or puts nurses or other users at risk. You may stop using StepCare and ask us to close your account at any time.</p>
+
+          <h4>11. Changes and governing law</h4>
+          <p>We may update these Terms from time to time and will post the latest version on our website. Continued use means you accept the updated Terms. These Terms are governed by the laws of Malaysia.</p>
+        </div>
+
+        <!-- PRIVACY -->
+        <div id="legalPane-privacy" class="legal-pane hidden">
+          <p class="mt-3">We understand that health and home-address information is deeply personal. This policy explains what we collect, why, and how we protect it, in line with Malaysia&rsquo;s Personal Data Protection Act 2010 (PDPA).</p>
+
+          <h4>1. Information we collect</h4>
+          <ul>
+            <li><strong>Identity and contact:</strong> name, email, phone number, IC / passport number, gender and date of birth.</li>
+            <li><strong>Home address</strong> and visit instructions, so a nurse can find you.</li>
+            <li><strong>Emergency contact:</strong> the name and phone number of someone we may call if needed.</li>
+            <li><strong>Health information</strong> you or the nurse provide: conditions, allergies, medication, notes and vital signs recorded during visits.</li>
+            <li><strong>Booking and account data:</strong> appointments, reviews, sign-in attempts and technical data such as your device and browser type.</li>
+          </ul>
+
+          <h4>2. Why we use it</h4>
+          <ul>
+            <li>To arrange, carry out and follow up your nursing visits.</li>
+            <li>To send booking confirmations, reminders and service updates by email.</li>
+            <li>To keep patients and nurses safe, prevent fraud and secure your account.</li>
+            <li>To improve our services, using aggregated or de-identified data wherever possible.</li>
+          </ul>
+
+          <h4>3. Sensitive health data and your consent</h4>
+          <p>Health information is &ldquo;sensitive personal data&rdquo; under the PDPA. By accepting these terms you give us your explicit consent to collect and use it for the purposes above. You can withdraw your consent at any time, but we may then be unable to provide nursing services.</p>
+
+          <h4>4. Who we share it with</h4>
+          <ul>
+            <li>The <strong>nurse assigned</strong> to your visit, who sees only the information needed to care for you.</li>
+            <li>Your <strong>doctor</strong>, when vitals or visit reports are sent to them with your consent.</li>
+            <li>Your <strong>emergency contact</strong> or emergency services, if there is a risk to your life or health.</li>
+            <li>Trusted service providers (such as email and hosting) who process data for us under confidentiality obligations.</li>
+            <li>Authorities, where we are required to by law.</li>
+          </ul>
+          <p class="mt-2">We <strong>do not sell</strong> your personal data.</p>
+
+          <h4>5. How we protect it</h4>
+          <p>Passwords are stored in hashed form and never in plain text. Access to patient records is restricted to authorised staff and the nurse on your visit, and accounts are locked after repeated failed sign-ins. No system is perfectly secure, so please use a strong, unique password and tell us straight away if you suspect misuse.</p>
+
+          <h4>6. How long we keep it</h4>
+          <p>We keep your information for as long as your account is active and for the period required for healthcare record-keeping and legal obligations. After that it is deleted or anonymised.</p>
+
+          <h4>7. Your rights</h4>
+          <p>You may ask to see the personal data we hold about you, to correct it, to limit how it is used, or to delete your account, by contacting us below. We will respond within a reasonable time as required by the PDPA.</p>
+
+          <h4>8. Contact us</h4>
+          <p>Questions about this policy or your data? Email us at <strong>support@stepcare.com</strong>.</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
+        <button type="button" id="legalDecline"
+                class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Close</button>
+        <button type="button" id="legalAccept"
+                class="rounded-lg bg-[#3C52C3] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#007FFF] active:scale-95">I have read and agree</button>
+      </div>
+    </div>
+  </div>
+
 
   <script src="login.js"></script>
 </body>

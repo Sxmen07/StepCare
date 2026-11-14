@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginToastArea  = document.getElementById('loginToastArea');
   const signupToastArea = document.getElementById('signupToastArea');
 
+  let stepBusy = false;
+  const STEP_ANIMS = ['step-out-left', 'step-out-right', 'step-in-left', 'step-in-right'];
+
   /* Which panel is currently visible — determines where toasts land */
   let activePanel = 'login';
 
@@ -187,7 +190,10 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
      2. PANEL SWITCHING (LOGIN <-> SIGNUP)
      ============================================================ */
+  const stepProgress = document.getElementById('stepProgress');
+
   function updateIndicators(activeStep) {
+    if (stepProgress) stepProgress.style.width = activeStep === 2 ? '100%' : '0%';
     if (activeStep === 1) {
       ind1.querySelector('span:first-child').className = 'w-7 h-7 rounded-full bg-[#3C52C3] text-white flex items-center justify-center text-xs font-bold transition-colors';
       ind1.querySelector('span:last-child').className  = 'text-xs font-semibold text-[#3C52C3] transition-colors';
@@ -199,15 +205,21 @@ document.addEventListener("DOMContentLoaded", function () {
       ind2.querySelector('span:first-child').className = 'w-7 h-7 rounded-full bg-[#3C52C3] text-white flex items-center justify-center text-xs font-bold transition-colors';
       ind2.querySelector('span:last-child').className  = 'text-xs font-semibold text-[#3C52C3] transition-colors';
     }
+    const active = (activeStep === 1 ? ind1 : ind2).querySelector('span:first-child');
+    active.classList.add('indicator-pop');
   }
 
   function showSignup() {
     activePanel = 'signup';
     clearArea(loginToastArea);
 
+    step2.classList.remove(...STEP_ANIMS);
+    step1.classList.remove(...STEP_ANIMS);
+    stepBusy = false;
     step2.classList.add('hidden');
     step2.classList.remove('flex');
     step1.classList.remove('hidden');
+    step1.classList.add('flex');
     updateIndicators(1);
 
     backHomeBtn.classList.add('hidden');
@@ -266,6 +278,30 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
      4. SIGNUP STEP NAVIGATION
      ============================================================ */
+  /** Slide the current step out, then slide the next one in. dir: 'next' | 'back' */
+  function swapStep(fromEl, toEl, dir) {
+    if (stepBusy) return;
+    stepBusy = true;
+
+    fromEl.classList.add(dir === 'next' ? 'step-out-left' : 'step-out-right');
+
+    setTimeout(() => {
+      fromEl.classList.remove(...STEP_ANIMS);
+      fromEl.classList.add('hidden');
+      fromEl.classList.remove('flex');
+
+      toEl.classList.remove('hidden');
+      toEl.classList.add('flex', dir === 'next' ? 'step-in-right' : 'step-in-left');
+
+      const done = () => {
+        toEl.classList.remove(...STEP_ANIMS);
+        stepBusy = false;
+      };
+      toEl.addEventListener('animationend', done, { once: true });
+      setTimeout(done, 700); // safety net
+    }, 220);
+  }
+
   toStep2.addEventListener('click', () => {
     const firstName      = document.getElementById('firstName').value.trim();
     const lastName       = document.getElementById('lastName').value.trim();
@@ -327,17 +363,15 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    step1.classList.add('hidden');
-    step2.classList.remove('hidden');
-    step2.classList.add('flex');
+    if (stepBusy) return;
     updateIndicators(2);
+    swapStep(step1, step2, 'next');
   });
 
   toStep1.addEventListener('click', () => {
-    step2.classList.add('hidden');
-    step2.classList.remove('flex');
-    step1.classList.remove('hidden');
+    if (stepBusy) return;
     updateIndicators(1);
+    swapStep(step2, step1, 'back');
   });
 
   /* ============================================================
@@ -393,6 +427,96 @@ document.addEventListener("DOMContentLoaded", function () {
       showToast({ title: 'Terms required', message: 'You must agree to the Terms and Conditions.', tone: 'error' });
       return;
     }
+  });
+
+
+  /* ============================================================
+     6b. TERMS / PRIVACY POP-UP
+     ============================================================ */
+  const legalModal  = document.getElementById('legalModal');
+  const legalCard   = document.getElementById('legalCard');
+  const legalBody   = document.getElementById('legalBody');
+  const legalTabs   = document.querySelectorAll('[data-legal-tab]');
+  const legalPanes  = {
+    terms:   document.getElementById('legalPane-terms'),
+    privacy: document.getElementById('legalPane-privacy'),
+  };
+  const termsBox    = document.getElementById('terms');
+  let legalOpen     = false;
+  let legalClosing  = false;
+  let legalReturnFocus = null;
+
+  function setLegalTab(name, animate = true) {
+    legalTabs.forEach(tab => {
+      const on = tab.dataset.legalTab === name;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.classList.toggle('bg-[#3C52C3]', on);
+      tab.classList.toggle('text-white', on);
+      tab.classList.toggle('shadow-md', on);
+      tab.classList.toggle('bg-slate-100', !on);
+      tab.classList.toggle('text-slate-600', !on);
+      tab.classList.toggle('hover:bg-slate-200', !on);
+    });
+    Object.entries(legalPanes).forEach(([key, pane]) => {
+      const show = key === name;
+      pane.classList.toggle('hidden', !show);
+      if (show && animate) {
+        pane.style.animation = 'none';
+        void pane.offsetHeight;      // restart the rise-in animation
+        pane.style.animation = '';
+      }
+    });
+    legalBody.scrollTop = 0;
+  }
+
+  function openLegal(tab, trigger) {
+    if (legalOpen) return;
+    legalOpen = true;
+    legalReturnFocus = trigger || null;
+    setLegalTab(tab, false);
+
+    legalModal.classList.remove('hidden', 'is-closing');
+    legalModal.classList.add('flex', 'is-open');
+    legalBody.scrollTop = 0;
+    document.getElementById('legalClose').focus({ preventScroll: true });
+  }
+
+  function closeLegal() {
+    if (!legalOpen || legalClosing) return;
+    legalClosing = true;
+    legalModal.classList.remove('is-open');
+    legalModal.classList.add('is-closing');
+
+    setTimeout(() => {
+      legalModal.classList.add('hidden');
+      legalModal.classList.remove('flex', 'is-closing');
+      legalOpen = false;
+      legalClosing = false;
+      if (legalReturnFocus) legalReturnFocus.focus({ preventScroll: true });
+    }, 230);
+  }
+
+  document.querySelectorAll('[data-legal]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();           // the link sits inside the checkbox <label>
+      openLegal(link.dataset.legal, link);
+    });
+  });
+
+  legalTabs.forEach(tab => tab.addEventListener('click', () => setLegalTab(tab.dataset.legalTab)));
+
+  document.getElementById('legalClose').addEventListener('click', closeLegal);
+  document.getElementById('legalDecline').addEventListener('click', closeLegal);
+  document.getElementById('legalBackdrop').addEventListener('click', closeLegal);
+
+  document.getElementById('legalAccept').addEventListener('click', () => {
+    termsBox.checked = true;
+    closeLegal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && legalOpen) closeLegal();
   });
 
   /* ============================================================
