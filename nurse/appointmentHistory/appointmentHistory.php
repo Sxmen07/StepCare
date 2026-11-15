@@ -36,10 +36,23 @@ $stats = [
     'earnings' => 0
 ];
 
+$currentMonth = date('m');
+$currentYear = date('Y');
+
 foreach ($history as $appt) {
     if (strtolower($appt['appointmentStatus']) === 'completed') {
         $stats['completed']++;
-        $stats['earnings'] += (float)$appt['price'];
+        
+        // Calculate THIS MONTH earnings only
+        $apptMonth = date('m', strtotime($appt['startDateTime']));
+        $apptYear = date('Y', strtotime($appt['startDateTime']));
+        
+        if ($apptMonth == $currentMonth && $apptYear == $currentYear) {
+            // Nurse gets 85% of the service price (System takes 15% service charge)
+            $price = (float)$appt['price'];
+            $nurseEarning = $price * 0.85; 
+            $stats['earnings'] += $nurseEarning;
+        }
     } else {
         $stats['cancelled']++;
     }
