@@ -37,7 +37,7 @@ $stats = [
 ];
 
 foreach ($history as $appt) {
-    if ($appt['appointmentStatus'] === 'completed') {
+    if (strtolower($appt['appointmentStatus']) === 'completed') {
         $stats['completed']++;
         $stats['earnings'] += (float)$appt['price'];
     } else {
@@ -46,8 +46,11 @@ foreach ($history as $appt) {
 }
 
 // Prepare JSON for JS
-$historyJson = json_encode($history, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$statsJson = json_encode($stats);
+$historyJson = json_encode($history, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);
+$statsJson = json_encode($stats, JSON_INVALID_UTF8_SUBSTITUTE);
+
+if ($historyJson === false) $historyJson = '[]';
+if ($statsJson === false) $statsJson = '{"completed":0,"cancelled":0,"earnings":0}';
 
 include __DIR__ . '/appointmentHistory.html';
 ?>

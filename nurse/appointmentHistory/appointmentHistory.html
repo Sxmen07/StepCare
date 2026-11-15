@@ -10,13 +10,14 @@
   
   <link rel="stylesheet" href="appointmentHistory.css">
 </head>
-<body class="bg-[#fafafa] min-h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
+<!-- CHANGED: min-h-screen to h-screen -->
+<body class="bg-[#fafafa] h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
 
   <!-- Sidebar Include -->
   <?php include __DIR__ . '/../../components/sidebar-nurse.html'; ?>
 
-  <!-- Main Layout Area -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden">
+  <!-- Main Layout Area (ADDED: min-w-0 to fix sidebar squishing) -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
     
     <!-- Topbar Include -->
     <?php include __DIR__ . '/../../components/topbar.html'; ?>
@@ -71,10 +72,10 @@
     </main>
   </div>
 
-  <!-- Pass PHP data to JS -->
+  <!-- Pass PHP data to JS with safe fallbacks -->
   <script>
-    window.historyData = <?= $historyJson ?>;
-    window.statsData = <?= $statsJson ?>;
+    window.historyData = <?= $historyJson ?: '[]' ?>;
+    window.statsData = <?= $statsJson ?: '{"completed":0,"cancelled":0,"earnings":0}' ?>;
   </script>
   
   <script src="appointmentHistory.js"></script>

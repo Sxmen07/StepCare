@@ -87,9 +87,9 @@ $stmt->execute([$nurseID, $currentID]);
 $upcomingSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Prepare JSON for JS
-$statsJson = json_encode($stats);
-$currentJson = json_encode($currentService ?: null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$upcomingJson = json_encode($upcomingSchedules, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$statsJson = json_encode($stats, JSON_INVALID_UTF8_SUBSTITUTE);
+$currentJson = json_encode($currentService ?: null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);
+$upcomingJson = json_encode($upcomingSchedules, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);
 
 include __DIR__ . '/appointment.html';
 ?>
