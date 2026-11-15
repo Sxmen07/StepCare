@@ -3,7 +3,6 @@
 session_start();
 require __DIR__ . '/../../config/db_connect.php';
 
-// 严格检查护士登录
 if (empty($_SESSION['nurseID'])) {
     header('Location: /StepCare/loginNsignup/login/login.html');
     exit;
@@ -12,7 +11,7 @@ if (empty($_SESSION['nurseID'])) {
 $nurseID = (int)$_SESSION['nurseID'];
 
 // ==========================================
-// 1. Fetch History & Stats
+// 1. Fetch History List (For the page list)
 // ==========================================
 $stmt = $pdo->prepare("
     SELECT 
@@ -29,34 +28,36 @@ $stmt = $pdo->prepare("
 $stmt->execute([$nurseID]);
 $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate Stats
+// ==========================================
+// 2. Calculate Stats
+// ==========================================
 $stats = [
     'completed' => 0,
     'cancelled' => 0,
     'earnings' => 0
 ];
 
-$currentMonth = date('m');
-$currentYear = date('Y');
-
+// Count completed & cancelled from the fetched list
 foreach ($history as $appt) {
     if (strtolower($appt['appointmentStatus']) === 'completed') {
         $stats['completed']++;
-        
-        // Calculate THIS MONTH earnings only
-        $apptMonth = date('m', strtotime($appt['startDateTime']));
-        $apptYear = date('Y', strtotime($appt['startDateTime']));
-        
-        if ($apptMonth == $currentMonth && $apptYear == $currentYear) {
-            // Nurse gets 85% of the service price (System takes 15% service charge)
-            $price = (float)$appt['price'];
-            $nurseEarning = $price * 0.85; 
-            $stats['earnings'] += $nurseEarning;
-        }
     } else {
         $stats['cancelled']++;
     }
 }
+
+// Calculate THIS MONTH earnings ONLY using SQL to prevent PHP timezone mismatch
+$earnStmt = $pdo->prepare("
+    SELECT COALESCE(SUM(s.price * 0.85), 0) AS month_earnings
+    FROM appointments a
+    JOIN services s ON a.serviceID = s.serviceID
+    WHERE a.nurseID = ? 
+      AND a.appointmentStatus = 'completed'
+      AND MONTH(a.startDateTime) = MONTH(CURRENT_DATE())
+      AND YEAR(a.startDateTime) = YEAR(CURRENT_DATE())
+");
+$earnStmt->execute([$nurseID]);
+$stats['earnings'] = (float)$earnStmt->fetchColumn();
 
 // Prepare JSON for JS
 $historyJson = json_encode($history, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);

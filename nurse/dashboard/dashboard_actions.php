@@ -48,25 +48,26 @@ function fetchDashboardData($pdo, $nurseId) {
             if (empty($nurseName)) $nurseName = 'Nurse';
         }
 
-        // 2. Fetch Revenue & Basic Stats (Robust queries with fallbacks)
+        // 2. Fetch Revenue & Basic Stats
         $totalRevenue = 0.00;
         $monthlyRevenue = 0.00;
         $completedCount = 0;
 
         try {
-            // Count completed cares
-            $compStmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE nurseID = ? AND status = 'completed'");
+            // Count completed cares (FIXED: status -> appointmentStatus)
+            $compStmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE nurseID = ? AND appointmentStatus = 'completed'");
             $compStmt->execute([$nurseId]);
             $completedCount = (int)$compStmt->fetchColumn();
 
-            // Try calculating payments if table exists
+            // Calculate payments (FIXED: status -> appointmentStatus, amount -> totalAmount)
+            // Added 15% deduction (* 0.85) to match the history page logic
             $revStmt = $pdo->prepare("
                 SELECT 
-                    COALESCE(SUM(p.amount), 0) AS totalRev,
-                    COALESCE(SUM(CASE WHEN DATE(p.paymentDate) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN p.amount ELSE 0 END), 0) AS monthRev
+                    COALESCE(SUM(p.totalAmount * 0.85), 0) AS totalRev,
+                    COALESCE(SUM(CASE WHEN DATE(p.paymentDate) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN p.totalAmount * 0.85 ELSE 0 END), 0) AS monthRev
                 FROM payments p
                 INNER JOIN appointments a ON p.appointmentID = a.appointmentID
-                WHERE a.nurseID = ? AND a.status = 'completed'
+                WHERE a.nurseID = ? AND a.appointmentStatus = 'completed'
             ");
             $revStmt->execute([$nurseId]);
             $revData = $revStmt->fetch(PDO::FETCH_ASSOC);
@@ -75,20 +76,18 @@ function fetchDashboardData($pdo, $nurseId) {
                 $monthlyRevenue = (float)$revData['monthRev'];
             }
         } catch (Exception $ex) {
-            // If payments table doesn't have exact fields, default cleanly to 0.00
             $totalRevenue = 0.00;
             $monthlyRevenue = 0.00;
         }
 
-        // 3. Fetch Today's Appointments
+        // 3. Fetch Today's Appointments (FIXED: appointmentDate -> DATE(startDateTime), status -> appointmentStatus)
         $todayApps = [];
         try {
             $appStmt = $pdo->prepare("
                 SELECT 
                     a.appointmentID,
-                    a.appointmentDate,
-                    a.appointmentTime,
-                    a.status,
+                    a.startDateTime,
+                    a.appointmentStatus,
                     COALESCE(s.price, 0) AS price,
                     u.firstName AS userFirstName,
                     u.lastName AS userLastName,
@@ -96,8 +95,8 @@ function fetchDashboardData($pdo, $nurseId) {
                 FROM appointments a
                 LEFT JOIN users u ON a.userID = u.userID
                 LEFT JOIN services s ON a.serviceID = s.serviceID
-                WHERE a.nurseID = ? AND DATE(a.appointmentDate) = ?
-                ORDER BY a.appointmentTime ASC
+                WHERE a.nurseID = ? AND DATE(a.startDateTime) = ?
+                ORDER BY a.startDateTime ASC
             ");
             $appStmt->execute([$nurseId, $today]);
 
@@ -106,9 +105,9 @@ function fetchDashboardData($pdo, $nurseId) {
                     'id' => 'APT-' . str_pad($row['appointmentID'], 4, '0', STR_PAD_LEFT),
                     'patient' => trim(($row['userFirstName'] ?? '') . ' ' . ($row['userLastName'] ?? 'Client')),
                     'service' => $row['serviceName'] ?? 'Nursing Care',
-                    'time' => date('h:i A', strtotime($row['appointmentTime'])),
+                    'time' => date('h:i A', strtotime($row['startDateTime'])),
                     'price' => 'RM ' . number_format((float)$row['price'], 2),
-                    'status' => ucfirst(strtolower($row['status'] ?? 'Pending'))
+                    'status' => ucfirst(str_replace('_', ' ', strtolower($row['appointmentStatus'] ?? 'Pending')))
                 ];
             }
         } catch (Exception $e) {
