@@ -3,6 +3,7 @@
 session_start();
 require __DIR__ . '/../../config/db_connect.php';
 
+// 严格检查护士登录
 if (empty($_SESSION['nurseID'])) {
     header('Location: /StepCare/loginNsignup/login/login.html');
     exit;
@@ -46,17 +47,23 @@ foreach ($history as $appt) {
     }
 }
 
-// Calculate THIS MONTH earnings ONLY using SQL to prevent PHP timezone mismatch
+// ==========================================
+// 3. Calculate THIS MONTH earnings ONLY
+// ==========================================
+// Get the exact first and last second of the current month
+$startOfMonth = date('Y-m-01 00:00:00'); 
+$endOfMonth   = date('Y-m-t 23:59:59');
+
 $earnStmt = $pdo->prepare("
     SELECT COALESCE(SUM(s.price * 0.85), 0) AS month_earnings
     FROM appointments a
     JOIN services s ON a.serviceID = s.serviceID
     WHERE a.nurseID = ? 
       AND a.appointmentStatus = 'completed'
-      AND MONTH(a.startDateTime) = MONTH(CURRENT_DATE())
-      AND YEAR(a.startDateTime) = YEAR(CURRENT_DATE())
+      AND a.startDateTime >= ?
+      AND a.startDateTime <= ?
 ");
-$earnStmt->execute([$nurseID]);
+$earnStmt->execute([$nurseID, $startOfMonth, $endOfMonth]);
 $stats['earnings'] = (float)$earnStmt->fetchColumn();
 
 // Prepare JSON for JS

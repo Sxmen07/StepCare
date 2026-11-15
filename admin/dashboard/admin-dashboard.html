@@ -222,7 +222,7 @@
           if (!data.success) return;
 
           // Admin Name Display
-          const adminName = localStorage.getItem('stepcare_username') || data.admin.name || "Admin";
+          const adminName = data.admin.name || "Admin";
           document.getElementById('admin-display-name').textContent = adminName;
 
           // Metric Cards

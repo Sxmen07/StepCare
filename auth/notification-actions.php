@@ -1,16 +1,129 @@
 <?php
-header('Content-Type: application/json; charset=UTF-8');
+// English comments only
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+
 require_once __DIR__ . '/../config/db_connect.php';
 
+// Retrieve action and authentication context
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
-// Retrieve current authentication context (fallback to admin 1)
-$currentRole   = $_GET['role'] ?? $_POST['role'] ?? 'admin';
-$currentUserID = (int)($_GET['user_id'] ?? $_POST['user_id'] ?? 1);
+$currentRole = strtolower(trim((string)($_GET['role'] ?? $_POST['role'] ?? $_SESSION['role'] ?? 'admin')));
+
+// Resolve the acting user id — role-aware (admins table vs nurses table)
+if ($currentRole === 'nurse') {
+    $currentUserID = (int)(
+        $_GET['user_id'] ?? $_POST['user_id']
+        ?? $_SESSION['nurseID'] ?? $_SESSION['nurse_id'] ?? $_SESSION['user_id'] ?? 1
+    );
+} else {
+    $currentUserID = (int)(
+        $_GET['user_id'] ?? $_POST['user_id']
+        ?? $_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1
+    );
+}
 
 $response = ['success' => false, 'message' => ''];
 
 try {
+    if (!isset($conn) || !($conn instanceof mysqli)) {
+        throw new Exception("Database connection error: \$conn is not initialized properly.");
+    }
+
+    // -------------------------------------------------------------
+    // 0. Current user profile — consumed by topbar.html
+    //    URL: get_current_user.php?role=admin|nurse
+    //    Returns: { status:"success", user:{ fullName, photoURL,
+    //               profileLink, settingsLink } }
+    // -------------------------------------------------------------
+    if ($action === '' || $action === 'get_profile' || $action === 'current_user') {
+
+        if ($currentRole === 'nurse') {
+            $nurseId = (int)($_SESSION['nurseID'] ?? $_SESSION['nurse_id'] ?? $_SESSION['user_id'] ?? 0);
+            if ($nurseId <= 0) {
+                http_response_code(401);
+                $response['message'] = 'Not authenticated as nurse.';
+                echo json_encode($response);
+                exit;
+            }
+
+            $stmt = $conn->prepare(
+                "SELECT nurseID AS id, firstName, lastName, nursePhotoURL AS photoURL
+                 FROM nurses WHERE nurseID = ? LIMIT 1"
+            );
+            if (!$stmt) throw new Exception("SQL Prepare Error: " . $conn->error);
+            $stmt->bind_param('i', $nurseId);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+
+            if (!$row) {
+                http_response_code(401);
+                $response['message'] = 'Nurse record not found.';
+                echo json_encode($response);
+                exit;
+            }
+
+            $fullName = trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? ''));
+            if ($fullName === '') $fullName = 'Nurse';
+
+            $response['status']  = 'success';
+            $response['success'] = true;
+            $response['user'] = [
+                'id'           => (int)$row['id'],
+                'fullName'     => $fullName,
+                'photoURL'     => $row['photoURL'],
+                'profileLink'  => '/StepCare/nurse/profile/nurse-profile.html',
+                // Adjust this path if your nurse settings page lives elsewhere
+                'settingsLink' => '/StepCare/nurse/settings/nurse-settings.html',
+            ];
+            echo json_encode($response);
+            exit;
+        }
+
+        // Default = admin
+        $adminId = (int)($_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 0);
+        if ($adminId <= 0) {
+            http_response_code(401);
+            $response['message'] = 'Not authenticated as admin.';
+            echo json_encode($response);
+            exit;
+        }
+
+        $stmt = $conn->prepare(
+            "SELECT adminID AS id, firstName, lastName, adminPhotoURL AS photoURL
+             FROM admins WHERE adminID = ? LIMIT 1"
+        );
+        if (!$stmt) throw new Exception("SQL Prepare Error: " . $conn->error);
+        $stmt->bind_param('i', $adminId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        if (!$row) {
+            http_response_code(401);
+            $response['message'] = 'Admin record not found.';
+            echo json_encode($response);
+            exit;
+        }
+
+        $fullName = trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? ''));
+        if ($fullName === '') $fullName = 'Administrator';
+
+        $response['status']  = 'success';
+        $response['success'] = true;
+        $response['user'] = [
+            'id'           => (int)$row['id'],
+            'fullName'     => $fullName,
+            'photoURL'     => $row['photoURL'],
+            'profileLink'  => '/StepCare/admin/profile/admin-profile.html',
+            'settingsLink' => '/StepCare/admin/settings/admin-settings.html',
+        ];
+        echo json_encode($response);
+        exit;
+    }
+
     // -------------------------------------------------------------
     // 1. Fetch Notification Summary or Full Stream
     // -------------------------------------------------------------
@@ -19,17 +132,18 @@ try {
         $sortBy     = $_GET['sort_by'] ?? 'newest';
 
         $limitClause = ($action === 'fetch_summary') ? "LIMIT 10" : "";
+        $orderSql    = ($sortBy === 'oldest') ? "ASC" : "DESC";
 
         $whereRole = "";
+        $params = [$currentRole, $currentRole, $currentUserID, $currentRole, $currentUserID];
+        $types  = "ssisi";
+
         if ($filterRole !== 'all') {
-            $escapedRole = $conn->real_escape_string($filterRole);
-            $whereRole = "AND n.senderType = '{$escapedRole}'";
+            $whereRole = "AND n.senderType = ?";
+            $params[] = $filterRole;
+            $types  .= "s";
         }
 
-        $orderSql = ($sortBy === 'oldest') ? "ASC" : "DESC";
-
-        // Segregated fetch: Broadcast (recipientID = 0) OR Personal (recipientID = currentUserID)
-        // Or notifications authored by this user
         $sql = "SELECT n.*, 
                        CASE 
                          WHEN n.senderType = 'admin' THEN (SELECT CONCAT(firstName, ' ', lastName) FROM admins WHERE adminID = n.senderID)
@@ -57,7 +171,7 @@ try {
             throw new Exception("SQL Prepare Error: " . $conn->error);
         }
 
-        $stmt->bind_param("ssisi", $currentRole, $currentRole, $currentUserID, $currentRole, $currentUserID);
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -68,7 +182,6 @@ try {
             $row['can_manage'] = ($row['senderType'] === $currentRole && (int)$row['senderID'] === $currentUserID);
             $row['recipients_list'] = array_filter(array_map('trim', explode(',', $row['recipientType'])));
             
-            // Count unread directly from the dataset
             if ((int)$row['isRead'] === 0) {
                 $unreadCount++;
             }
@@ -124,7 +237,9 @@ try {
     // 3. Dispatch Notification (Create)
     // -------------------------------------------------------------
     elseif ($action === 'send') {
-        if ($currentRole === 'user') throw new Exception("Standard users cannot broadcast notifications.");
+        if ($currentRole !== 'admin' && $currentRole !== 'nurse') {
+            throw new Exception("Unauthorized: Only admins and nurses can dispatch notifications.");
+        }
 
         $rawTargets = $_POST['recipientTypes'] ?? [];
         if (is_string($rawTargets)) {
@@ -256,3 +371,4 @@ try {
 
 echo json_encode($response);
 exit;
+?>
