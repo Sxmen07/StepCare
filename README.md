@@ -20,23 +20,16 @@ Bringing loved ones to hospitals or care centers can be challenging for busy fam
 
 ## 👥 Group Contributions & Module Breakdown
 
-### 🛠️ Jonsen Choong Zhe Yi — User Platform & Core Workflows
+### Jonsen Choong Zhe Yi — User Platform & Core Workflows
 * **Patient/User:** Packages Browse & Filtering, Appointment Booking System, Integrated Online Payment, Notifications & Alerts.
 * **Nurse:** Booking Requests Management.
 * **Admin:** Care Packages Management, Dispute, Refund & Emergency Handling.
-* **Cross-Role:** AI Chat Guidance *(Optional/Experimental)*.
 
-### 🩺 Dohnaven — Nurse Platform & Operations
-* **Patient/User:** View Visit Reports & Updates.
-* **Nurse:** Schedule & Availability Management, Visit Check-in/out, Care Documentation.
-* **Admin:** Automated Backup Nurse Allocation System.
-* **Cross-Role:** AI Chat Guidance *(Optional/Experimental)*.
 
-### 📊 Ooi Yun Pei — Admin Platform & User Management
+### Ooi Yun Pei — Admin Platform & User Management
 * **Patient/User:** Profile Management, Review & Rating System.
 * **Nurse:** Profile & Qualification Submissions Management.
 * **Admin:** Account Profile Management, System Statistics & Review Dashboard.
-* **Cross-Role:** AI Chat Guidance *(Optional/Experimental)*.
 
 ---
 
