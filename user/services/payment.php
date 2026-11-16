@@ -93,10 +93,33 @@ $ref = '#SC' . str_pad((string)$appt['appointmentID'], 6, '0', STR_PAD_LEFT);
       <!-- RIGHT: UPLOAD FORM -->
       <div class="md:w-3/5 p-8 md:p-10 flex flex-col justify-center">
         <h1 class="text-2xl font-extrabold text-slate-800 mb-2">Payment Verification</h1>
-        <p class="text-sm text-slate-500 mb-8">
-          Please transfer <strong class="text-slate-800">RM<?= number_format((float)$appt['price'], 2) ?></strong> to:<br>
-          <span class="inline-block mt-2 rounded bg-slate-100 px-3 py-1 font-mono text-slate-700">Maybank 5140 1234 5678 (StepCare)</span>
-        </p>
+        <p class="text-sm text-slate-500 mb-6">Review the amount and transfer to our bank account below.</p>
+
+        <!-- Minimalist Price & Bank Info Section (No Card) -->
+        <div class="mb-6 pb-6 border-b border-slate-200">
+          <div class="flex items-baseline justify-between mb-4">
+            <span class="text-sm font-medium text-slate-500">Total Amount Due</span>
+            <span class="text-2xl font-black text-[#3C52C3]">RM<?= number_format((float)$appt['price'], 2) ?></span>
+          </div>
+
+          <div class="text-sm text-slate-600 space-y-1 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Bank Name:</span>
+              <span class="font-bold text-slate-800">Maybank Berhad</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Account Number:</span>
+              <span class="font-mono font-bold text-[#3C52C3]">5140 1234 5678</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Holder Name:</span>
+              <span class="font-semibold text-slate-800">StepCare Healthcare Sdn. Bhd.</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 mt-2.5 leading-relaxed">
+            Please make your transfer using the details above, then upload your payslip or receipt proof below for verification.
+          </p>
+        </div>
 
         <form action="processPayment.php" method="POST" enctype="multipart/form-data" class="flex flex-col gap-6" id="uploadForm">
           <input type="hidden" name="appointmentID" value="<?= $appointmentID ?>" />
@@ -105,15 +128,15 @@ $ref = '#SC' . str_pad((string)$appt['appointmentID'], 6, '0', STR_PAD_LEFT);
             <p class="text-sm font-semibold text-slate-700 mb-2">Upload Payment Proof <span class="text-red-500">*</span></p>
             
             <!-- Drag and Drop Area -->
-            <div id="dropZone" class="relative border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-8 text-center hover:bg-slate-100 hover:border-[#3C52C3] transition cursor-pointer group overflow-hidden">
+            <div id="dropZone" class="relative border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center hover:bg-slate-100 hover:border-[#3C52C3] transition cursor-pointer group overflow-hidden">
               <input type="file" name="paymentProof" id="fileInput" accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" required />
               
               <div id="dropContent" class="flex flex-col items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-slate-400 group-hover:text-[#3C52C3] transition mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-slate-400 group-hover:text-[#3C52C3] transition mb-2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
                 </svg>
                 <p class="text-sm font-semibold text-slate-700">Click to upload or drag & drop</p>
-                <p class="text-xs text-slate-500 mt-1">PNG, JPG up to 5MB</p>
+                <p class="text-xs text-slate-400 mt-1">PNG, JPG up to 5MB</p>
               </div>
 
               <!-- Image Preview -->
@@ -126,7 +149,7 @@ $ref = '#SC' . str_pad((string)$appt['appointmentID'], 6, '0', STR_PAD_LEFT);
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3 mt-4">
+          <div class="flex flex-col sm:flex-row gap-3 mt-2">
             <a href="cancelPayment.php?id=<?= $appointmentID ?>" class="flex-1 text-center rounded-xl border border-slate-300 bg-white py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
               Cancel Booking
             </a>

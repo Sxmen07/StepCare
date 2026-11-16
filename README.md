@@ -32,7 +32,7 @@ Bringing loved ones to hospitals or care centers can be challenging for busy fam
 * **Admin:** Automated Backup Nurse Allocation System.
 * **Cross-Role:** AI Chat Guidance *(Optional/Experimental)*.
 
-### 📊 Ooi Yun Pei — Admin Platform & User Management
+### Ooi Yun Pei — Admin Platform & User Management
 * **Patient/User:** Profile Management, Review & Rating System.
 * **Nurse:** Profile & Qualification Submissions Management.
 * **Admin:** Account Profile Management, System Statistics & Review Dashboard.

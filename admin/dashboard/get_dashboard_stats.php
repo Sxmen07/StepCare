@@ -1,5 +1,6 @@
 <?php
 // English comments only
+session_start(); // MUST start session to read the logged-in admin
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
@@ -21,10 +22,22 @@ $response = [
 ];
 
 try {
-    // 1. Fetch latest active admin name
-    $resAdmin = $conn->query("SELECT firstName, lastName FROM admins ORDER BY adminID DESC LIMIT 1");
-    if ($resAdmin && $rowAdmin = $resAdmin->fetch_assoc()) {
-        $response['admin']['name'] = trim(($rowAdmin['firstName'] ?? '') . ' ' . ($rowAdmin['lastName'] ?? ''));
+    // 1. Fetch the CURRENTLY LOGGED IN admin name from the Session
+    $adminId = $_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['userID'] ?? $_SESSION['user_id'] ?? 0;
+
+    if ($adminId > 0) {
+        $stmtAdmin = $conn->prepare("SELECT firstName, lastName FROM admins WHERE adminID = ? LIMIT 1");
+        if ($stmtAdmin) {
+            $stmtAdmin->bind_param("i", $adminId);
+            $stmtAdmin->execute();
+            $resAdmin = $stmtAdmin->get_result();
+            if ($resAdmin && $rowAdmin = $resAdmin->fetch_assoc()) {
+                $response['admin']['name'] = trim(($rowAdmin['firstName'] ?? '') . ' ' . ($rowAdmin['lastName'] ?? ''));
+            }
+        }
+    } elseif (!empty($_SESSION['firstName'])) {
+        // Fallback if DB query fails but session exists
+        $response['admin']['name'] = trim($_SESSION['firstName'] . ' ' . ($_SESSION['lastName'] ?? ''));
     }
 
     // 2. Metrics Calculation
@@ -97,3 +110,4 @@ try {
 
 echo json_encode($response);
 exit;
+?>

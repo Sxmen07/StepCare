@@ -81,6 +81,10 @@ foreach ($rawSlots as $slotRow) {
 }
 
 /* ---------- Dynamic Availability per Service for Next 30 Days ---------- */
+// Same rule as saveBooking.php: effective capacity = min(maxCapacity, verified nurse count)
+$totalVerifiedNurses = (int)$pdo->query("SELECT COUNT(*) FROM nurses WHERE isVerified = 1")->fetchColumn();
+if ($totalVerifiedNurses <= 0) $totalVerifiedNurses = 3;
+
 $availability = [];
 $cursor = new DateTime('today');
 
@@ -104,7 +108,8 @@ for ($i = 0; $i < 30; $i++) {
             $stmt->execute([$svcId, $d, $time24]);
             $bookedCount = (int)$stmt->fetchColumn();
 
-            $maxCap = $slotMeta['maxCapacity'];
+            // effective capacity respects both the slot capacity AND nurse availability
+            $maxCap = max(1, min((int)$slotMeta['maxCapacity'], $totalVerifiedNurses));
             $availability[$d][$svcId][$time24] = max(0, $maxCap - $bookedCount);
         }
     }

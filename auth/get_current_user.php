@@ -11,14 +11,117 @@ require_once __DIR__ . '/../config/db_connect.php';
 // Retrieve action and authentication context
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
-$currentRole   = $_GET['role'] ?? $_POST['role'] ?? $_SESSION['role'] ?? 'admin';
-$currentUserID = (int)($_GET['user_id'] ?? $_POST['user_id'] ?? $_SESSION['adminID'] ?? $_SESSION['user_id'] ?? 1);
+$currentRole = strtolower(trim((string)($_GET['role'] ?? $_POST['role'] ?? $_SESSION['role'] ?? 'admin')));
+
+// Resolve the acting user id — role-aware (admins table vs nurses table)
+if ($currentRole === 'nurse') {
+    $currentUserID = (int)(
+        $_GET['user_id'] ?? $_POST['user_id']
+        ?? $_SESSION['nurseID'] ?? $_SESSION['nurse_id'] ?? $_SESSION['user_id'] ?? 1
+    );
+} else {
+    $currentUserID = (int)(
+        $_GET['user_id'] ?? $_POST['user_id']
+        ?? $_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 1
+    );
+}
 
 $response = ['success' => false, 'message' => ''];
 
 try {
     if (!isset($conn) || !($conn instanceof mysqli)) {
         throw new Exception("Database connection error: \$conn is not initialized properly.");
+    }
+
+    // -------------------------------------------------------------
+    // 0. Current user profile — consumed by topbar.html
+    //    URL: get_current_user.php?role=admin|nurse
+    //    Returns: { status:"success", user:{ fullName, photoURL,
+    //               profileLink, settingsLink } }
+    // -------------------------------------------------------------
+    if ($action === '' || $action === 'get_profile' || $action === 'current_user') {
+
+        if ($currentRole === 'nurse') {
+            $nurseId = (int)($_SESSION['nurseID'] ?? $_SESSION['nurse_id'] ?? $_SESSION['user_id'] ?? 0);
+            if ($nurseId <= 0) {
+                http_response_code(401);
+                $response['message'] = 'Not authenticated as nurse.';
+                echo json_encode($response);
+                exit;
+            }
+
+            $stmt = $conn->prepare(
+                "SELECT nurseID AS id, firstName, lastName, nursePhotoURL AS photoURL
+                 FROM nurses WHERE nurseID = ? LIMIT 1"
+            );
+            if (!$stmt) throw new Exception("SQL Prepare Error: " . $conn->error);
+            $stmt->bind_param('i', $nurseId);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+
+            if (!$row) {
+                http_response_code(401);
+                $response['message'] = 'Nurse record not found.';
+                echo json_encode($response);
+                exit;
+            }
+
+            $fullName = trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? ''));
+            if ($fullName === '') $fullName = 'Nurse';
+
+            $response['status']  = 'success';
+            $response['success'] = true;
+            $response['user'] = [
+                'id'           => (int)$row['id'],
+                'fullName'     => $fullName,
+                'photoURL'     => $row['photoURL'],
+                'profileLink'  => '/StepCare/nurse/profile/nurse-profile.html',
+                // Adjust this path if your nurse settings page lives elsewhere
+                'settingsLink' => '/StepCare/nurse/settings/nurse-settings.html',
+            ];
+            echo json_encode($response);
+            exit;
+        }
+
+        // Default = admin
+        $adminId = (int)($_SESSION['adminID'] ?? $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 0);
+        if ($adminId <= 0) {
+            http_response_code(401);
+            $response['message'] = 'Not authenticated as admin.';
+            echo json_encode($response);
+            exit;
+        }
+
+        $stmt = $conn->prepare(
+            "SELECT adminID AS id, firstName, lastName, adminPhotoURL AS photoURL
+             FROM admins WHERE adminID = ? LIMIT 1"
+        );
+        if (!$stmt) throw new Exception("SQL Prepare Error: " . $conn->error);
+        $stmt->bind_param('i', $adminId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        if (!$row) {
+            http_response_code(401);
+            $response['message'] = 'Admin record not found.';
+            echo json_encode($response);
+            exit;
+        }
+
+        $fullName = trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? ''));
+        if ($fullName === '') $fullName = 'Administrator';
+
+        $response['status']  = 'success';
+        $response['success'] = true;
+        $response['user'] = [
+            'id'           => (int)$row['id'],
+            'fullName'     => $fullName,
+            'photoURL'     => $row['photoURL'],
+            'profileLink'  => '/StepCare/admin/profile/admin-profile.html',
+            'settingsLink' => '/StepCare/admin/settings/admin-settings.html',
+        ];
+        echo json_encode($response);
+        exit;
     }
 
     // -------------------------------------------------------------
@@ -268,3 +371,4 @@ try {
 
 echo json_encode($response);
 exit;
+?>

@@ -5,6 +5,10 @@ let currentCategory = 'all';
 let searchQuery = '';
 let viewMode = 'card';
 
+// Delete Modal State
+let serviceToDelete = null;
+let deleteCountdown = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   loadComponents();
   fetchServices();
@@ -12,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupViewModeToggle();
   setupModalHandlers();
   setupLivePreviewListeners();
+  setupDeleteModalHandlers();
 });
 
 // 1. Load Components
@@ -128,6 +133,7 @@ function renderServices() {
           <div class="flex items-center gap-3 shrink-0">
             <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">Active</span>
             <button type="button" onclick="openEditModal(${service.serviceID})" class="p-2 text-neutral-400 hover:text-[#3C52C3] transition cursor-pointer" title="Edit Service"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            <button type="button" onclick="openDeleteModal(${service.serviceID}, '${service.serviceName.replace(/'/g, "\\'")}')" class="p-2 text-neutral-400 hover:text-red-500 transition cursor-pointer" title="Delete Service"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
       `;
@@ -144,9 +150,14 @@ function renderServices() {
           <div>
             ${service.isTopRecommendation == 1 ? `<span class="bg-amber-400 text-amber-950 font-black text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">★ Top Pick</span>` : ''}
           </div>
-          <button type="button" onclick="openEditModal(${service.serviceID})" class="p-1.5 text-white/80 hover:text-white transition cursor-pointer focus:outline-none" title="Edit Service">
-            <i data-lucide="pencil" class="w-4 h-4 drop-shadow-md"></i>
-          </button>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="openEditModal(${service.serviceID})" class="p-1.5 text-white/80 hover:text-white transition cursor-pointer focus:outline-none" title="Edit Service">
+              <i data-lucide="pencil" class="w-4 h-4 drop-shadow-md"></i>
+            </button>
+            <button type="button" onclick="openDeleteModal(${service.serviceID}, '${service.serviceName.replace(/'/g, "\\'")}')" class="p-1.5 text-white/80 hover:text-red-400 transition cursor-pointer focus:outline-none" title="Delete Service">
+              <i data-lucide="trash-2" class="w-4 h-4 drop-shadow-md"></i>
+            </button>
+          </div>
         </div>
 
         <div class="relative z-20 p-5 flex flex-col justify-end space-y-2.5">
@@ -174,7 +185,7 @@ function renderServices() {
   if (window.lucide) lucide.createIcons();
 }
 
-// Time Formatting & Buffer Helper Functions
+// 4. Time Formatting & Buffer Helper Functions
 function formatTo12Hour(time24) {
   if (!time24) return '';
   const [hStr, mStr] = time24.split(':');
@@ -295,7 +306,7 @@ function updateSlotBuffers() {
   });
 }
 
-// 4. Modal, Tabs & Live Preview Handlers
+// 5. Modal, Tabs & Live Preview Handlers
 function setupModalHandlers() {
   const modal = document.getElementById('service-modal');
   const openAddBtn = document.getElementById('btn-open-add-modal');
@@ -684,4 +695,88 @@ function setupSearchAndFilters() {
       renderServices();
     });
   }
+}
+
+// ==========================================
+// 6. Delete Modal Logic (With 5-second countdown)
+// ==========================================
+function setupDeleteModalHandlers() {
+  const deleteModal = document.getElementById('delete-confirm-modal');
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+  const btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+  if (btnCancelDelete) {
+    btnCancelDelete.addEventListener('click', closeDeleteModal);
+  }
+
+  if (btnConfirmDelete) {
+    btnConfirmDelete.addEventListener('click', async () => {
+      if (!serviceToDelete) return;
+
+      btnConfirmDelete.disabled = true;
+      btnConfirmDelete.textContent = 'Deleting...';
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'delete_service');
+        formData.append('serviceID', serviceToDelete.id);
+
+        const res = await fetch('serviceManagement.php', { method: 'POST', body: formData });
+        const json = await res.json();
+
+        if (json.status === 'success') {
+          closeDeleteModal();
+          fetchServices(); // Refresh grid
+        } else {
+          alert(json.message || 'Failed to delete service.');
+          closeDeleteModal();
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Network error occurred.');
+        closeDeleteModal();
+      }
+    });
+  }
+}
+
+function openDeleteModal(id, name) {
+  serviceToDelete = { id, name };
+
+  const deleteModal = document.getElementById('delete-confirm-modal');
+  const textEl = document.getElementById('delete-modal-text');
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+
+  if (textEl) {
+    textEl.innerHTML = `Are you sure you want to delete <strong class="text-neutral-900">${name}</strong>? This action cannot be undone.`;
+  }
+
+  btnConfirmDelete.disabled = true;
+  btnConfirmDelete.textContent = 'Wait 5s...';
+  btnConfirmDelete.className = 'w-full rounded-xl bg-neutral-200 py-3.5 text-sm font-bold text-neutral-400 transition cursor-not-allowed';
+
+  deleteModal.classList.remove('hidden');
+  deleteModal.classList.add('flex');
+
+  let seconds = 5;
+  clearInterval(deleteCountdown);
+  deleteCountdown = setInterval(() => {
+    seconds--;
+    if (seconds > 0) {
+      btnConfirmDelete.textContent = `Wait ${seconds}s...`;
+    } else {
+      clearInterval(deleteCountdown);
+      btnConfirmDelete.disabled = false;
+      btnConfirmDelete.textContent = 'Yes, Delete Service';
+      btnConfirmDelete.className = 'w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white hover:bg-red-700 active:scale-95 transition';
+    }
+  }, 1000);
+}
+
+function closeDeleteModal() {
+  clearInterval(deleteCountdown);
+  const deleteModal = document.getElementById('delete-confirm-modal');
+  deleteModal.classList.add('hidden');
+  deleteModal.classList.remove('flex');
+  serviceToDelete = null;
 }

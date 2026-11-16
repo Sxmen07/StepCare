@@ -14,13 +14,14 @@ if ($isLoggedIn) {
     $self = $stmt->fetch();
 
     /* ---------- Connections (both directions) ---------- */
+    // Added isPinned and ordered by it
     $stmt = $pdo->prepare("
-        SELECT c.connectionID, c.ownerID, c.viewerID, c.relationship,
+        SELECT c.connectionID, c.ownerID, c.viewerID, c.relationship, c.isPinned,
                CASE WHEN c.ownerID = ? THEN c.viewerID ELSE c.ownerID END AS otherUserID,
                CASE WHEN c.ownerID = ? THEN 'viewer' ELSE 'owner' END AS iAm
         FROM familyConnections c
         WHERE c.ownerID = ? OR c.viewerID = ?
-        ORDER BY c.createdAt DESC
+        ORDER BY c.isPinned DESC, c.createdAt DESC
     ");
     $stmt->execute([$userID, $userID, $userID, $userID]);
     $rows = $stmt->fetchAll();
@@ -47,6 +48,7 @@ if ($isLoggedIn) {
                 'photoURL'     => $u['userPhotoURL'] ?: '../../images/default-user.png',
                 'relationship' => $r['relationship'],
                 'iAm'          => $r['iAm'],
+                'isPinned'     => (int)$r['isPinned'],
             ];
         }
     }
@@ -77,14 +79,12 @@ if ($isLoggedIn) {
         $stmt->execute($allIDs);
         $appointments = $stmt->fetchAll();
 
-        // Fetch timelines (加上了 try-catch 兼容不同的表名)
         if (!empty($appointments)) {
             $apptIDs = array_column($appointments, 'appointmentID');
             $phAppt = implode(',', array_fill(0, count($apptIDs), '?'));
             $timelines = [];
             
             try {
-                // 优先尝试查询 appointment_timeline 表
                 $tStmt = $pdo->prepare("
                     SELECT appointmentID, status, title, message, createdBy, createdAt
                     FROM appointment_timeline
@@ -96,7 +96,6 @@ if ($isLoggedIn) {
                     $timelines[$t['appointmentID']][] = $t;
                 }
             } catch (Exception $e) {
-                // 如果失败，尝试兼容 trackServiceStatus 表
                 try {
                     $tStmt = $pdo->prepare("
                         SELECT appointmentID, status, message AS title, message, 'system' AS createdBy, createdAt
@@ -108,14 +107,11 @@ if ($isLoggedIn) {
                     foreach ($tStmt->fetchAll() as $t) {
                         $timelines[$t['appointmentID']][] = $t;
                     }
-                } catch (Exception $ex) {
-                    // 如果都没找到，静默跳过
-                }
+                } catch (Exception $ex) {}
             }
 
             foreach ($appointments as &$appt) {
                 $appt['timeline'] = $timelines[$appt['appointmentID']] ?? [];
-                // 如果没有查到时间线，生成一个默认的
                 if (empty($appt['timeline'])) {
                     $appt['timeline'][] = [
                         'status' => $appt['appointmentStatus'],
@@ -148,7 +144,6 @@ if ($isLoggedIn) {
     $activeCodeJson   = json_encode($activeCode, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 } else {
-    // Set empty defaults for guests so the HTML doesn't break
     $selfJson = 'null'; $membersJson = '[]'; $appointmentsJson = '[]'; $activeCodeJson = 'null';
 }
 

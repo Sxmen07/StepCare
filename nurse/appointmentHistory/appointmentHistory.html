@@ -10,13 +10,13 @@
   
   <link rel="stylesheet" href="appointmentHistory.css">
 </head>
-<body class="bg-[#fafafa] min-h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
+<body class="bg-[#fafafa] h-screen flex overflow-hidden font-sans text-neutral-800 antialiased">
 
   <!-- Sidebar Include -->
   <?php include __DIR__ . '/../../components/sidebar-nurse.html'; ?>
 
   <!-- Main Layout Area -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden">
+  <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
     
     <!-- Topbar Include -->
     <?php include __DIR__ . '/../../components/topbar.html'; ?>
@@ -47,17 +47,63 @@
             </div>
           </div>
 
-          <!-- SLIDING FILTER BAR -->
-          <div class="py-4">
+          <!-- ADVANCED FILTERS ROW -->
+          <div class="py-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            
+            <!-- Left: Sliding Status Pill -->
             <div class="relative inline-flex items-center p-1.5 bg-white rounded-full border border-neutral-200/80 shadow-sm" id="filterContainer">
-              <!-- The sliding background pill with gradient -->
               <div id="filterSlider" class="absolute top-1.5 bottom-1.5 rounded-full z-0 shadow-sm" style="background: linear-gradient(90deg, #3C52C3 0%, #007FFF 100%);"></div>
               
-              <!-- The clickable buttons -->
               <button type="button" class="filter-chip active relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="all">All History</button>
               <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="completed">Completed</button>
               <button type="button" class="filter-chip relative z-10 px-6 py-2 text-sm font-semibold text-slate-500 transition-colors duration-300 rounded-full hover:text-slate-800" data-filter="cancelled">Cancelled</button>
             </div>
+
+            <!-- Right: Category and Airbnb-Style Date Range -->
+            <div class="flex flex-wrap items-center gap-3">
+              
+              <!-- Category Filter -->
+              <div class="relative">
+                <select id="filterCategory" class="appearance-none w-40 pl-4 pr-10 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-medium text-slate-700 focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none transition-all shadow-sm cursor-pointer">
+                  <option value="all">All Services</option>
+                  <!-- Populated by JS -->
+                </select>
+                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+              </div>
+
+              <!-- Airbnb/Booking.com Style Date Range Picker -->
+              <div class="relative" id="dateRangeWrapper">
+                <button type="button" id="dateRangeBtn" class="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-4 py-2.5 shadow-sm hover:border-[#3C52C3] focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 outline-none transition-all text-sm font-medium text-slate-700">
+                  <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                  <span id="dateRangeText">Select dates</span>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="dateRangeMenu" class="hidden absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-neutral-200 p-5 z-50">
+                  <div class="flex flex-col gap-4">
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">From</label>
+                      <input type="date" id="filterFromDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 transition-all cursor-pointer">
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">To</label>
+                      <input type="date" id="filterToDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-[#3C52C3] focus:ring-2 focus:ring-[#3C52C3]/20 transition-all cursor-pointer">
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center mt-5 pt-4 border-t border-slate-100">
+                    <button type="button" id="clearDatesBtn" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Clear</button>
+                    <button type="button" id="applyDatesBtn" class="bg-[#3C52C3] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#2f41a0] transition">Apply</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reset Button -->
+              <button id="resetFilters" type="button" class="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors cursor-pointer shadow-sm">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Reset
+              </button>
+            </div>
+            
           </div>
 
           <!-- List Container -->
@@ -71,10 +117,10 @@
     </main>
   </div>
 
-  <!-- Pass PHP data to JS -->
+  <!-- Pass PHP data to JS with safe fallbacks -->
   <script>
-    window.historyData = <?= $historyJson ?>;
-    window.statsData = <?= $statsJson ?>;
+    window.historyData = <?= $historyJson ?: '[]' ?>;
+    window.statsData = <?= $statsJson ?: '{"completed":0,"cancelled":0,"earnings":0}' ?>;
   </script>
   
   <script src="appointmentHistory.js"></script>

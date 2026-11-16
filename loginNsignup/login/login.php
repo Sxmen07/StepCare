@@ -33,8 +33,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $table = 'users'; $idColumn = 'userID'; $photoColumn = 'userPhotoURL';
     }
 
-    // Include accountStatus in the query (admins/nurses tables can default to 'Active' or handle gracefully if column only exists in users)
-    // For safety across tables, we check if accountStatus exists or select it conditionally. Assuming 'users' has accountStatus:
     if ($table === 'users') {
         $stmt = $conn->prepare("SELECT $idColumn, firstName, $photoColumn, passwordHash, failedAttempt, lockedUntil, accountStatus FROM $table WHERE email = ?");
     } else {
@@ -48,13 +46,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
-        // ★ Check if the account has been banned by an admin
         if (isset($user['accountStatus']) && $user['accountStatus'] === 'Banned') {
             header("Location: login.html?error=banned");
             exit();
         }
 
-        // Lock check
         if ($user['lockedUntil'] !== null) {
             $lockTime = strtotime($user['lockedUntil']);
             $now = time();
@@ -70,29 +66,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
 
-        // Verify password
         if (password_verify($password, $user['passwordHash'])) {
             $stmt_success = $conn->prepare("UPDATE $table SET failedAttempt = 0, lockedUntil = NULL WHERE $idColumn = ?");
             $stmt_success->bind_param("i", $user[$idColumn]);
             $stmt_success->execute();
 
-            // Set common session variables
+            // Clear old session variables to prevent data crossover
+            session_unset();
+
+            // Set unified & role-specific session variables
+            $_SESSION['role']         = $portal;
             $_SESSION['firstName']    = $user['firstName'];
             $_SESSION['userPhotoURL'] = $user[$photoColumn] ?? '';
-            $_SESSION['role']         = $portal;
 
             if ($portal === 'admin') {
-                $_SESSION['adminID'] = $user['adminID'];
+                $_SESSION['adminID']  = $user['adminID'];
+                $_SESSION['admin_id'] = $user['adminID']; // Fallback alias
             } elseif ($portal === 'nurse') {
-                $_SESSION['nurseID'] = $user['nurseID'];
+                $_SESSION['nurseID']  = $user['nurseID'];
+                $_SESSION['nurse_id'] = $user['nurseID']; // Fallback alias
             } else {
-                $_SESSION['userID'] = $user['userID'];
+                $_SESSION['userID']   = $user['userID'];
+                $_SESSION['user_id']  = $user['userID'];  // Fallback alias
             }
 
             header("Location: " . getRedirectByPortal($portal));
             exit();
         } else {
-            // Wrong password
             $attempts = $user['failedAttempt'] + 1;
             if ($attempts >= 3) {
                 $stmt_lock = $conn->prepare("UPDATE $table SET failedAttempt = ?, lockedUntil = DATE_ADD(NOW(), INTERVAL 3 MINUTE) WHERE $idColumn = ?");

@@ -186,5 +186,34 @@ if ($action === 'save_service') {
     exit;
 }
 
+// 4. Handle Delete Service
+if ($action === 'delete_service') {
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        $serviceID = (int)($_POST['serviceID'] ?? 0);
+        if ($serviceID <= 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid Service ID.']);
+            exit;
+        }
+
+        // Safety Check: Ensure no active appointments are linked to this service
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE serviceID = ? AND appointmentStatus IN ('pending', 'confirmed', 'in_progress')");
+        $checkStmt->execute([$serviceID]);
+        if ((int)$checkStmt->fetchColumn() > 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Cannot delete: There are active appointments linked to this service.']);
+            exit;
+        }
+
+        // Delete Service (Cascade will handle features, badges, slots)
+        $stmt = $pdo->prepare("DELETE FROM services WHERE serviceID = ?");
+        $stmt->execute([$serviceID]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Service deleted successfully.']);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
 require_once __DIR__ . '/serviceManagement.html';
 ?>

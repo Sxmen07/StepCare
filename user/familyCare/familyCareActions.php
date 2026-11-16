@@ -17,11 +17,8 @@ $code    = strtoupper(trim($payload['code'] ?? ''));
    CREATE CODE
    ========================================================= */
 if ($action === 'create') {
-    // Invalidate previous unused codes
-    $pdo->prepare("UPDATE familyCare SET isUsed = 1 WHERE userID = ? AND isUsed = 0")
-        ->execute([$userID]);
+    $pdo->prepare("UPDATE familyCare SET isUsed = 1 WHERE userID = ? AND isUsed = 0")->execute([$userID]);
 
-    // Generate a unique 6-character code
     do {
         $newCode = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
         $stmt = $pdo->prepare("SELECT 1 FROM familyCare WHERE accessCode = ?");
@@ -30,17 +27,10 @@ if ($action === 'create') {
 
     $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
-    $stmt = $pdo->prepare(
-        "INSERT INTO familyCare (userID, accessCode, codeExpiredTime)
-         VALUES (?, ?, ?)"
-    );
+    $stmt = $pdo->prepare("INSERT INTO familyCare (userID, accessCode, codeExpiredTime) VALUES (?, ?, ?)");
     $stmt->execute([$userID, $newCode, $expires]);
 
-    echo json_encode([
-        'ok'        => true,
-        'code'      => $newCode,
-        'expiresAt' => $expires,
-    ]);
+    echo json_encode(['ok' => true, 'code' => $newCode, 'expiresAt' => $expires]);
     exit;
 }
 
@@ -53,10 +43,7 @@ if ($action === 'redeem') {
         exit;
     }
 
-    $stmt = $pdo->prepare(
-        "SELECT familyCareID, userID, codeExpiredTime, isUsed
-         FROM familyCare WHERE accessCode = ? LIMIT 1"
-    );
+    $stmt = $pdo->prepare("SELECT familyCareID, userID, codeExpiredTime, isUsed FROM familyCare WHERE accessCode = ? LIMIT 1");
     $stmt->execute([$code]);
     $invite = $stmt->fetch();
 
@@ -77,10 +64,7 @@ if ($action === 'redeem') {
         exit;
     }
 
-    // Duplicate check
-    $stmt = $pdo->prepare(
-        "SELECT 1 FROM familyConnections WHERE ownerID = ? AND viewerID = ? LIMIT 1"
-    );
+    $stmt = $pdo->prepare("SELECT 1 FROM familyConnections WHERE ownerID = ? AND viewerID = ? LIMIT 1");
     $stmt->execute([$invite['userID'], $userID]);
     if ($stmt->fetch()) {
         echo json_encode(['ok' => false, 'message' => 'You are already connected to this person']);
@@ -89,29 +73,78 @@ if ($action === 'redeem') {
 
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("INSERT INTO familyConnections (ownerID, viewerID) VALUES (?, ?)")
-            ->execute([$invite['userID'], $userID]);
-
-        $pdo->prepare("UPDATE familyCare SET isUsed = 1 WHERE familyCareID = ?")
-            ->execute([$invite['familyCareID']]);
-
-        // ★ 修复：使用正确的 recipientType 和 recipientID 字段，而不是旧的 userID
+        $pdo->prepare("INSERT INTO familyConnections (ownerID, viewerID) VALUES (?, ?)")->execute([$invite['userID'], $userID]);
+        $pdo->prepare("UPDATE familyCare SET isUsed = 1 WHERE familyCareID = ?")->execute([$invite['familyCareID']]);
         $pdo->prepare(
             "INSERT INTO notifications (recipientType, recipientID, title, message, type, linkURL)
-             VALUES ('user', ?, 'New family member connected',
-                        'A family member has joined your care circle.',
-                        'system',
-                        '../familyCare/familyCare.php')"
+             VALUES ('user', ?, 'New family member connected', 'A family member has joined your care circle.', 'system', '../familyCare/familyCare.php')"
         )->execute([$invite['userID']]);
-
         $pdo->commit();
     } catch (Exception $e) {
         $pdo->rollBack();
-        // 记录具体错误到服务器日志，方便以后排查
         error_log('Family connection failed: ' . $e->getMessage());
         echo json_encode(['ok' => false, 'message' => 'Connection failed. Please try again.']);
         exit;
     }
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/* =========================================================
+   DELETE CONNECTIONS (Bulk)
+   ========================================================= */
+if ($action === 'delete') {
+    $connIDs = $payload['connectionIDs'] ?? [];
+    if (empty($connIDs) || !is_array($connIDs)) {
+        echo json_encode(['ok' => false, 'message' => 'No members selected']);
+        exit;
+    }
+
+    // Sanitize array to integers
+    $connIDs = array_map('intval', $connIDs);
+    $inQuery = implode(',', array_fill(0, count($connIDs), '?'));
+
+    // Verify ownership/viewership for security
+    $stmt = $pdo->prepare(
+        "SELECT connectionID FROM familyConnections 
+         WHERE connectionID IN ($inQuery) AND (ownerID = ? OR viewerID = ?)"
+    );
+    $params = array_merge($connIDs, [$userID, $userID]);
+    $stmt->execute($params);
+    
+    $validIDs = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    if (count($validIDs) > 0) {
+        $delQuery = implode(',', array_fill(0, count($validIDs), '?'));
+        $pdo->prepare("DELETE FROM familyConnections WHERE connectionID IN ($delQuery)")->execute($validIDs);
+    }
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/* =========================================================
+   TOGGLE PIN
+   ========================================================= */
+if ($action === 'pin') {
+    $connIDs = $payload['connectionIDs'] ?? [];
+    if (empty($connIDs) || !is_array($connIDs)) {
+        echo json_encode(['ok' => false, 'message' => 'No members selected']);
+        exit;
+    }
+
+    $connIDs = array_map('intval', $connIDs);
+    
+    // We toggle: if 1 becomes 0, if 0 becomes 1
+    $inQuery = implode(',', array_fill(0, count($connIDs), '?'));
+    $stmt = $pdo->prepare(
+        "UPDATE familyConnections 
+         SET isPinned = NOT isPinned 
+         WHERE connectionID IN ($inQuery) AND (ownerID = ? OR viewerID = ?)"
+    );
+    $params = array_merge($connIDs, [$userID, $userID]);
+    $stmt->execute($params);
 
     echo json_encode(['ok' => true]);
     exit;
